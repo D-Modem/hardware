@@ -298,6 +298,13 @@ fitted, GP22–27 become spare pins.
 
 ## 5. Firmware (outline)
 
+> Implemented in [`firmware/`](firmware/README.md) (v0.1, wired board).
+> Details settled there:
+> - detection samples every 50 ms and needs 3 matching samples;
+> - the vendor protocol is in [firmware/PROTOCOL.md](firmware/PROTOCOL.md);
+> - no 1200-baud reboot, since 1200 baud is a real modem speed;
+> - TinyUSB 0.21 is used for SERIAL_STATE.
+
 ### 5.1 USB
 
 - Pico SDK + TinyUSB composite device: CDC-ACM + the SDK's reset

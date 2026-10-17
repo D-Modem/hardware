@@ -1,0 +1,52 @@
+name: firmware
+
+on:
+  push:
+    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml"]
+  pull_request:
+    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib ninja-build cmake
+
+      - name: Pin header matches the netlist
+        run: |
+          python3 hardware/netlist/build_netlist.py
+          git diff --exit-code -- firmware/src/generated hardware/netlist
+
+      - name: Core tests (host)
+        run: make -C firmware/test run
+
+      - name: Build (hood board)
+        run: |
+          cmake -S firmware -B firmware/build-hood -G Ninja -DPS_BOARD=hood
+          ninja -C firmware/build-hood
+
+      - name: Build (Pico bench rig)
+        run: |
+          cmake -S firmware -B firmware/build-pico -G Ninja -DPS_BOARD=pico \
+                -DPICO_SDK_PATH=$PWD/firmware/build-hood/_deps/pico_sdk-src \
+                -DPICO_TINYUSB_PATH=$PWD/firmware/build-hood/_deps/tinyusb-src
+          ninja -C firmware/build-pico
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Emulator test (rp2040js)
+        run: firmware/test/emu/run.sh firmware/build-hood/pico-serial-hood.bin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pico-serial-firmware
+          path: |
+            firmware/build-hood/pico-serial-hood.uf2
+            firmware/build-pico/pico-serial-pico.uf2

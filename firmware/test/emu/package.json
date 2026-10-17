@@ -1,0 +1,10 @@
+{
+  "name": "pico-serial-emu-test",
+  "private": true,
+  "type": "module",
+  "description": "Runs the pico-serial firmware in the rp2040js emulator",
+  "devDependencies": {
+    "rp2040js": "1.4.0",
+    "tsx": "4.20.6"
+  }
+}

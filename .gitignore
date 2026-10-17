@@ -1,1 +1,5 @@
 __pycache__/
+firmware/build*/
+firmware/test/test_core
+firmware/test/emu/node_modules/
+firmware/test/emu/vendor/
