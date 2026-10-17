@@ -70,7 +70,37 @@ Options:
 | B | Keep the hood size; RM2 at the back with the antenna overhanging the board | Keep-out not met: USB-C and the cable are right there | Shorter range, and the modular approval no longer applies |
 | C | Hood board for the wired version; a separate small radio board on a short cable | Fine | Two boards and an inter-board cable; messy |
 
-Option A gives a second board, **pico-serial W**. The hood version stays
+### 2.1 Enclosure: avoid printing if at all possible
+
+A 3D-printed case is the **last resort**. Try these in order:
+
+1. **Keep the hood (option B) if the bench test allows it.**
+   - The Pico W prototype (§9 step 2) has the same radio. Hold it inside
+     a DB25 hood against a computer's back panel and measure signal
+     strength and drop-outs at desk distances.
+   - If the link holds, the W board stays hood-sized and needs no case at
+     all. The antenna keep-out isn't met, which only matters for
+     approvals.
+2. **A DB25 "modular adapter" housing.**
+   - The long plastic shell sold as a DB25-to-RJ45 adapter kit, e.g.
+     L-com **RBA258F** (female DB25, grey) at DigiKey, or similar kits
+     from StarTech or CableWholesale.
+   - It plugs in like a hood, but it's longer and wider, and its RJ45
+     opening at the back can take the USB-C.
+   - The kit's crimp-pin insert is thrown away; our solder-cup DB25 and
+     board go in its place.
+   - Inside dimensions aren't published, so buy one and measure. RM2 and
+     its keep-out need roughly 45 × 55 mm of board-plus-air inside.
+3. **An off-the-shelf box with a hand-cut DB25 opening**, e.g. Hammond
+   **1551KBK** (80 × 40 × 20 mm ABS, about $6, DigiKey).
+   - The DB25 flange (53 mm) is wider than the box (40 mm), so the
+     connector goes on a long side. That's awkward behind a computer.
+4. **3D-printed case**: only if 1–3 all fail.
+
+Each option changes the board outline, so the outline waits for this
+choice. The circuit (§3) is the same for all four.
+
+Options 2–4 give a second board, **pico-serial W**. The hood version stays
 as it is. Both come from the same netlist script with a variant switch.
 Only the radio, the outline and a few GPIOs differ.
 
@@ -292,10 +322,10 @@ pairing window open, steady = connected.
 
 ## 8. Open questions
 
-1. **Form factor:** option A (small case, recommended), B (hood size,
-   compromised antenna) or C (two boards)?
-2. **Case:** 3D-printed, or an off-the-shelf small plastic box? It
-   decides the outline, the button and where the LEDs show.
+1. **Enclosure:** decided to avoid 3D printing; settle it with the
+   order in §2.1, starting with the Pico W bench test inside a hood.
+2. **Samples to buy:** one DB25-female-to-RJ45 modular adapter kit (e.g.
+   L-com RBA258F) to measure. Optionally a Hammond 1551KBK.
 3. **Wi-Fi:** leave it off, or plan the TCP serial server?
 4. **RP2350 instead of RP2040** for the W board? It's a Pico 2 W
    equivalent: more RAM (520 KB) and faster. It needs the external
@@ -304,11 +334,13 @@ pairing window open, steady = connected.
 
 ## 9. Next steps
 
-1. Pick the form factor and case (§8).
+1. Buy a Pico W and an adapter-kit housing (§2.1, §8).
 2. **Bench prototype with an off-the-shelf Pico W.** It has the same radio
    and the same pins. Wire it to the RS-232 test rig from SPEC.md §9, then
    prove BLE NUS with an iPhone, SPP with dmodem-android, pairing, and
-   throughput at 115,200 and 230,400. This needs no new board.
+   throughput at 115,200 and 230,400. **Also test the radio inside a
+   DB25 hood against a computer's back panel**: this decides the
+   enclosure (§2.1). None of this needs a new board.
 3. Add the W variant to `hardware/netlist/build_netlist.py`: the RM2, the
    moved GPIOs, the button and fitted LEDs.
 4. W board layout following §2 option A.
