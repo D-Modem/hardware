@@ -1,8 +1,12 @@
 # pico-serial hardware
 
 `netlist/build_netlist.py` defines every part and every connection on the
-board. The netlist, the readable net list and the JLC parts list are all
-generated from it, so change the script, not the outputs.
+board. The netlist, the readable net list, the JLC parts list and the
+schematic are all generated from it, so change the script, not the
+outputs.
+
+Everything targets **KiCad 9**: KiCad 9 file formats and the KiCad 9.0
+symbol and footprint libraries. KiCad 10 opens it too.
 
 | File | What it is |
 |---|---|
@@ -10,21 +14,29 @@ generated from it, so change the script, not the outputs.
 | `netlist/pico-serial.net` | KiCad netlist (generated) |
 | `netlist/NETLIST.md` | Every net and every part, readable (generated) |
 | `netlist/bom-jlc.csv` | JLC assembly parts list with LCSC numbers (generated) |
+| `schematic/build_schematic.py` | Draws the schematic from the netlist script |
+| `schematic/pico-serial.kicad_sch` | KiCad schematic, one A2 sheet (generated) |
+| `schematic/pico-serial.kicad_sym` | SP3238E and MAX3243E symbols, which KiCad doesn't ship (generated) |
+| `schematic/preview.svg` | Rough drawing of the sheet for a quick look (generated) |
 
 ## Regenerate
 
 ```sh
-cd hardware/netlist
-python3 build_netlist.py                  # checks + writes the outputs
+python3 hardware/netlist/build_netlist.py       # checks + netlist, NETLIST.md, BOM
+python3 hardware/schematic/build_schematic.py   # checks + schematic and preview
 ```
 
-To also check every pin against KiCad's own libraries, point it at
-checkouts of the official symbol and footprint libraries:
+Neither needs KiCad or a network connection. The schematic script uses
+symbols cached in `schematic/lib/symbol-cache.sexp`.
+
+To check every pin against KiCad's own libraries, and to refresh the
+symbol cache, point the scripts at the KiCad 9.0 library checkouts:
 
 ```sh
-git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-symbols.git
-git clone --depth 1 https://gitlab.com/kicad/libraries/kicad-footprints.git
-python3 build_netlist.py --kicad-sym kicad-symbols --kicad-fp kicad-footprints
+git clone --depth 1 --branch 9.0.6 https://gitlab.com/kicad/libraries/kicad-symbols.git
+git clone --depth 1 --branch 9.0.6 https://gitlab.com/kicad/libraries/kicad-footprints.git
+python3 hardware/netlist/build_netlist.py --kicad-sym kicad-symbols --kicad-fp kicad-footprints
+python3 hardware/schematic/build_schematic.py --kicad-sym9 kicad-symbols
 ```
 
 It stops with an error, and writes nothing, if:
@@ -67,21 +79,45 @@ from the datasheets (MaxLinear SP3238E rev 1.0.1; TI MAX3243E SLLS657E,
 Table 6-2) and marked as such in the script. Every other part's pins
 match KiCad's library symbols.
 
+## The schematic
+
+`schematic/pico-serial.kicad_sch` is one A2 sheet in blocks:
+- USB-C, protection and supply;
+- RP2040 and its decoupling;
+- crystal, flash and buttons;
+- chip A (DCE) and chip B (DTE), each with its charge-pump capacitors;
+- the DB25;
+- the optional LEDs;
+- test pads and the power flags ERC needs.
+
+Every pin ends in a short wire with a net label or power symbol, so parts
+connect by name, not by long wires. Each part carries its LCSC number, a
+note on its purpose, and its footprint.
+
+The schematic script refuses to write if:
+- the connections read back from the drawing differ from the netlist in
+  any way (a missing pin, an extra join, a pin touching the middle of a
+  wire);
+- any two texts, labels or symbols overlap.
+
+It's generated, so hand edits are overwritten on the next run. Either
+change `build_netlist.py` and regenerate, or stop generating and edit in
+KiCad from then on.
+
 ## Using it in KiCad
 
-1. Create a project and open the PCB editor.
-2. **File → Import → Netlist…**, choose `pico-serial.net`, then **Update
-   PCB**. The footprints come from KiCad's standard libraries.
-3. LCSC numbers are in each footprint's `LCSC` field; the DNP field marks
-   the LEDs.
+1. Open `schematic/pico-serial.kicad_pro` in KiCad 9 or 10. The project
+   table points at `pico-serial.kicad_sym`, which has the two RS-232
+   symbols. Every symbol is also embedded in the schematic.
+2. Run ERC.
+3. Open the PCB editor and choose **Tools → Update PCB from Schematic**
+   (or import `netlist/pico-serial.net`). Footprints come from KiCad's
+   standard libraries.
 
-The import hasn't been tried in KiCad yet: KiCad couldn't be installed
-where this was made. The file follows KiCad's netlist format (version
-"E") and parses cleanly, but expect to fix small issues on the first
-import.
-
-There is no schematic yet. This netlist goes straight to layout. A
-generated KiCad schematic can come next if wanted.
+Neither file has been opened in KiCad yet: KiCad couldn't be installed
+where they were made. Both parse cleanly, and the schematic also passes
+an independent parser (kiutils). Expect small fixes the first time
+KiCad opens them.
 
 ## Before layout
 

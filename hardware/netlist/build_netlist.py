@@ -26,7 +26,7 @@ from collections import defaultdict
 # the two RS-232 chips; theirs come from the datasheets:
 #   SP3238E  MaxLinear rev 1.0.1, pin description table
 #   MAX3243E TI SLLS657E, Table 6-2 (DB/DW/PW 28-pin)
-# Pin types follow KiCad's names.
+# Pin names and types follow KiCad 9.0 (kicad-symbols tag 9.0.x).
 # ---------------------------------------------------------------------------
 P, PI, PO, I, O, B, NC = "passive", "power_in", "power_out", "input", "output", "bidirectional", "no_connect"
 
@@ -35,15 +35,15 @@ RP2040 = {
     "6": ("GPIO4", B), "7": ("GPIO5", B), "8": ("GPIO6", B), "9": ("GPIO7", B), "10": ("IOVDD", P),
     "11": ("GPIO8", B), "12": ("GPIO9", B), "13": ("GPIO10", B), "14": ("GPIO11", B), "15": ("GPIO12", B),
     "16": ("GPIO13", B), "17": ("GPIO14", B), "18": ("GPIO15", B), "19": ("TESTEN", I), "20": ("XIN", I),
-    "21": ("XOUT", O), "22": ("IOVDD", P), "23": ("DVDD", PI), "24": ("SWCLK", I), "25": ("SWDIO", B),
+    "21": ("XOUT", O), "22": ("IOVDD", P), "23": ("DVDD", PI), "24": ("SWCLK", I), "25": ("SWD", B),
     "26": ("RUN", I), "27": ("GPIO16", B), "28": ("GPIO17", B), "29": ("GPIO18", B), "30": ("GPIO19", B),
     "31": ("GPIO20", B), "32": ("GPIO21", B), "33": ("IOVDD", P), "34": ("GPIO22", B), "35": ("GPIO23", B),
-    "36": ("GPIO24", B), "37": ("GPIO25", B), "38": ("GPIO26/ADC0", B), "39": ("GPIO27/ADC1", B),
-    "40": ("GPIO28/ADC2", B), "41": ("GPIO29/ADC3", B), "42": ("IOVDD", P), "43": ("ADC_AVDD", PI),
-    "44": ("VREG_VIN", PI), "45": ("VREG_VOUT", PO), "46": ("USB_DM", B), "47": ("USB_DP", B),
+    "36": ("GPIO24", B), "37": ("GPIO25", B), "38": ("GPIO26_ADC0", B), "39": ("GPIO27_ADC1", B),
+    "40": ("GPIO28_ADC2", B), "41": ("GPIO29_ADC3", B), "42": ("IOVDD", P), "43": ("ADC_AVDD", PI),
+    "44": ("VREG_IN", PI), "45": ("VREG_VOUT", PO), "46": ("USB_DM", B), "47": ("USB_DP", B),
     "48": ("USB_VDD", PI), "49": ("IOVDD", P), "50": ("DVDD", P), "51": ("QSPI_SD3", B),
     "52": ("QSPI_SCLK", O), "53": ("QSPI_SD0", B), "54": ("QSPI_SD2", B), "55": ("QSPI_SD1", B),
-    "56": ("~{QSPI_SS}", O), "57": ("GND", PI),
+    "56": ("QSPI_SS", O), "57": ("GND", PI),
 }
 SP3238E = {
     "1": ("C2+", P), "2": ("GND", PI), "3": ("C2-", P), "4": ("V-", P), "5": ("T1OUT", O),
@@ -70,9 +70,9 @@ USBLC6 = {"1": ("I/O1", P), "2": ("GND", P), "3": ("I/O2", P), "4": ("I/O2", P),
 USB_C16 = {"A1": ("GND", P), "A4": ("VBUS", P), "A5": ("CC1", B), "A6": ("D+", B), "A7": ("D-", B),
            "A8": ("SBU1", B), "A9": ("VBUS", P), "A12": ("GND", P), "B1": ("GND", P), "B4": ("VBUS", P),
            "B5": ("CC2", B), "B6": ("D+", B), "B7": ("D-", B), "B8": ("SBU2", B), "B9": ("VBUS", P),
-           "B12": ("GND", P), "SH": ("SHIELD", P)}
+           "B12": ("GND", P), "S1": ("SHIELD", P)}
 DB25F = {str(n): (str(n) if n <= 13 else f"P{n}", P) for n in range(1, 26)}
-XTAL4 = {"1": ("1", P), "2": ("G", P), "3": ("3", P), "4": ("G", P)}
+XTAL4 = {"1": ("1", P), "2": ("2", P), "3": ("3", P), "4": ("4", P)}
 TWO = {"1": ("~", P), "2": ("~", P)}
 DIODE = {"1": ("K", P), "2": ("A", P)}
 SW = {"1": ("1", P), "2": ("2", P)}
@@ -105,6 +105,12 @@ parts = {}      # ref -> dict
 nets = defaultdict(list)   # net -> [(ref, pin)]
 noconnect = set()          # (ref, pin)
 counters = defaultdict(int)
+BLOCK = None               # schematic block the next parts belong to
+
+
+def block(name):
+    global BLOCK
+    BLOCK = name
 
 
 def part(prefix, value, pins, footprint, lcsc="", note="", dnp=False, assembly="jlc", desc="", ref=None):
@@ -113,7 +119,7 @@ def part(prefix, value, pins, footprint, lcsc="", note="", dnp=False, assembly="
         ref = f"{prefix}{counters[prefix]}"
     assert ref not in parts, ref
     parts[ref] = dict(ref=ref, value=value, pins=pins, footprint=footprint, lcsc=lcsc,
-                      note=note, dnp=dnp, assembly=assembly, desc=desc)
+                      note=note, dnp=dnp, assembly=assembly, desc=desc, block=BLOCK)
     return ref
 
 
@@ -153,6 +159,7 @@ GND, VBUS_IN, VBUS, V33, V11 = "GND", "VBUS_IN", "VBUS", "+3V3", "+1V1"
 SUPPLIES = {GND, VBUS_IN, VBUS, V33, V11}
 
 # --- §4.4 USB-C (UFP) -------------------------------------------------------
+block("usb")
 J1 = part("J", "USB_C", USB_C16, "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12", "C165948",
           desc="HRO TYPE-C-31-M-12")
 conn(GND, *[(J1, p) for p in ("A1", "A12", "B1", "B12")])
@@ -161,7 +168,7 @@ conn("CC1", (J1, "A5"))
 conn("CC2", (J1, "B5"))
 conn("USB_CONN_DP", (J1, "A6"), (J1, "B6"))
 conn("USB_CONN_DM", (J1, "A7"), (J1, "B7"))
-conn("USB_SHIELD", (J1, "SH"))
+conn("USB_SHIELD", (J1, "S1"))
 nc(J1, "A8", "B8")
 passive("R", "5.1k", "CC1", GND, "CC1 Rd: separate resistor per CC pin")
 passive("R", "5.1k", "CC2", GND, "CC2 Rd")
@@ -186,6 +193,7 @@ passive("R", "100k", VBUS, "VBUS_SENSE", "VBUS divider top")
 passive("R", "100k", "VBUS_SENSE", GND, "VBUS divider bottom")
 
 # --- §4.2 RP2040 ------------------------------------------------------------
+block("mcu")
 U1 = part("U", "RP2040", RP2040, "Package_DFN_QFN:QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm", "C2040", ref="U1")
 for p in ("1", "10", "22", "33", "42", "49"):
     conn(V33, (U1, p))
@@ -203,6 +211,7 @@ passive("R", "27R", "USB_CONN_DP", "USB_DP", "USB D+ series")
 passive("R", "27R", "USB_CONN_DM", "USB_DM", "USB D- series")
 
 # crystal: 15 pF each side, 1k in series with XOUT
+block("clock")
 Y1 = part("Y", "12MHz", XTAL4, "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm", "C20625731", desc="Abracon ABM8-272-T3")
 conn("XIN", (U1, "20"), (Y1, "1"))
 conn("XOUT", (U1, "21"))
@@ -233,8 +242,10 @@ passive("R", "10k", V33, "RUN", "RUN pull-up; RP2040 has a weak internal one, th
 conn("SWCLK", (U1, "24")); conn("SWDIO", (U1, "25"))
 
 # --- §4.5 RS-232: chip A (DCE, SP3238E) and chip B (DTE, MAX3243E) -----------
+block("rsa")
 UA = part("U", "SP3238EEA", SP3238E, "Package_SO:SSOP-28_5.3x10.2mm_P0.65mm", "C49669",
           desc="MaxLinear SP3238EEA-L/TR, chip A, DCE", ref="U5")
+block("rsb")
 UB = part("U", "MAX3243EIDBR", MAX3243E, "Package_SO:SSOP-28_5.3x10.2mm_P0.65mm", "C353887",
           desc="TI MAX3243EIDBR, chip B, DTE", ref="U6")
 
@@ -252,9 +263,12 @@ def charge_pump(u, c1p, c1m, c2p, c2m, vp, vm, vcc, gnd, tag):
     passive("C", "100nF", V33, GND, f"chip {tag[-1]} VCC")
 
 
+block("rsa")
 charge_pump(UA, "28", "25", "1", "3", "27", "4", "26", "2", "CPA")
+block("rsb")
 charge_pump(UB, "28", "24", "1", "2", "27", "3", "26", "25", "CPB")
 
+block("db25")
 J2 = part("J", "DB25_Female", DB25F, "Connector_Dsub:DSUB-25_Socket_EdgeMount_P2.77mm", "C19601171",
           assembly="hand", desc="MH Connectors MHDB25SS, solder cups straddling the board edge")
 
@@ -307,13 +321,17 @@ for g, (net, node) in GPIO.items():
     conn(net, (U1, GPIO_PIN[g]), node)
 # GP18 drives chip A ONLINE and chip B FORCEON together
 conn("RS_FORCEON", (U1, GPIO_PIN[18]), (UA, "13"), (UB, "23"))
+block("rsa")
 passive("R", "100k", "A_SHDN_N", GND, "chip A off until firmware decides")
+block("rsb")
 passive("R", "100k", "B_FORCEOFF_N", GND, "chip B off until firmware decides")
+block("rsa")
 passive("R", "100k", "RS_FORCEON", GND, "auto power-down on until firmware decides")
 nc(UB, "20")  # ROUT2B unused (INVALID covers detection)
 conn("VBUS_SENSE", (U1, GPIO_PIN[29]))
 
 # --- §4.8 optional LEDs (not fitted by default) ---------------------------------
+block("led")
 for g, name in zip(range(22, 28), ("PWR", "TR", "CD", "SD", "RD", "RI")):
     led = part("D", f"LED_{name}", DIODE, "LED_SMD:LED_0603_1608Metric", "C2286", dnp=True,
                desc=f"{name} status LED, optional")
@@ -322,6 +340,7 @@ for g, name in zip(range(22, 28), ("PWR", "TR", "CD", "SD", "RD", "RI")):
     conn(f"LED_{name}_A", (led, "2")); conn(GND, (led, "1"))
 
 # --- test pads ----------------------------------------------------------------
+block("tp")
 conn("GP28", (U1, GPIO_PIN[28]))
 for net, label in ((VBUS, "VBUS"), (V33, "3V3"), (V11, "1V1"), (GND, "GND"), ("SWCLK", "SWCLK"),
                    ("SWDIO", "SWDIO"), ("RUN", "RUN"), ("GP28", "GP28"), ("A_TX", "A_TX"),
@@ -366,9 +385,23 @@ def check():
     return errs, warns
 
 
-def parse_sym(libdir, lib, name, seen=()):
-    path = os.path.join(libdir, f"{lib}.kicad_symdir", f"{name}.kicad_sym")
-    t = open(path).read()
+def sym_text(libdir, lib, name):
+    """One symbol's text, from a KiCad 9 single-file library or a KiCad 10 .kicad_symdir."""
+    d = os.path.join(libdir, f"{lib}.kicad_symdir", f"{name}.kicad_sym")
+    if os.path.exists(d):
+        return open(d).read()
+    t = open(os.path.join(libdir, f"{lib}.kicad_sym")).read()
+    i = t.index(f'\n\t(symbol "{name}"') + 2
+    depth = 0
+    for j in range(i, len(t)):
+        depth += {"(": 1, ")": -1}.get(t[j], 0)
+        if depth == 0:
+            return t[i:j + 1]
+    raise ValueError(name)
+
+
+def parse_sym(libdir, lib, name):
+    t = sym_text(libdir, lib, name)
     m = re.search(r'\(extends "([^"]+)"\)', t)
     if m:
         return parse_sym(libdir, lib, m.group(1))
