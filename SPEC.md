@@ -170,6 +170,20 @@ margin.
 
 ### 4.5 The two transceivers on one connector
 
+**Why two chips (decided):** an RS-232 chip's pins have fixed directions.
+In DCE mode pins 3/5/6/8/22 are outputs and 2/4/20 are inputs. DTE mode
+is the exact opposite. A gender changer is straight-through and can't swap
+directions, so every signal pin needs both a driver and a receiver
+available: a 5T/3R chip plus a 3T/5R chip. Alternatives ruled out:
+- one chip + a mechanical crossover switch: still the wrong number of
+  drivers and receivers, needs 8 poles, and is unreachable in a closed
+  hood;
+- one 8T/8R chip: none found in common stock;
+- ±12 V analog switches: cost and space;
+- one DCE chip + a null-modem adapter for DTE use: a standard null modem
+  merges DCD and DSR and usually drops RI, so DTE mode would lose separate
+  carrier and ring sensing.
+
 Each of the 8 signal pins has **one driver and one receiver**: the driver
 from one chip and the receiver from the other.
 
