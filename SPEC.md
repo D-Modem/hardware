@@ -1,4 +1,4 @@
-# pico-serial — hardware spec (draft 0.2)
+# pico-serial — hardware spec (draft 0.3)
 
 A USB-C to DB25 RS-232 adapter built on a bare **RP2040** (the chip on the
 Raspberry Pi Pico). There is no Pico module: the chip, flash, crystal,
@@ -22,8 +22,13 @@ vintage computer: to the computer it looks like an external modem. DTE
 mode turns the same board into an ordinary USB-to-serial adapter for
 talking to real modems.
 
-Part availability below was checked on DigiKey and LCSC on **2026-10-17**.
-Every chosen part was in stock and on sale **at quantity 1**.
+**Sourcing: one LCSC order.**
+- JLC assembles every surface-mount part from LCSC stock.
+- The DB25 connector and hood also come from LCSC (quantity 1 is fine)
+  and are soldered and fitted by hand.
+- DigiKey options are listed as backups.
+- Stock was checked on **2026-10-17**. The parts picker page compares every
+  option.
 
 ---
 
@@ -60,9 +65,9 @@ Every chosen part was in stock and on sale **at quantity 1**.
  RP2040 ─────────────┤                                      ├── DB25 female
    │                 └── UART0 pins set B (GP12–15) + GP8–11┘     (same 8 pins)
    │                      │                        │
-   │               TRS3238E (5 TX / 3 RX)   MAX3243E (3 TX / 5 RX)
+   │               SP3238E (5 TX / 3 RX)    MAX3243E (3 TX / 5 RX)
    │                 "chip A": DCE            "chip B": DTE
-   │               FORCEOFF/ROUT1B/INVALID  FORCEOFF/INVALID → GPIO
+   │               SHUTDOWN/R1OUT/STATUS    FORCEOFF/INVALID → GPIO
    ├─ QSPI ── W25Q128JV flash
    ├─ 12 MHz crystal
    ├─ BOOTSEL + RESET buttons, SWD pads
@@ -73,27 +78,31 @@ Every chosen part was in stock and on sale **at quantity 1**.
 
 ## 3. Bill of materials (main parts)
 
-| Function | Chosen part | Second source | Pkg | Qty-1 price | Stock (2026-10-17) |
+| Function | Chosen part (LCSC #) | Backups | Pkg | Price | LCSC stock (2026-10-17) |
 |---|---|---|---|---|---|
-| MCU | Raspberry Pi **RP2040** | — | QFN-56 7×7 | $0.76 DigiKey / $1.08 LCSC C2040 | DigiKey 133k, LCSC 43k |
-| Flash 16 MB | Winbond **W25Q128JVSIQ** | — | SOIC-8 208 mil | $5.99 DigiKey / $2.87 LCSC C97521 | DigiKey 59k, LCSC 5k |
-| Crystal | Abracon **ABM8-272-T3** 12 MHz | Fox FC3BSHFEM12.0-T3 | 3.2×2.5 | $0.69 / LCSC C20625731 | DigiKey 27k |
-| LDO 3.3 V | Diodes **AP2112K-3.3TRG1** (600 mA) | TI TLV75733PDBVR (LCSC only right now) | SOT-23-5 | $0.28 / LCSC C51118 | DigiKey 428k |
-| DCE transceiver (5T/3R) | TI **TRS3238EIPWR** | MaxLinear SP3238EEY-L/TR (same TSSOP footprint) | TSSOP-28 | $2.82 | DigiKey 2.4k |
-| DTE transceiver (3T/5R) | TI **MAX3243ECDBR** | TI TRS3243EIDBR; MaxLinear SP3243EBEA-L/TR (LCSC C138704) | SSOP-28 | $2.40 / LCSC C2671247 | DigiKey 2.4k, LCSC 774 |
-| USB ESD | ST **USBLC6-2SC6** | — | SOT-23-6 | $0.54 / LCSC C7519 | DigiKey 100k |
-| USB-C 16-pin | GCT **USB4105-GF-A** | HRO TYPE-C-31-M-12 (LCSC C165948, different footprint) | SMT + shell tabs | $0.80 | DigiKey 97k (LCSC out) |
-| VBUS TVS | Littelfuse **SMF5.0A** | — | SOD-123FL | $0.53 / LCSC C151296 | DigiKey 36k |
-| VBUS PTC | Littelfuse **1206L050YR** (0.5 A hold) | — | 1206 | $0.64 / LCSC C163512 | DigiKey 20k |
-| DB25 female | Amphenol FCI **DB25S064TLF** (solder cup, see §7) | Adam Tech DB25-SD; NorComp 171-025-203L001 | solder cup | $2.08 | DigiKey 7.0k |
-| Hood | Adam Tech **DB25-HD-PB-TS** (black ABS, 4-40 thumbscrews) | Amphenol FCI 86303639BLF (snap-shut, ~5 mm shorter); NorComp 977-025-010R031 | — | $1.35 | DigiKey 2.4k |
+| MCU | Raspberry Pi **RP2040** (C2040) | — | QFN-56 7×7 | $1.07 | 51k |
+| Flash 16 MB | Winbond **W25Q128JVSIQ** (C97521) | W25Q128JVPIQ WSON-8, smaller (C190862); W25Q32JVSSIQ 4 MB (C179173) | SOIC-8 208 mil | $2.85 | 66k |
+| Crystal | Abracon **ABM8-272-T3** 12 MHz (C20625731) | YXC X322512MSB4SI (C9002), 20 pF / 80 Ω: needs different caps | 3225 | $0.65 | 8.5k |
+| LDO 3.3 V | Diodes **AP2112K-3.3TRG1** (C51118) | ME6211C33M5G-N (C82942); TLV75733PDBVR (C485517) | SOT-23-5 | $0.17 | 7.9k |
+| DCE transceiver (5T/3R) | MaxLinear **SP3238EEA-L/TR** (C49669) | TI TRS3238EIPWR from DigiKey (TSSOP-28, different footprint), consigned to JLC | SSOP-28 208 mil | $1.22 | 4.4k (the only 5T/3R with real LCSC stock) |
+| DTE transceiver (3T/5R) | TI **MAX3243EIDBR** (C353887) | SP3243EBEA-L/TR (C138704); MAX3243CDBR budget, no IEC rating (C414614) | SSOP-28 208 mil | $1.32 | 2.5k |
+| USB-C 16-pin | HRO **TYPE-C-31-M-12** (C165948) | GCT USB4105-GF-A-120 (C5184243), different footprint | SMT | $0.19 | 367k |
+| USB ESD | ST **USBLC6-2SC6** (C7519) | — | SOT-23-6 | $0.18 | 35k |
+| VBUS TVS | Littelfuse **SMF5.0A** (C151296) | — | SOD-123FL | $0.13 | 22k |
+| VBUS PTC | Littelfuse **1206L050YR** (C163512) | PTTC SMD1206P050TF (C2836286) | 1206 | $0.07 | 18k |
+| DB25 female, solder cup (hand-soldered) | MH Connectors **MHDB25SS** (C19601171) | Amphenol L77SDB25S (C429843); Amphenol FCI DB25S064TLF from DigiKey | solder cup | $0.82 | 487 |
+| Hood (hand-fitted) | MH Connectors **MHDPPK25-K** (C22372846), PA66, 4-40 thumbscrews, Ø11.5 mm exit | Amphenol FCI 86303639BLF (C5399712; 15 on LCSC, 3k on DigiKey); Adam Tech DB25-HD-PB-TS from DigiKey | — | $1.56 | 84 (buy spares) |
+| Gender changer (DTE use) | any male–male DB25, straight-through | — | — | — | none on LCSC: buy elsewhere |
 
-Rough cost at qty 1, before the PCB: **about $18–21** including
-passives.
+Rough parts cost per board, before the PCB and JLC's assembly fees:
+**about $12–14** including passives.
 
 **Parts avoided and why:**
-- ADI MAX3238E: about 40 in stock at $8–9 each.
-- TI MAX3238E: 0 stock or obsolete.
+- ADI MAX3238E: tiny stock at $8–14 each (LCSC and DigiKey).
+- TI MAX3238E: 0 stock or obsolete. TI MAX3238IPWR (not "E"): 49 on LCSC.
+- Amphenol L77SDB25SOL2: shows up in DB25 searches but is a vertical
+  through-hole part, not solder cup.
+- MH MHDTPPK25-DB25P-K: the hood kit comes with a male connector.
 - ST ST3243EBTR: none until April 2027.
 - Plain SP3243E (no "B"): only 120 kbps.
 - W25Q16JVSSIQ: marked obsolete.
@@ -101,7 +110,7 @@ passives.
 - True straddle-mount female DB25s: none stocked at qty 1 (§7.1).
 
 LCSC asks for 5–10 of some cheap passives and protection parts; that adds
-only cents.
+only cents. The connector and hoods have a minimum of 1.
 
 Passives are 0402 (0603 where noted). X7R or better for anything on the
 RS-232 charge pumps.
@@ -147,9 +156,9 @@ margin.
 - Budget: RP2040 ~25 mA, the active transceiver ~1 mA plus 10–20 mA into
   its loads, the idle one ~1 µA in shutdown, LEDs (if fitted) ~10 mA.
   **Under 80 mA.**
-- Keep both transceivers' VCC on all the time; only FORCEOFF puts one to
-  sleep. (TRS3238E's off-state leakage is only specified with VCC
-  powered.)
+- Keep both transceivers' VCC on all the time; only the shutdown pin puts
+  one to sleep. Not every part's datasheet specifies off-state leakage with
+  VCC unpowered.
 
 ### 4.4 USB-C
 
@@ -164,30 +173,33 @@ margin.
 Each of the 8 signal pins has **one driver and one receiver**: the driver
 from one chip and the receiver from the other.
 
-| DB25 pin | Signal | Chip A, TRS3238E (DCE) | Chip B, MAX3243E (DTE) |
+| DB25 pin | Signal | Chip A, SP3238E (DCE) | Chip B, MAX3243E (DTE) |
 |---|---|---|---|
-| 2 | TXD | RIN1 (in) | DOUT1 (out) |
-| 3 | RXD | DOUT1 (out) | RIN1 (in) |
-| 4 | RTS | RIN2 (in) | DOUT2 (out) |
-| 5 | CTS | DOUT2 (out) | RIN2 (in) |
-| 6 | DSR | DOUT3 (out) | RIN3 (in) |
-| 8 | DCD | DOUT4 (out) | RIN4 (in) |
-| 20 | DTR | RIN3 (in) | DOUT3 (out) |
-| 22 | RI | DOUT5 (out) | RIN5 (in) |
+| 2 | TXD | R1IN (in) | DOUT1 (out) |
+| 3 | RXD | T1OUT (out) | RIN1 (in) |
+| 4 | RTS | R2IN (in) | DOUT2 (out) |
+| 5 | CTS | T2OUT (out) | RIN2 (in) |
+| 6 | DSR | T3OUT (out) | RIN3 (in) |
+| 8 | DCD | T4OUT (out) | RIN4 (in) |
+| 20 | DTR | R3IN (in) | DOUT3 (out) |
+| 22 | RI | T5OUT (out) | RIN5 (in) |
 | 7 | Signal ground | GND | GND |
 | 1 | Frame ground | shell, 0 Ω to GND (option to leave open) | |
 | others | **not connected** | | |
 
 In DCE mode chip A is on and chip B is held in shutdown; in DTE mode it's
-the other way round. Both pins are pulled low at power-up, so both chips
-start off. Why this works:
+the other way round. Chip A's SHUTDOWN pin and chip B's FORCEOFF pin do the
+same job. Both are pulled low at power-up, so both chips start off. Why this
+works:
 
-- **Idle drivers are high-impedance** with FORCEOFF low. TI MAX3243E: ±25 µA
-  max at ±12 V even with VCC = 0. TRS3238E: ±25 µA at ±12 V with VCC
-  powered.
-- **Idle receivers' outputs are high-impedance**, apart from TRS3238E's
-  ROUT1B and MAX3243E's INVALID and ROUT2B, which are always active. Those
-  go to their own GPIOs.
+- **Idle drivers are high-impedance** in shutdown.
+  - MAX3243E: ±25 µA max at ±12 V, even with VCC = 0.
+  - SP3238E: its datasheet says only "High-Z" and gives no figure at
+    ±12 V. **Check the leakage on the bench**, or fit the TI TRS3238E (±25 µA
+    at ±12 V) from DigiKey.
+- **Idle receivers' outputs are high-impedance.** The exceptions are the
+  always-active outputs: SP3238E's STATUS and non-inverting R1OUT (pin 16),
+  and MAX3243E's INVALID and ROUT2B. Those go to their own GPIOs.
 - **Even with both chips on (a firmware bug), no two of our drivers share a
   pin.** The worst case is fighting the far end's driver, which RS-232
   drivers are short-circuit protected against.
@@ -210,27 +222,28 @@ Known trade-offs:
    no footprints for them by default.
 
 **Capacitors, per chip:**
-- C1 (flying cap): **0.22 µF**. The TRS3238E needs this for 3.3 V ±0.3 V;
-  0.1 µF is enough only within ±0.15 V.
+- C1 (flying cap): **0.22 µF**. Both SP3238E and TRS3238E are specified
+  with 0.22 µF across a 3.3 V ±10 % supply.
 - C2–C4 (V+/V− reservoirs): **1 µF**.
 - VCC: **1 µF**. TI asks for ≥1 µF here to meet the IEC ESD rating.
 - All X7R, ≥16 V on V+/V−. Keep each chip's pump loop short.
 
-**FORCEON** on both chips goes high together (one GPIO): with automatic
-power-down off, the chip that FORCEOFF enables stays on.
+**ONLINE** (SP3238E) and **FORCEON** (MAX3243E) share one GPIO and go
+high together. That turns automatic power-down off, so whichever chip its
+shutdown pin enables stays on.
 
 ### 4.6 GPIO map
 
 | GPIO | Function | To |
 |---|---|---|
-| GP0 | UART0 TX (set A) | A DIN1 → pin 3 RXD |
-| GP1 | UART0 RX (set A) | A ROUT1 ← pin 2 TXD |
-| GP2 | UART0 CTS (set A) | A ROUT2 ← pin 4 RTS |
-| GP3 | UART0 RTS (set A) | A DIN2 → pin 5 CTS |
-| GP4 | out | A DIN3 → pin 6 DSR |
-| GP5 | out | A DIN4 → pin 8 DCD |
-| GP6 | out | A DIN5 → pin 22 RI |
-| GP7 | in | A ROUT3 ← pin 20 DTR |
+| GP0 | UART0 TX (set A) | A T1IN → pin 3 RXD |
+| GP1 | UART0 RX (set A) | A R1OUT (pin 21) ← pin 2 TXD |
+| GP2 | UART0 CTS (set A) | A R2OUT ← pin 4 RTS |
+| GP3 | UART0 RTS (set A) | A T2IN → pin 5 CTS |
+| GP4 | out | A T3IN → pin 6 DSR |
+| GP5 | out | A T4IN → pin 8 DCD |
+| GP6 | out | A T5IN → pin 22 RI |
+| GP7 | in | A R3OUT ← pin 20 DTR |
 | GP8 | out | B DIN3 → pin 20 DTR |
 | GP9 | in | B ROUT3 ← pin 6 DSR |
 | GP10 | in | B ROUT4 ← pin 8 DCD |
@@ -239,11 +252,11 @@ power-down off, the chip that FORCEOFF enables stays on.
 | GP13 | UART0 RX (set B) | B ROUT1 ← pin 3 RXD |
 | GP14 | UART0 CTS (set B) | B ROUT2 ← pin 5 CTS |
 | GP15 | UART0 RTS (set B) | B DIN2 → pin 4 RTS |
-| GP16 | out, 100 k pull-down | A FORCEOFF |
+| GP16 | out, 100 k pull-down | A SHUTDOWN |
 | GP17 | out, 100 k pull-down | B FORCEOFF |
-| GP18 | out, 100 k pull-down | A + B FORCEON |
-| GP19 | in | A ROUT1B (pin 2 sensed even in shutdown) |
-| GP20 | in | A INVALID |
+| GP18 | out, 100 k pull-down | A ONLINE + B FORCEON |
+| GP19 | in | A R1OUT pin 16, non-inverting, active in shutdown (pin 2 activity) |
+| GP20 | in | A STATUS (valid even in shutdown) |
 | GP21 | in | B INVALID (valid even in shutdown) |
 | GP22–27 | out (optional LEDs) | PWR, TR, CD, SD, RD, RI |
 | GP28 | spare | test pad |
@@ -286,17 +299,22 @@ fitted, GP22–27 become spare pins.
 The mode setting is **auto** (default), **DCE** or **DTE**. It is stored in
 flash and set with a vendor request (§5.5).
 
-In auto mode, both chips start in shutdown, and the board checks about
-every 250 ms:
-- **GP19 (A ROUT1B) high** → something is driving pin 2 to the idle mark
-  level, i.e. a computer's TXD is attached → **turn on chip A (DCE)**.
-- otherwise **GP21 (B INVALID) high** → valid RS-232 levels are on pins
+In auto mode, both chips start in shutdown. Each chip's status output keeps
+working in shutdown and goes high when any of **its own receiver pins**
+carries a valid RS-232 level. The board checks about every 250 ms:
+- **GP20 (A STATUS) high** → something drives pins 2/4/20, i.e. a
+  computer is attached → **turn on chip A (DCE)**.
+- otherwise **GP21 (B INVALID) high** → something drives pins
   3/5/6/8/22, i.e. a modem is attached → **turn on chip B (DTE)**.
 - otherwise nothing is attached → stay off.
 
-While a role is active, if the active chip's INVALID stays low for about
-1 s (the cable was pulled or the far end switched off), both chips go back
-to shutdown and detection starts again. When the mode changes, the board
+GP19 (chip A's always-on, non-inverting R1OUT) shows activity on the
+computer's TXD while chip A is off. Idle mark reads **low** on this pin,
+the opposite of a normal inverting receiver output.
+
+While a role is active, if the active chip's status output stays low for
+about 1 s (the cable was pulled or the far end switched off), both chips go
+back to shutdown and detection starts again. When the mode changes, the board
 reports it in `GET_INFO` and sends a `SERIAL_STATE` with all lines off.
 
 ### 5.3 DCE mode: line mapping (matches a null-modem cable)
@@ -310,7 +328,7 @@ reports it in `GET_INFO` and sends a `SERIAL_STATE` with all lines off.
 | From computer | To USB host (`SERIAL_STATE`) |
 |---|---|
 | DTR (pin 20) | DSR bit |
-| valid RS-232 levels present (INVALID) | DCD bit |
+| valid RS-232 levels present (A STATUS) | DCD bit |
 | RTS (pin 4) | used locally: UART CTS, stops our sending |
 
 ### 5.4 DTE mode: line mapping (an ordinary USB serial adapter)
@@ -340,7 +358,7 @@ flow control on or off.
 - `SET_MODE(auto|dce|dte)`, saved to flash
 - `GET_INFO`: firmware version, board revision, current mode, setting
 - `SET_MODEM_OUTPUTS(mask, value)`: drive each output line directly
-- `GET_MODEM_INPUTS`: read every input line plus both INVALIDs, for hosts
+- `GET_MODEM_INPUTS`: read every input line plus both status outputs, for hosts
   whose CDC driver ignores `SERIAL_STATE`
 - `SET_FLOW(auto|on|off)`
 - `SET_LEDS` (if LEDs are fitted)
@@ -390,34 +408,41 @@ rows. KiCad has a matching footprint: `DSUB-25_Female_EdgeMount_P2.77mm`.
 The cup gap isn't standardised across brands, so **check a sample with a
 1.6 mm scrap board** before ordering PCBs.
 
-Pick a connector with **plain, unthreaded Ø3.05 flange holes** (the
-DB25S064TLF has them). The hood's 4-40 thumbscrews pass through those holes
+Pick a connector with **plain, unthreaded Ø3.05 flange holes**. The
+MHDB25SS has Ø3.1 holes, confirmed from its drawing, and a 2.84 mm row
+pitch. The hood's 4-40 thumbscrews pass through those holes
 into the computer's or gender changer's standoffs. Clinch nuts or board
 locks would get in the way.
 
 ### 7.2 Hood and board outline
 
-The hood is the Adam Tech DB25-HD-PB-TS. Its datasheet gives only outside
-dimensions: 42.2 mm long, 54.2 mm over the screw ears, tapering to 40.8 mm
-at the back, 16.8 mm thick, Ø11 mm cable hole.
+The hood is the MH Connectors **MHDPPK25-K** (LCSC C22372846):
+- PA66 plastic, outside 53.5 × 47.2 mm (40 mm across the body), 15 mm
+  thick;
+- comes with 4-40 thumbscrews;
+- Ø11.5 mm cable exit, which leaves room for USB-C (8.9 × 3.2 mm);
+- the kit includes only two strain-relief screws at the cable end, so the
+  inside looks clear of screws. Not yet confirmed whether the hood snaps
+  or hinges shut;
+- no datasheet gives inside dimensions. With a 15 mm outside thickness,
+  expect about 11–12 mm of inside height.
+
+**Backups:**
+- **Amphenol FCI 86303639BLF**: snaps together with nothing crossing the
+  inside, best drawing, ~5 mm shorter. 15 on LCSC, 3k+ on DigiKey.
+- **Adam Tech DB25-HD-PB-TS** (DigiKey): two body screws cross the inside,
+  so the board needs ~Ø5 mm notches at x = ±15 mm.
 
 **Target outline. Inferred, so confirm on a sample:**
-- About **36–38 mm wide** at the connector end, narrowing to about 34 mm at
-  the back.
+- About **36–38 mm wide** at the connector end, narrowing toward the
+  back.
 - About **28–30 mm usable length** behind the connector's insulator. The
   front ~3 mm of board is inside the cup field.
-- The hood's two body screws pass through the cavity, about 30 mm apart.
-  Give them **~Ø5 mm notches at x = ±15 mm**, roughly 16–17 mm in from the
-  back wall. The other option is to keep the back ~12 mm of the board no
-  wider than 24 mm.
-- A **USB-C tongue about 10–11 mm wide** reaching into the cable neck. The
-  receptacle's mouth sits flush with the opening. Leave out the cable
-  clamp.
-- Height: about 5.5 mm free on each side of the board, so **components go
-  on both sides**.
-
-The FCI 86303639BLF hood snaps shut with no screws through the cavity, but
-it's about 5 mm shorter. Use it if the notches get in the way.
+- A **USB-C tongue about 10–11 mm wide** reaching into the cable exit.
+  The receptacle's mouth sits flush with the opening. Leave out the
+  strain relief.
+- Height: about 5 mm free on each side of the board, so **components go
+  on both sides**. JLC can assemble both sides, for an extra fee.
 
 ### 7.3 PCB
 
@@ -441,12 +466,12 @@ it's about 5 mm shorter. Use it if the notches get in the way.
 
 ## 8. Open questions
 
-1. **Hood choice**: is notching the board for the Adam Tech hood's screws
-   acceptable, or is the shorter snap-shut FCI hood better? Decide after
-   measuring both.
-2. **USB-C footprint**: the GCT USB4105-GF-A (DigiKey stock) and the HRO
-   TYPE-C-31-M-12 (LCSC/JLC stock) need different footprints. Pick based on
-   who assembles the board.
+1. **Hood**: confirm the MHDPPK25-K's inside space and how it closes. If it
+   doesn't fit, use the FCI 86303639BLF.
+2. **SP3238E off-state leakage**: measure it with ±12 V on an idle driver.
+   If it's poor, switch the DCE chip to the TI TRS3238E from DigiKey. That
+   chip is TSSOP-28, so decide before layout, or lay out a TSSOP footprint
+   and use the MaxLinear SP3238EEY (also TSSOP).
 3. **RS-232 TVS footprints** for ±15 V-era kit: they cost board space;
    leave them out unless a target machine needs them.
 4. **Galvanic isolation** and **phone charging through the board**: still
@@ -457,12 +482,12 @@ it's about 5 mm shorter. Use it if the notches get in the way.
 
 ## 9. Next steps
 
-1. **Buy samples (~$3.50)**: DB25S064TLF + DB25-HD-PB-TS (and the FCI hood
-   as a backup). Check that a 1.6 mm offcut fits between the cups. Measure
-   the hood's inside length and width and where its screw bosses are. Then
-   lock the outline.
-2. **Bench prototype** on a Pico dev board with TRS3238E and MAX3243E on
-   SSOP/TSSOP adapter boards, wired as §4.5. Prove the role detection, the
+1. **Buy samples from LCSC (~$7)**: 2 × MHDB25SS, 2 × MHDPPK25-K, 1 ×
+   86303639BLF. Check that a 1.6 mm offcut fits between the cups. Measure
+   each hood's inside length and width and any screw bosses. Then lock the
+   outline.
+2. **Bench prototype** on a Pico dev board with SP3238E and MAX3243E on
+   SSOP-28 adapter boards, wired as §4.5. Prove the role detection, the
    driver swing with both chips on the bus, and both line mappings with
    dmodem-android (DCE) and a real modem (DTE).
 3. Schematic and 4-layer layout in KiCad.
