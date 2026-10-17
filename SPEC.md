@@ -141,7 +141,7 @@ RS-232 charge pumps.
 | USB_DP / USB_DM | 27 Ω series each, close to the RP2040 |
 | QSPI_SS | to flash CS; to the BOOTSEL button through 1 kΩ (button to GND) |
 | QSPI SD0–3, SCLK | straight to flash; 100 nF on flash VCC |
-| RUN | RESET button to GND (RUN has an internal pull-up) |
+| RUN | RESET button to GND, 10 kΩ pull-up to 3V3 (adds noise margin to the internal one) |
 | TESTEN | to GND |
 | SWCLK / SWDIO | test pads (plus GND, 3V3) |
 | Center pad | GND, paste in a grid, many vias |
@@ -504,7 +504,8 @@ The hood is the MH Connectors **MHDPPK25-K** (LCSC C22372846):
    SSOP-28 adapter boards, wired as §4.5. Prove the role detection, the
    driver swing with both chips on the bus, and both line mappings with
    dmodem-android (DCE) and a real modem (DTE).
-3. Schematic and 4-layer layout in KiCad.
+3. Netlist: done, `hardware/netlist/` (generated and checked). Next: the
+   4-layer layout in KiCad, and a schematic if wanted.
 4. Firmware v1 (§5).
 5. App: read CDC `SERIAL_STATE`; add the pico-serial options.
 6. Order 5 boards. Bring-up: 3V3, 1V1, crystal, enumeration, UF2, loopback
