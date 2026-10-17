@@ -66,41 +66,61 @@ Options:
 
 | | Form | Antenna | Notes |
 |---|---|---|---|
-| **A (recommended)** | Board in a small plastic case, about 40 × 65 mm. The DB25 female stays on one end (same solder-cup mount), USB-C at the other | RM2 on a long side edge, antenna end flush with the board edge; the keep-out falls in air inside the case | Meets the datasheet. Room for the LEDs and a pairing button on the case |
+| **A (chosen)** | A longer **3D-printed hood**, 61 × 56 × 15 mm (§2.2). The DB25 female stays on the front (same solder-cup mount), USB-C at the back | RM2 at the rear corner, antenna end flush with the board edge; the keep-out falls in air inside the hood | Meets the datasheet. Room for the LEDs and a pairing pinhole on top |
 | B | Keep the hood size; RM2 at the back with the antenna overhanging the board | Keep-out not met: USB-C and the cable are right there | Shorter range, and the modular approval no longer applies |
 | C | Hood board for the wired version; a separate small radio board on a short cable | Fine | Two boards and an inter-board cable; messy |
 
-### 2.1 Enclosure: avoid printing if at all possible
+### 2.1 Enclosure: a 3D-printed hood (decided)
 
-A 3D-printed case is the **last resort**. Try these in order:
+The W board gets its own **3D-printed DB25 hood**, sized for the RM2 and
+its keep-out. Print services make these in quantity, and since we set the
+inside dimensions, there's no third-party hood to measure first.
 
-1. **Keep the hood (option B) if the bench test allows it.**
-   - The Pico W prototype (§9 step 2) has the same radio. Hold it inside
-     a DB25 hood against a computer's back panel and measure signal
-     strength and drop-outs at desk distances.
-   - If the link holds, the W board stays hood-sized and needs no case at
-     all. The antenna keep-out isn't met, which only matters for
-     approvals.
-2. **A DB25 "modular adapter" housing.**
-   - The long plastic shell sold as a DB25-to-RJ45 adapter kit, e.g.
-     L-com **RBA258F** (female DB25, grey) at DigiKey, or similar kits
-     from StarTech or CableWholesale.
-   - It plugs in like a hood, but it's longer and wider, and its RJ45
-     opening at the back can take the USB-C.
-   - The kit's crimp-pin insert is thrown away; our solder-cup DB25 and
-     board go in its place.
-   - Inside dimensions aren't published, so buy one and measure. RM2 and
-     its keep-out need roughly 45 × 55 mm of board-plus-air inside.
-3. **An off-the-shelf box with a hand-cut DB25 opening**, e.g. Hammond
-   **1551KBK** (80 × 40 × 20 mm ABS, about $6, DigiKey).
-   - The DB25 flange (53 mm) is wider than the box (40 mm), so the
-     connector goes on a long side. That's awkward behind a computer.
-4. **3D-printed case**: only if 1–3 all fail.
+### 2.2 The printed hood
 
-Each option changes the board outline, so the outline waits for this
-choice. The circuit (§3) is the same for all four.
+Model: `hardware/enclosure/w_hood.py` (CadQuery). It writes the print
+files, the board outline and the placement rules, and checks the fit.
 
-Options 2–4 give a second board, **pico-serial W**. The hood version stays
+| | |
+|---|---|
+| Outside | **60.6 × 56 × 15 mm**, with the DB25's D-shell 5.8 mm further in front. A standard hood is about 42 × 54 × 16 |
+| Parts | Two halves split at the board's mid-plane: `hood-top` and `hood-bottom` (STEP and STL) |
+| DB25 | The flange (53.02 × 12.55 × 0.8) sits in a slot like any hood. The front lip clears the mating shell (43 × 11.2) and the computer's jack posts (Ø7.2) |
+| Fixing to the computer | 2 × **Keystone 2400** knurled thumbscrews, 4-40 × 5/16″, DigiKey 36-2400-ND. They're captive between the halves, in finger pockets at the front corners, and engage the jack posts by **4.5 mm** |
+| Closing | 3 × M2 × 10 pan-head self-tapping screws from below, **through the board**, into pilot holes in the top half. They hold the board too. Plus 2 alignment pins at the rear corners |
+| Board | 42.2 × 50.6 mm main area, plus an 11 mm wide USB-C tongue to the back wall; narrows to ±18 mm at the front for the thumbscrew pockets. Outline in `out/board-outline.dxf` |
+| RM2 | Top side, rear left, antenna end flush with the board edge at x = 44. The keep-out (35.5 × 18.5) covers the last 5 mm of the module and 13.5 mm of air inside the hood |
+| USB-C | Rear right, outside the keep-out. The back-wall opening (13.2 × 7.6) lets typical plug overmoulds seat fully |
+| Top face | Five LED windows with light tubes (BT, TR, CD, RD, SD), a **PAIR** pinhole over the pairing button, debossed labels |
+| Inside height | 4.8 mm for parts on each side of the board |
+
+**What the script checks before it writes anything:**
+- the halves don't overlap;
+- the hood touches none of these: the PCB, the DB25 and its solder cups,
+  the RM2, the USB-C, the LEDs, the button, the thumbscrews, the screws;
+- no metal (DB25, USB-C, screws) is inside the RF keep-out;
+- the thumbscrews engage at least 4 mm.
+
+Planted faults (a light tube on an LED, a screw in the keep-out) are
+caught.
+
+**Printing:**
+- **MJF nylon PA12** (e.g. JLC3DP, black or grey): tough and takes
+  self-tapping screws well.
+- SLA resin also works but is more brittle at the screw bosses.
+- Don't use carbon-filled or metallised materials, or metallic paint:
+  they detune the antenna.
+- The design keeps walls ≥ 1.0 mm, holes ≥ 1.5 mm and text 2.4 mm tall,
+  0.5 mm deep, within MJF's usual design rules.
+
+**Assembly:**
+1. Solder the DB25's cups to the board edge.
+2. Lay the board into the bottom half with the flange in its slot.
+3. Drop in the thumbscrews.
+4. Fit the top half.
+5. Drive the 3 screws.
+
+This gives a second board, **pico-serial W**. The wired version stays
 as it is. Both come from the same netlist script with a variant switch.
 Only the radio, the outline and a few GPIOs differ.
 
@@ -322,10 +342,11 @@ pairing window open, steady = connected.
 
 ## 8. Open questions
 
-1. **Enclosure:** decided to avoid 3D printing; settle it with the
-   order in §2.1, starting with the Pico W bench test inside a hood.
-2. **Samples to buy:** one DB25-female-to-RJ45 modular adapter kit (e.g.
-   L-com RBA258F) to measure. Optionally a Hammond 1551KBK.
+1. **Enclosure:** decided: the printed hood (§2.2). Open: print one test
+   pair before ordering in quantity, and check the flange fit, the
+   thumbscrew reach on a real computer, and the USB-C plug seating.
+2. **Wired version:** keep the off-the-shelf hood, or give it a printed
+   hood from the same script (shorter, no RM2)?
 3. **Wi-Fi:** leave it off, or plan the TCP serial server?
 4. **RP2350 instead of RP2040** for the W board? It's a Pico 2 W
    equivalent: more RAM (520 KB) and faster. It needs the external
@@ -334,7 +355,7 @@ pairing window open, steady = connected.
 
 ## 9. Next steps
 
-1. Buy a Pico W and an adapter-kit housing (§2.1, §8).
+1. Buy a Pico W; order one test print of the hood (`hardware/enclosure/out/*.stl`).
 2. **Bench prototype with an off-the-shelf Pico W.** It has the same radio
    and the same pins. Wire it to the RS-232 test rig from SPEC.md §9, then
    prove BLE NUS with an iPhone, SPP with dmodem-android, pairing, and
@@ -343,4 +364,6 @@ pairing window open, steady = connected.
    enclosure (§2.1). None of this needs a new board.
 3. Add the W variant to `hardware/netlist/build_netlist.py`: the RM2, the
    moved GPIOs, the button and fitted LEDs.
-4. W board layout following §2 option A.
+4. W board layout inside `hardware/enclosure/out/board-outline.dxf`,
+   following `placement.md` (RM2, keep-out, USB-C, LEDs, button, screw
+   holes).
