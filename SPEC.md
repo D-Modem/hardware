@@ -478,6 +478,14 @@ The hood is the MH Connectors **MHDPPK25-K** (LCSC C22372846):
 
 ---
 
+## 7.4 Wireless variant
+
+A Bluetooth version (BLE for iPhone, classic Bluetooth serial for Android)
+is specified in [SPEC-W.md](SPEC-W.md). Its antenna needs more room than a
+DB25 hood has, so it is a separate, slightly larger board.
+
+---
+
 ## 8. Open questions
 
 1. **Hood**: confirm the MHDPPK25-K's inside space and how it closes. If it
