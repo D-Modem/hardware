@@ -3,10 +3,16 @@
 # Copyright (C) 2026 Neo-Desktop
 """pico-serial netlist: every part and connection on the board, in one place.
 
-Writes, next to this script:
+Two boards come from this script (--variant, or $PS_VARIANT for the
+scripts that import it):
+  hood  the wired board inside a standard DB25 hood (SPEC.md)
+  w     pico-serial W: the same plus an RM2 Bluetooth module (SPEC-W.md)
+
+Writes, next to this script (W files carry a "-w" suffix):
   pico-serial.net   KiCad netlist (import into Pcbnew: File > Import > Netlist)
   NETLIST.md        the same nets, readable: by net and by part
   bom-jlc.csv       JLC assembly BOM (Comment, Designator, Footprint, LCSC)
+and firmware/src/generated/board_pins.h (board_pins_w.h).
 
 Checks before writing (exit 1 on any error):
   - every pin of every part is on a net or listed as not connected
@@ -19,8 +25,24 @@ Checks before writing (exit 1 on any error):
 
 Spec: ../../SPEC.md (section numbers below refer to it).
 """
-import argparse, datetime, os, re, sys, uuid
+import argparse, os, re, sys, uuid
 from collections import defaultdict
+
+# Design date, written into the netlist and the schematic's title block. A
+# fixed value, so regenerating on another day changes nothing (CI diffs the
+# output). Bump it with the revision when the circuit changes.
+DATE = "2026-10-18"
+
+VARIANTS = ("hood", "w")
+VARIANT = os.environ.get("PS_VARIANT", "hood")
+if "--variant" in sys.argv[1:-1]:          # read early: the circuit is built on import
+    VARIANT = sys.argv[sys.argv.index("--variant") + 1]
+if VARIANT not in VARIANTS:
+    raise SystemExit(f"unknown variant {VARIANT!r}; one of {VARIANTS}")
+W = VARIANT == "w"
+SUFFIX = "-w" if W else ""
+HERE = os.path.dirname(os.path.abspath(__file__))
+LOCAL_FP = os.path.join(HERE, "..", "kicad", "lib")   # our own footprints (pico-serial.pretty)
 
 # ---------------------------------------------------------------------------
 # Pin tables. RP2040, flash, LDO, USBLC6 and connectors are copied from
@@ -73,6 +95,13 @@ USB_C16 = {"A1": ("GND", P), "A4": ("VBUS", P), "A5": ("CC1", B), "A6": ("D+", B
            "A8": ("SBU1", B), "A9": ("VBUS", P), "A12": ("GND", P), "B1": ("GND", P), "B4": ("VBUS", P),
            "B5": ("CC2", B), "B6": ("D+", B), "B7": ("D-", B), "B8": ("SBU2", B), "B9": ("VBUS", P),
            "B12": ("GND", P), "S1": ("SHIELD", P)}
+# Raspberry Pi RM2 (RMC20452T), datasheet Table 2. GND pins are passive in
+# KiCad terms; VDDIO and Vin are power inputs.
+RM2 = {"1": ("GND", PI), "2": ("NC", NC), "3": ("SCLK", I), "4": ("GND", PI), "5": ("DATA_IN", I),
+       "6": ("DATA_OUT", O), "7": ("GND", PI), "8": ("GPIO0", B), "9": ("CS", I), "10": ("~{IRQ}", O),
+       "11": ("GND", PI), "12": ("WL_ON", I), "13": ("BT_ON", I), "14": ("VDDIO", PI), "15": ("GND", PI),
+       "16": ("VIN", PI), "17": ("GPIO2", B), "18": ("GPIO1", B), "19": ("NC", NC), "20": ("NC", NC),
+       "21": ("GND", PI)}
 DB25F = {str(n): (str(n) if n <= 13 else f"P{n}", P) for n in range(1, 26)}
 XTAL4 = {"1": ("1", P), "2": ("2", P), "3": ("3", P), "4": ("4", P)}
 TWO = {"1": ("~", P), "2": ("~", P)}
@@ -86,12 +115,13 @@ SYMBOLS = {
     id(AP2112K): ("Regulator_Linear", "AP2112K-3.3"), id(USBLC6): ("Power_Protection", "USBLC6-2SC6"),
     id(USB_C16): ("Connector", "USB_C_Receptacle_USB2.0_16P"), id(DB25F): ("Connector", "DB25_Socket"),
     id(XTAL4): ("Device", "Crystal_GND24"), id(DIODE): None, id(SW): ("Switch", "SW_Push"),
-    id(TP): ("Connector", "TestPoint"), id(SP3238E): None, id(MAX3243E): None,
+    id(TP): ("Connector", "TestPoint"), id(SP3238E): None, id(MAX3243E): None, id(RM2): None,
 }
 
 FP_R = "Resistor_SMD:R_0402_1005Metric"
 FP_C = "Capacitor_SMD:C_0402_1005Metric"
 FP_C6 = "Capacitor_SMD:C_0603_1608Metric"
+FP_C8 = "Capacitor_SMD:C_0805_2012Metric"
 
 # value -> (LCSC part, footprint); JLC "basic" parts unless noted
 PASSIVES = {
@@ -100,6 +130,7 @@ PASSIVES = {
     "4.7nF": ("C1538", FP_C), "27R": ("C25100", FP_R),  # 27R is "extended"
     "5.1k": ("C25905", FP_R), "1k": ("C11702", FP_R), "10k": ("C25744", FP_R),
     "100k": ("C25741", FP_R), "1M": ("C26083", FP_R), "0R": ("C17168", FP_R),
+    "22uF": ("C45783", FP_C8), "470R": ("C25117", FP_R),
 }
 
 # ---------------------------------------------------------------------------
@@ -330,24 +361,61 @@ passive("R", "100k", "B_FORCEOFF_N", GND, "chip B off until firmware decides")
 block("rsa")
 passive("R", "100k", "RS_FORCEON", GND, "auto power-down on until firmware decides")
 nc(UB, "20")  # ROUT2B unused (INVALID covers detection)
-conn("VBUS_SENSE", (U1, GPIO_PIN[29]))
+if not W:
+    conn("VBUS_SENSE", (U1, GPIO_PIN[29]))   # W: on the RM2's GPIO0 instead (SPEC-W §3.3)
 
-# --- §4.8 optional LEDs (not fitted by default) ---------------------------------
+if W:
+    # --- SPEC-W §3.1 RM2 radio, wired exactly like Pico W ------------------------
+    block("radio")
+    RM = part("U", "RM2", RM2, "pico-serial:RaspberryPi_RM2", assembly="hand", ref="U7",
+              desc="Raspberry Pi RM2 (SC1169), CYW43439; DigiKey 2648-SC1169CT-ND, not at LCSC")
+    conn(GND, *[(RM, p) for p in ("1", "4", "7", "11", "15", "21")])
+    nc(RM, "2", "19", "20")
+    conn("WL_ON", (U1, GPIO_PIN[23]), (RM, "12"), (RM, "13"))   # Wi-Fi and Bluetooth on together
+    conn("WL_D", (U1, GPIO_PIN[24]), (RM, "5"))                 # gSPI data in, shared pin
+    conn("WL_CS", (U1, GPIO_PIN[25]), (RM, "9"))
+    conn("WL_CLK", (U1, GPIO_PIN[29]), (RM, "3"))
+    conn(V33, (RM, "14"), (RM, "16"))
+    conn("VBUS_SENSE", (RM, "8"))                               # RM2 GPIO0: VBUS present
+
+# --- §4.8 LEDs: optional on the hood board; fitted on W (SPEC-W §3.2-3.3) -------
 block("led")
-for g, name in zip(range(22, 28), ("PWR", "TR", "CD", "SD", "RD", "RI")):
-    led = part("D", f"LED_{name}", DIODE, "LED_SMD:LED_0603_1608Metric", "C2286", dnp=True,
-               desc=f"{name} status LED, optional")
-    conn(f"LED_{name}", (U1, GPIO_PIN[g]))
-    passive("R", "1k", f"LED_{name}", f"LED_{name}_A", f"{name} LED current", dnp=True)
+if W:
+    LEDS = (("BT", (U1, GPIO_PIN[22])), ("TR", (U1, GPIO_PIN[26])), ("CD", (U1, GPIO_PIN[27])),
+            ("RD", (RM, "18")), ("SD", (RM, "17")))
+else:
+    LEDS = tuple((name, (U1, GPIO_PIN[g])) for g, name in zip(range(22, 28), ("PWR", "TR", "CD", "SD", "RD", "RI")))
+for name, node in LEDS:
+    led = part("D", f"LED_{name}", DIODE, "LED_SMD:LED_0603_1608Metric", "C2286", dnp=not W,
+               desc=f"{name} status LED" + ("" if W else ", optional"))
+    conn(f"LED_{name}", node)
+    passive("R", "1k", f"LED_{name}", f"LED_{name}_A", f"{name} LED current", dnp=not W)
     conn(f"LED_{name}_A", (led, "2")); conn(GND, (led, "1"))
 
 # --- test pads ----------------------------------------------------------------
 block("tp")
-conn("GP28", (U1, GPIO_PIN[28]))
+if not W:
+    conn("GP28", (U1, GPIO_PIN[28]))
 for net, label in ((VBUS, "VBUS"), (V33, "3V3"), (V11, "1V1"), (GND, "GND"), ("SWCLK", "SWCLK"),
                    ("SWDIO", "SWDIO"), ("RUN", "RUN"), ("GP28", "GP28"), ("A_TX", "A_TX"),
                    ("A_RX", "A_RX"), ("B_TX", "B_TX"), ("B_RX", "B_RX")):
-    tp(net, label)
+    if not (W and net == "GP28"):
+        tp(net, label)
+
+if W:
+    # RM2 data-out and host-wake share GP24 through resistors, as on Pico W
+    block("radio")
+    passive("R", "470R", "WL_DOUT", "WL_D", "RM2 data out to the shared GP24")
+    conn("WL_DOUT", (RM, "6"))
+    passive("R", "10k", "WL_IRQ", "WL_D", "RM2 host wake to the shared GP24")
+    conn("WL_IRQ", (RM, "10"))
+    passive("C", "10uF", V33, GND, "RM2 Vin")
+    passive("C", "100nF", V33, GND, "RM2 Vin")
+    passive("C", "22uF", V33, GND, "RM2 bulk, for Wi-Fi transmit peaks")
+    # SPEC-W §4.5 pairing button, reached through a pinhole in the hood
+    SW3 = part("SW", "PAIR", SW, "Button_Switch_SMD:SW_SPST_TS-1088-xR020", "C720477",
+               desc="XUNPU TS-1088-AR02016, pairing")
+    conn("PAIR_BTN", (U1, GPIO_PIN[28]), (SW3, "1")); conn(GND, (SW3, "2"))
 
 
 # ===========================================================================
@@ -430,7 +498,7 @@ def verify_libs(symdir, fpdir):
                         errs.append(f"{ref}.{num}: name {name!r} but KiCad {sym[1]} says {lib_pins[num]!r}")
         if fpdir:
             lib, fp = p["footprint"].split(":")
-            path = os.path.join(fpdir, f"{lib}.pretty", f"{fp}.kicad_mod")
+            path = os.path.join(LOCAL_FP if lib == "pico-serial" else fpdir, f"{lib}.pretty", f"{fp}.kicad_mod")
             if not os.path.exists(path):
                 errs.append(f"{ref}: footprint {p['footprint']} not found")
                 continue
@@ -458,7 +526,7 @@ def natural(s):
 def write_kicad(path):
     ns = uuid.UUID("6a1f6c1e-6f1d-4a43-9a52-0c0de5e2a1aa")
     out = ["(export (version \"E\")",
-           f"  (design (source \"build_netlist.py\") (date {q(datetime.date.today().isoformat())}) "
+           f"  (design (source \"build_netlist.py\") (date {q(DATE)}) "
            "(tool \"pico-serial build_netlist.py\"))",
            "  (components"]
     for ref in sorted(parts, key=natural):
@@ -493,7 +561,7 @@ def write_kicad(path):
 
 def write_md(path):
     L = ["<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->", "<!-- Copyright (C) 2026 Neo-Desktop -->",
-         "# pico-serial netlist", "",
+         f"# pico-serial{' W' if W else ''} netlist", "",
          "Generated by `build_netlist.py`; edit that script, not this file.", "",
          f"{len(parts)} parts, {len(nets)} nets. DNP = not fitted by default.", "",
          "## Nets", "", "| Net | Pins |", "|---|---|"]
@@ -538,6 +606,12 @@ def write_pins_header(path):
          "#pragma once", ""]
     for net, g in sorted(by_net.items(), key=lambda kv: kv[1]):
         L.append(f"#define PIN_{net:<16} {g:>2}   // GP{g}")
+    if W:   # the radio module's own GPIOs, driven through the CYW43 driver
+        L += ["", "// RM2 (CYW43439) GPIOs: cyw43_arch_gpio_get/put"]
+        for net, members in sorted(nets.items()):
+            for r, pin in members:
+                if r == "U7" and RM2[pin][0].startswith("GPIO"):
+                    L.append(f"#define WLGPIO_{net:<14} {RM2[pin][0][4:]:>2}   // RM2 pin {pin}")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, "w").write("\n".join(L) + "\n")
 
@@ -546,6 +620,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--kicad-sym", help="kicad-symbols checkout, to verify pin tables")
     ap.add_argument("--kicad-fp", help="kicad-footprints checkout, to verify footprints")
+    ap.add_argument("--variant", choices=VARIANTS, default=VARIANT, help="which board (default: hood)")
     a = ap.parse_args()
     errs, warns = check()
     if a.kicad_sym or a.kicad_fp:
@@ -556,13 +631,13 @@ def main():
         print("ERROR:", e)
     if errs:
         sys.exit(1)
-    here = os.path.dirname(os.path.abspath(__file__))
-    write_kicad(os.path.join(here, "pico-serial.net"))
-    write_md(os.path.join(here, "NETLIST.md"))
-    write_bom(os.path.join(here, "bom-jlc.csv"))
-    write_pins_header(os.path.join(here, "..", "..", "firmware", "src", "generated", "board_pins.h"))
+    write_kicad(os.path.join(HERE, f"pico-serial{SUFFIX}.net"))
+    write_md(os.path.join(HERE, f"NETLIST{SUFFIX}.md"))
+    write_bom(os.path.join(HERE, f"bom-jlc{SUFFIX}.csv"))
+    write_pins_header(os.path.join(HERE, "..", "..", "firmware", "src", "generated",
+                                   f"board_pins{SUFFIX.replace('-', '_')}.h"))
     fitted = sum(1 for p in parts.values() if not p["dnp"])
-    print(f"ok: {len(parts)} parts ({fitted} fitted), {len(nets)} nets, "
+    print(f"ok ({VARIANT}): {len(parts)} parts ({fitted} fitted), {len(nets)} nets, "
           f"{sum(len(m) for m in nets.values())} connections, {len(noconnect)} pins left open on purpose")
 
 

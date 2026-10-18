@@ -3,11 +3,16 @@
 # Copyright (C) 2026 Neo-Desktop
 """pico-serial schematic, generated from ../netlist/build_netlist.py.
 
+--variant w draws pico-serial W (the Bluetooth board) instead; its files
+carry a "-w" suffix (pico-serial-w.kicad_sch, preview-w.svg).
+
 Writes, next to this script:
   pico-serial.kicad_sch   KiCad 9 schematic (opens in KiCad 9 and 10)
   pico-serial.kicad_pro   minimal project file
-  pico-serial.kicad_sym   symbols KiCad doesn't ship (SP3238E, MAX3243E)
+  pico-serial.kicad_sym   symbols KiCad doesn't ship (SP3238E, MAX3243E, RM2);
+                          shared by both boards
   sym-lib-table           points KiCad at pico-serial.kicad_sym
+  fp-lib-table            points KiCad at lib/pico-serial.pretty (RM2)
   preview.svg             a rough drawing of the sheet, for a quick look
 
 Every pin gets a short wire ending in a net label or a power symbol, and
@@ -23,7 +28,7 @@ Symbols come from KiCad's official library, 9.0 branch. They are cached in
 lib/symbol-cache.sexp so this runs offline; refresh the cache with
   --kicad-sym9 <kicad-symbols checkout at tag 9.0.x>
 """
-import argparse, datetime, math, os, sys, uuid
+import argparse, math, os, sys, uuid
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -32,11 +37,13 @@ sys.path.insert(0, HERE)
 import sexpr  # noqa: E402
 from sexpr import Sym, find, first  # noqa: E402
 
+if "--variant" in sys.argv[1:-1]:
+    os.environ["PS_VARIANT"] = sys.argv[sys.argv.index("--variant") + 1]
 _argv, sys.argv = sys.argv, sys.argv[:1]
 import build_netlist as N  # noqa: E402  (builds the circuit on import)
 sys.argv = _argv
 
-PROJECT = "pico-serial"
+PROJECT = "pico-serial" + N.SUFFIX
 NS = uuid.UUID("0b4c1d1e-5e7a-4c2b-8c51-9f0a7d3e6b21")
 GRID = 1.27
 STUB = 2.54
@@ -51,12 +58,16 @@ BLOCKS = [  # key, title, max width (mm)
     ("rsa", "Chip A: SP3238E, modem side (DCE)", 120),
     ("rsb", "Chip B: MAX3243E, computer side (DTE)", 120),
     ("db25", "DB25 female (hand-fitted)", 45),
-    ("led", "Status LEDs (optional, not fitted)", 118),
+    ("led", "Status LEDs" + ("" if N.W else " (optional, not fitted)"), 118),
+    ("radio", "Bluetooth: Raspberry Pi RM2 (CYW43439), wired as on Pico W", 150),
     ("tp", "Test pads", 100),
     ("flags", "Power flags for ERC", 60),
 ]
 # rows of columns; a column stacks its blocks top to bottom
 SHEET_ROWS = [[["usb"], ["clock"], ["db25"], ["led"]], [["mcu"], ["rsa"], ["rsb"], ["tp", "flags"]]]
+if N.W:
+    SHEET_ROWS = [[["usb"], ["clock"], ["db25"], ["led"]], [["mcu"], ["rsa"], ["rsb"], ["tp", "flags"]],
+                  [["radio"]]]
 FLAGS_SIZE = (35.56, 15.24)
 
 
@@ -85,6 +96,8 @@ def lib_id(ref):
         return "pico-serial:SP3238E"
     if pins is N.MAX3243E:
         return "pico-serial:MAX3243E"
+    if pins is N.RM2:
+        return "pico-serial:RM2"
     if pins is N.TWO:
         return {"R": "Device:R", "C": "Device:C", "F": "Device:Polyfuse"}[ref.rstrip("0123456789")]
     if pins is N.DIODE:
@@ -95,7 +108,7 @@ def lib_id(ref):
 
 def custom_symbol(name, left, right, top, bottom, desc, fp, ds):
     """A plain box: logic pins left, RS-232 and charge pump right, VCC top, GND bottom."""
-    pins_tab = N.SP3238E if name == "SP3238E" else N.MAX3243E
+    pins_tab = {"SP3238E": N.SP3238E, "MAX3243E": N.MAX3243E, "RM2": N.RM2}[name]
     by_name = {}
     for num, (pname, ty) in pins_tab.items():
         by_name.setdefault(pname, []).append((num, ty))
@@ -157,6 +170,13 @@ CUSTOM = {
         top=["VCC"], bottom=["GND"],
         desc="3 V to 5.5 V RS-232 transceiver, 3 drivers / 5 receivers, auto-powerdown, +-15 kV ESD",
         fp="Package_SO:SSOP-28_5.3x10.2mm_P0.65mm", ds="https://www.ti.com/lit/ds/symlink/max3243e.pdf"),
+    "RM2": custom_symbol(
+        "RM2",
+        left=["SCLK", "DATA_IN", "DATA_OUT", "~{IRQ}", "CS", None, "WL_ON", "BT_ON"],
+        right=["GPIO0", "GPIO1", "GPIO2", None, "NC", "NC", "NC"],
+        top=["VDDIO", "VIN"], bottom=["GND"] * 6,
+        desc="Raspberry Pi Radio Module 2: CYW43439 Wi-Fi 4 + Bluetooth 5.2, gSPI host interface",
+        fp="pico-serial:RaspberryPi_RM2", ds="https://datasheets.raspberrypi.com/rm2/rm2-datasheet.pdf"),
 }
 
 CACHE = os.path.join(HERE, "lib", "symbol-cache.sexp")
@@ -639,10 +659,13 @@ def build(syms):
 
     sch = [Sym("kicad_sch"), [Sym("version"), Sym("20250114")], [Sym("generator"), "eeschema"],
            [Sym("generator_version"), "9.0"], [Sym("uuid"), root], [Sym("paper"), paper],
-           [Sym("title_block"), [Sym("title"), "pico-serial: USB-C to DB25 RS-232 (DCE/DTE)"],
-            [Sym("date"), datetime.date.today().isoformat()], [Sym("rev"), "0.3"],
-            [Sym("comment"), 1, "RP2040, SP3238E (DCE) + MAX3243E (DTE) on one female DB25"],
-            [Sym("comment"), 2, "See SPEC.md; parts and nets come from hardware/netlist/build_netlist.py"],
+           [Sym("title_block"), [Sym("title"), "pico-serial W: Bluetooth and USB-C to DB25 RS-232 (DCE/DTE)" if N.W
+                             else "pico-serial: USB-C to DB25 RS-232 (DCE/DTE)"],
+            [Sym("date"), N.DATE], [Sym("rev"), "0.3"],
+            [Sym("comment"), 1, "RP2040, SP3238E (DCE) + MAX3243E (DTE) on one female DB25"
+             + (", RM2 Bluetooth" if N.W else "")],
+            [Sym("comment"), 2, ("See SPEC-W.md" if N.W else "See SPEC.md")
+             + "; parts and nets come from hardware/netlist/build_netlist.py"],
             [Sym("comment"), 3, "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)"],
             [Sym("comment"), 4, "Source: https://github.com/Neo-Desktop/pico-serial"]],
            [Sym("lib_symbols")] + [syms[k] for k in sorted({lib_id(r) for r in N.parts} | set(POWER.values()) | {"power:PWR_FLAG"})]]
@@ -879,6 +902,7 @@ def write_lib(path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--kicad-sym9", help="kicad-symbols checkout (9.0 tag), refreshes lib/symbol-cache.sexp")
+    ap.add_argument("--variant", choices=N.VARIANTS, default=N.VARIANT, help="which board (default: hood)")
     a = ap.parse_args()
     syms = load_symbols(a.kicad_sym9)
     sch, world, boxes, cells, placed, (paper, pw, ph) = build(syms)
@@ -893,14 +917,17 @@ def main():
     write_lib(os.path.join(HERE, f"{PROJECT}.kicad_sym"))
     open(os.path.join(HERE, "sym-lib-table"), "w").write(
         '(sym_lib_table\n\t(version 7)\n\t(lib (name "pico-serial") (type "KiCad") '
-        '(uri "${KIPRJMOD}/pico-serial.kicad_sym") (options "") (descr "SP3238E, MAX3243E"))\n)\n')
+        '(uri "${KIPRJMOD}/pico-serial.kicad_sym") (options "") (descr "SP3238E, MAX3243E, RM2"))\n)\n')
+    open(os.path.join(HERE, "fp-lib-table"), "w").write(
+        '(fp_lib_table\n\t(version 7)\n\t(lib (name "pico-serial") (type "KiCad") '
+        '(uri "${KIPRJMOD}/lib/pico-serial.pretty") (options "") (descr "RM2"))\n)\n')
     pro = os.path.join(HERE, f"{PROJECT}.kicad_pro")
     if not os.path.exists(pro):
-        open(pro, "w").write('{\n  "meta": {\n    "filename": "pico-serial.kicad_pro",\n    "version": 3\n  }\n}\n')
-    preview(sch, syms, os.path.join(HERE, "preview.svg"), pw, ph)
+        open(pro, "w").write('{\n  "meta": {\n    "filename": "' + PROJECT + '.kicad_pro",\n    "version": 3\n  }\n}\n')
+    preview(sch, syms, os.path.join(HERE, f"preview{N.SUFFIX}.svg"), pw, ph)
     n_sym = sum(1 for x in sch if isinstance(x, list) and x[0] == "symbol")
     n_lab = sum(1 for x in sch if isinstance(x, list) and x[0] == "label")
-    print(f"ok: {paper} sheet, {len(N.parts)} parts, {n_sym - len(N.parts)} power symbols/flags, "
+    print(f"ok ({N.VARIANT}): {paper} sheet, {len(N.parts)} parts, {n_sym - len(N.parts)} power symbols/flags, "
           f"{n_lab} labels; drawing connects exactly as the netlist ({len(N.nets)} nets)")
 
 
