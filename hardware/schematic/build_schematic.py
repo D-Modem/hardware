@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+# Copyright (C) 2026 Neo-Desktop
 """pico-serial schematic, generated from ../netlist/build_netlist.py.
 
 Writes, next to this script:
@@ -640,7 +642,9 @@ def build(syms):
            [Sym("title_block"), [Sym("title"), "pico-serial: USB-C to DB25 RS-232 (DCE/DTE)"],
             [Sym("date"), datetime.date.today().isoformat()], [Sym("rev"), "0.3"],
             [Sym("comment"), 1, "RP2040, SP3238E (DCE) + MAX3243E (DTE) on one female DB25"],
-            [Sym("comment"), 2, "See SPEC.md; parts and nets come from hardware/netlist/build_netlist.py"]],
+            [Sym("comment"), 2, "See SPEC.md; parts and nets come from hardware/netlist/build_netlist.py"],
+            [Sym("comment"), 3, "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)"],
+            [Sym("comment"), 4, "Source: https://github.com/Neo-Desktop/pico-serial"]],
            [Sym("lib_symbols")] + [syms[k] for k in sorted({lib_id(r) for r in N.parts} | set(POWER.values()) | {"power:PWR_FLAG"})]]
     sch += items
     sch += [[Sym("sheet_instances"), [Sym("path"), "/", [Sym("page"), "1"]]], [Sym("embedded_fonts"), Sym("no")]]

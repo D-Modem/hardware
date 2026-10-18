@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
+<!-- Copyright (C) 2026 Neo-Desktop -->
 # pico-serial W — wireless variant (draft 0.1)
 
 pico-serial with a Bluetooth radio, so a phone can be the modem without a

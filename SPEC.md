@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
+<!-- Copyright (C) 2026 Neo-Desktop -->
 # pico-serial — hardware spec (draft 0.3)
 
 A USB-C to DB25 RS-232 adapter built on a bare **RP2040** (the chip on the
@@ -482,6 +484,10 @@ The hood is the MH Connectors **MHDPPK25-K** (LCSC C22372846):
   TX/RX (logic side).
 - Silkscreen: name, revision, "DCE / DTE auto", DB25 pin 1, "male–male
   gender changer for DTE".
+- Silkscreen must also carry the licence notice: `CERN-OHL-S-2.0` and
+  `github.com/Neo-Desktop/pico-serial`. This is the Source Location
+  required by the licence (LICENSING.md); the W board's hood also has it
+  debossed underneath.
 
 ---
 

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
+<!-- Copyright (C) 2026 Neo-Desktop -->
 # pico-serial W hood
 
 A 3D-printed DB25 hood for the wireless board (see `../../SPEC-W.md` §2.2).

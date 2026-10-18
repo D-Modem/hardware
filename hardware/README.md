@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
+<!-- Copyright (C) 2026 Neo-Desktop -->
 # pico-serial hardware
 
 `netlist/build_netlist.py` defines every part and every connection on the

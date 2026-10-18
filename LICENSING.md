@@ -36,16 +36,52 @@ its licence on an `SPDX-License-Identifier` line. This also covers:
 
 ## Hardware (`hardware/`, `SPEC*.md`)
 
-Not yet decided. Until a licence is chosen and stated here, the hardware
-design files are not offered under an open licence. This covers:
-- the netlist and schematic scripts and their outputs;
-- the enclosure model and its print files;
-- the specifications.
+The hardware design is available under either of two licences:
+
+- the **CERN Open Hardware Licence Version 2, Strongly Reciprocal**
+  (CERN-OHL-S-2.0), in [hardware/LICENSE](hardware/LICENSE); or
+- a **commercial licence** from Neo-Desktop, for uses that cannot meet
+  CERN-OHL-S's terms, such as shipping a product made from a modified
+  design without publishing that design. Ask Neo-Desktop for its terms.
+
+### What it covers
+
+- the netlist, schematic and enclosure scripts;
+- everything they generate:
+  - the netlist and parts lists;
+  - the KiCad schematic and symbols;
+  - the hood's STEP/STL files, board outline and placement rules;
+- the specifications (`SPEC.md`, `SPEC-W.md`).
+
+Each source file names its licence on an `SPDX-License-Identifier` line.
+
+### Source Location
+
+The Source Location (CERN-OHL-S-2.0 section 1.9) is
+<https://github.com/Neo-Desktop/pico-serial>.
+
+The repository must be **public**, and expected to stay reachable for at
+least three years, before any Product made from the design is given to
+anyone (section 1.9). It is private as of this writing.
+
+**Notice under section 4:** a Product made from this design must visibly
+and securely display that Source Location, and the licence name. This is
+already done on the original design:
+- on the PCB silkscreen;
+- debossed in the hood's underside: `github.com/Neo-Desktop/pico-serial`,
+  `CERN-OHL-S-2.0`.
+
+A modified design must point to its own Source Location instead, and
+carry a modification notice (section 3.3).
+
+### Not ours
 
 `hardware/schematic/lib/symbol-cache.sexp` and the symbols embedded in
 the schematic come from KiCad's official library. They are under
 CC-BY-SA-4.0 with the KiCad libraries' exception, which lets designs use
-them under any licence.
+them under any licence. The parts (RP2040, transceivers, connectors and
+so on) are Available Components in CERN-OHL-S's terms, under their
+makers' own terms.
 
 ## Contributions
 
