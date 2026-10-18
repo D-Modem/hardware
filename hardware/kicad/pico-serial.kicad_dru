@@ -1,0 +1,16 @@
+(version 1)
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+# Copyright (C) 2026 Neo-Desktop
+# Board-specific rules on top of the project's (build_pcb.py).
+
+# The DB25's solder-cup pads run to the board edge by design (the board
+# slides between the cups); JLCPCB allows copper 0.2 mm from a routed edge.
+(rule "DB25 cups reach the edge"
+    (condition "A.Parent == 'J2'")
+    (constraint edge_clearance (min 0.2mm)))
+
+# The USB-C receptacle's shell (and its silkscreen outline) overhangs the
+# back edge on purpose, so its mouth is flush with the hood's cable exit.
+(rule "USB-C outline at the edge"
+    (condition "A.Parent == 'J1' || B.Parent == 'J1'")
+    (constraint silk_clearance (min -2mm)))

@@ -3,9 +3,9 @@
 # pico-serial hardware
 
 `netlist/build_netlist.py` defines every part and every connection on the
-board. The netlist, the readable net list, the JLC parts list and the
-schematic are all generated from it, so change the script, not the
-outputs.
+board. The netlist, the readable net list, the JLC parts list, the
+schematic and the PCB are all generated from it, so change the script,
+not the outputs.
 
 Everything targets **KiCad 9**: KiCad 9 file formats and the KiCad 9.0
 symbol and footprint libraries. KiCad 10 opens it too.
@@ -16,20 +16,25 @@ symbol and footprint libraries. KiCad 10 opens it too.
 | `netlist/pico-serial.net` | KiCad netlist (generated) |
 | `netlist/NETLIST.md` | Every net and every part, readable (generated) |
 | `netlist/bom-jlc.csv` | JLC assembly parts list with LCSC numbers (generated) |
-| `schematic/build_schematic.py` | Draws the schematic from the netlist script |
-| `schematic/pico-serial.kicad_sch` | KiCad schematic, one A2 sheet (generated) |
-| `schematic/pico-serial.kicad_sym` | SP3238E and MAX3243E symbols, which KiCad doesn't ship (generated) |
-| `schematic/preview.svg` | Rough drawing of the sheet for a quick look (generated) |
+| `kicad/build_schematic.py` | Draws the schematic from the netlist script |
+| `kicad/pico-serial.kicad_sch` | KiCad schematic, one A2 sheet (generated) |
+| `kicad/pico-serial.kicad_sym` | SP3238E and MAX3243E symbols, which KiCad doesn't ship (generated) |
+| `kicad/preview.svg` | Rough drawing of the sheet for a quick look (generated) |
+| `kicad/build_pcb.py` | Lays out and routes the PCB: outline, rules, placement, planes |
+| `kicad/pico-serial.kicad_pcb` | KiCad PCB, 4 layers (generated) |
+| `kicad/pico-serial.kicad_dru` | Two board-specific DRC rules (the DB25 cups and USB-C shell at the edges) |
+| `kicad/fab/` | Gerbers + drill (zip) and the JLC placement file (generated) |
 
 ## Regenerate
 
 ```sh
 python3 hardware/netlist/build_netlist.py       # checks + netlist, NETLIST.md, BOM
-python3 hardware/schematic/build_schematic.py   # checks + schematic and preview
+python3 hardware/kicad/build_schematic.py   # checks + schematic and preview
+python3 hardware/kicad/build_pcb.py --kicad-fp kicad-footprints --route --fab   # PCB (see below)
 ```
 
 Neither needs KiCad or a network connection. The schematic script uses
-symbols cached in `schematic/lib/symbol-cache.sexp`.
+symbols cached in `kicad/lib/symbol-cache.sexp`.
 
 To check every pin against KiCad's own libraries, and to refresh the
 symbol cache, point the scripts at the KiCad 9.0 library checkouts:
@@ -38,7 +43,7 @@ symbol cache, point the scripts at the KiCad 9.0 library checkouts:
 git clone --depth 1 --branch 9.0.6 https://gitlab.com/kicad/libraries/kicad-symbols.git
 git clone --depth 1 --branch 9.0.6 https://gitlab.com/kicad/libraries/kicad-footprints.git
 python3 hardware/netlist/build_netlist.py --kicad-sym kicad-symbols --kicad-fp kicad-footprints
-python3 hardware/schematic/build_schematic.py --kicad-sym9 kicad-symbols
+python3 hardware/kicad/build_schematic.py --kicad-sym9 kicad-symbols
 ```
 
 It stops with an error, and writes nothing, if:
@@ -83,7 +88,7 @@ match KiCad's library symbols.
 
 ## The schematic
 
-`schematic/pico-serial.kicad_sch` is one A2 sheet in blocks:
+`kicad/pico-serial.kicad_sch` is one A2 sheet in blocks:
 - USB-C, protection and supply;
 - RP2040 and its decoupling;
 - crystal, flash and buttons;
@@ -106,24 +111,75 @@ It's generated, so hand edits are overwritten on the next run. Either
 change `build_netlist.py` and regenerate, or stop generating and edit in
 KiCad from then on.
 
+## The PCB
+
+`kicad/pico-serial.kicad_pcb`, made by `kicad/build_pcb.py` with KiCad
+9's Python module (pcbnew):
+
+- **Board:** about 37 × 38 mm, 4 layers, 1.6 mm; JLCPCB's standard
+  4-layer process with margin (0.127 mm clearance, 0.15 mm tracks, 0.25 mm
+  vias). The outline is SPEC §7.2's inferred one: full width at the DB25,
+  narrowing behind, and a tongue for the USB-C into the hood's cable exit.
+  It's set at the top of the script; **confirm it on a sample hood**.
+- **DB25:** the board's front edge slides between the solder cups: pins
+  1-13 on top, 14-25 underneath.
+- **Top:** RP2040, flash, crystal, buttons; USB-C, ESD, fuse, TVS and the
+  regulator at the back.
+- **Bottom:** both transceivers with their charge pumps, right behind the
+  cups; the RP2040's decoupling, about 2 mm from its pins; test pads on a
+  2.6 mm grid; the optional LEDs.
+- **Layers:**
+  - F.Cu: signals, then a GND pour;
+  - In1.Cu: solid GND plane under everything;
+  - In2.Cu: signals, then a +3V3 pour in the space left;
+  - B.Cu: signals, then a GND pour.
+- **Vias:** every GND and +3V3 pad gets its own short stub and via before
+  routing. The RP2040's exposed pad has four.
+- **Silkscreen:** name and revision, "DCE / DTE auto", the gender-changer
+  note, and, underneath, `CERN-OHL-S-2.0` and
+  `github.com/Neo-Desktop/pico-serial` (the licence's Source Location).
+  Reference designators are on the fab layers; the board has no room for
+  them on the silkscreen.
+- **Linked to the schematic:** every footprint carries its symbol's ID.
+
+### Rebuilding it
+
+```sh
+python3 hardware/kicad/build_pcb.py --kicad-fp kicad-footprints \
+    --route --freerouting freerouting-1.9.0.jar --fab
+```
+
+- **Needs:** KiCad 9 (its Python module and `kicad-cli`), the KiCad 9.0
+  footprint libraries, Java, `xvfb-run`, and
+  [Freerouting](https://github.com/freerouting/freerouting) 1.9.0.
+  Freerouting 2.1 ignores its pass limit on the command line, so 1.9 it
+  is; it wants a display, hence `xvfb-run`.
+- **Routing:** Freerouting routes everything but GND, which the plane and
+  the vias already connect. It runs in rounds, each starting from the
+  last, until nothing is left (`--passes`, `--rounds`). Each run comes out
+  a little different.
+- **Without `--route`** it writes the placed, unrouted board (with its
+  vias and planes); `--ses` imports a saved Freerouting session instead.
+- **`--fab`** writes `fab/pico-serial-gerbers.zip` and
+  `fab/pico-serial-cpl-jlc.csv`. Upload the zip, `netlist/bom-jlc.csv` and
+  the CPL file to JLCPCB. The DB25 is hand-soldered, so it's in neither
+  list.
+
 ## Using it in KiCad
 
-1. Open `schematic/pico-serial.kicad_pro` in KiCad 9 or 10. The project
+1. Open `kicad/pico-serial.kicad_pro` in KiCad 9 or 10. The project
    table points at `pico-serial.kicad_sym`, which has the two RS-232
    symbols. Every symbol is also embedded in the schematic.
-2. Run ERC.
-3. Open the PCB editor and choose **Tools → Update PCB from Schematic**
-   (or import `netlist/pico-serial.net`). Footprints come from KiCad's
-   standard libraries.
+2. Run ERC: clean (KiCad 9.0.9, with the 9.0 libraries).
+3. Open the PCB and run DRC, with the schematic parity check: see the
+   status below.
+4. **Update PCB from Schematic** finds nothing to change: the footprints
+   are linked to their symbols.
 
-Neither file has been opened in KiCad yet: KiCad couldn't be installed
-where they were made. Both parse cleanly, and the schematic also passes
-an independent parser (kiutils). Expect small fixes the first time
-KiCad opens them.
+## Before ordering
 
-## Before layout
-
-- Lock the board outline from the sample connector and hood (SPEC §7, §9).
+- Lock the board outline from the sample connector and hood (SPEC §7, §9),
+  and check the board slides between the DB25's cups.
 - Bench test the SP3238E's leakage while shut down (SPEC §8). If it fails,
   the DCE chip changes to the TI TRS3238E (TSSOP-28) and its footprint
   changes too.

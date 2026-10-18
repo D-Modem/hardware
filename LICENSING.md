@@ -76,7 +76,7 @@ carry a modification notice (section 3.3).
 
 ### Not ours
 
-`hardware/schematic/lib/symbol-cache.sexp` and the symbols embedded in
+`hardware/kicad/lib/symbol-cache.sexp` and the symbols embedded in
 the schematic come from KiCad's official library. They are under
 CC-BY-SA-4.0 with the KiCad libraries' exception, which lets designs use
 them under any licence. The parts (RP2040, transceivers, connectors and

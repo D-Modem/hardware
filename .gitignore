@@ -4,3 +4,7 @@ firmware/test/test_core
 firmware/test/test_autobaud
 firmware/test/emu/node_modules/
 firmware/test/emu/vendor/
+hardware/kicad/*.kicad_prl
+hardware/kicad/*-backups/
+hardware/kicad/route/
+hardware/kicad/fp-info-cache
