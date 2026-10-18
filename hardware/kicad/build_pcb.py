@@ -732,6 +732,11 @@ def _geom(item):
     hw, hh = T(sz.x) / 2, T(sz.y) / 2
     if item.GetShape(pcbnew.F_Cu) == pcbnew.PAD_SHAPE_CIRCLE:
         return ("circ", T(p.x), T(p.y), hw), layers
+    if item.GetShape(pcbnew.F_Cu) == pcbnew.PAD_SHAPE_OVAL:   # a stadium: a segment with round ends
+        a = math.radians(item.GetOrientationDegrees())
+        r, h = min(hw, hh), abs(hw - hh)
+        ux, uy = (math.cos(a), -math.sin(a)) if hw > hh else (math.sin(a), math.cos(a))
+        return ("seg", T(p.x) - ux * h, T(p.y) - uy * h, T(p.x) + ux * h, T(p.y) + uy * h, r), layers
     return ("rect", T(p.x), T(p.y), hw, hh, math.radians(item.GetOrientationDegrees())), layers
 
 
