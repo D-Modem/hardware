@@ -72,13 +72,14 @@ passes them to the core.
 format. A rate fits if:
 - a bit is no longer than the shortest stretch;
 - the level changes inside each character fall on bit boundaries;
-- at least 2 characters decode, and at most 1 in 8 has a framing or
-  parity error.
+- at most 1 in 8 characters has a framing or parity error.
 
 Of the rates that fit, it takes the slowest whose changes sit about as
 close to bit boundaries as the best one's. That rules out a rate too fast
 that happens to decode, and a slower one that fits characters with no
-1-bit run.
+1-bit run. It decides once 2 characters have decoded at that rate. They
+are counted only at the chosen rate, because a rate too fast can split one
+character into two.
 
 **Then:**
 - it waits for the line to go idle for a character's time, so the switch
@@ -93,9 +94,11 @@ detected. Until the new speed is known, the board keeps sending at the old
 one and holds back what it receives.
 
 **Limits:**
-- **Two characters** are enough ("AT"). With only two, very noisy lines
-  can rarely fool it: see the tests below. A wrong guess shows up as
-  framing errors and is re-learned.
+- **Two characters** are enough: "AT", or Enter as CR LF, or Enter
+  pressed twice on a terminal that sends only CR. One character on its own
+  isn't. With so few characters, very noisy lines can rarely fool it (see
+  the tests below); a wrong guess shows up as framing errors and is
+  re-learned.
 - **Standard rates only.** A sender up to about 3% off a standard rate is
   fine.
 - **Not the format.** 7E1 and 8N1 characters are the same length, so the
@@ -142,6 +145,9 @@ firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware 
   - Printable text, 2 to 12 characters: no wrong rate.
   - Random bytes: no wrong rate from 5 characters up. With only 2
     characters, 2 in 20 000 were wrong.
+  - CR LF, and CR CR: no wrong rate, all decoded.
+  - One character alone: waits, except 5–7 in 20 000 at 5% jitter
+    (none without jitter).
 - **Emulator test:** boots the real `.bin` in
   [rp2040js](https://github.com/wokwi/rp2040js), which plays the USB host,
   the transceivers' detect lines and the far end's modem lines. It checks:

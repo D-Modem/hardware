@@ -398,7 +398,8 @@ So the phone app doesn't need to know what speed the terminal is set to.
   tries every standard rate from 110 to 230 400 baud and picks the one the
   timings fit (firmware/README.md, "Automatic baud rate").
 - **Nothing lost:** the characters it learned from (for example "AT") are
-  decoded from the timings and passed on. Two characters are enough.
+  decoded from the timings and passed on. Two characters are enough, so
+  pressing Enter (CR LF) works, or Enter twice on a CR-only terminal.
 - **Re-learning:** 3 framing errors within 2 s (the computer changed
   speed), a vendor request, or a new peer on the DB25.
 - **Data format** (data bits, parity, stop bits) still comes from the host.

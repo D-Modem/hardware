@@ -112,10 +112,21 @@ int main(void) {
         printf("%-44s %s\n", "no 1-bit runs (\"<0\" etc.)", wrong ? "FAIL" : "ok");
     }
 
-    // one character isn't enough to decide
-    synth(HZ, 9600, 0, &F8N1, (const uint8_t *)"A", 1, 0, 0);
-    CHECK(ab_detect(&a, HZ, &F8N1) == 0);
-    printf("%-44s ok\n", "one character: no decision yet");
+    // one character isn't enough to decide, even one a faster rate would
+    // split in two (CR, as Enter sends on many terminals)
+    {
+        const char *one[] = {"A", "\r", "\n", "a", "~", "\x55", "\xff", "0"};
+        int decided = 0;
+        for (int t = 0; t < 8; t++)
+            for (uint32_t b = 0; b < AB_NBAUDS; b++) {
+                synth(HZ, AB_BAUDS[b], 0.01, &F8N1, (const uint8_t *)one[t], 1, 0, 0.03);
+                if (ab_detect(&a, HZ, &F8N1)) decided++;
+            }
+        CHECK(decided == 0);
+        printf("%-44s %s\n", "one character: no decision yet", decided ? "FAIL" : "ok");
+    }
+    every_rate("CR LF (Enter), 8N1", &F8N1, (const uint8_t *)"\r\n", 2, 0.02, 0.05, 0, HZ);
+    every_rate("CR CR (Enter twice, CR only), 7E1", &F7E1, (const uint8_t *)"\r\r", 2, -0.02, 0.05, 2, HZ);
 
     // a glitch before the data stops a decision until it's dropped
     synth(HZ, 9600, 0, &F8N1, at, 3, 0, 0);

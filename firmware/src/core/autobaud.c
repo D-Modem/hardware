@@ -9,10 +9,11 @@
 //   - every level change inside a character lands on a bit boundary
 //     (within 5/16 of a bit, counted from the start bit or from the
 //     previous change), at most 1 in 8 missing it;
-//   - at least AB_MIN_FRAMES characters decode, at most 1 in 8 with a
-//     framing or parity error, and no start bit is a glitch.
+//   - at most 1 in 8 characters has a framing or parity error, and no
+//     start bit is a glitch.
 // Of the rates that fit, take the slowest whose level changes are, on
-// average, within 1/16 bit as close to boundaries as the best one's.
+// average, within 1/16 bit as close to boundaries as the best one's, and
+// decide on it once AB_MIN_FRAMES characters decode at that rate.
 //
 // A rate too slow fails the first two (a 1-bit run, or changes in the middle
 // of its bits); with no 1-bit run to go on, 3/4 of the real rate can fit
@@ -173,20 +174,24 @@ uint32_t ab_detect(const ab_t *a, uint32_t hz, const uart_format_t *f) {
     uint32_t minrun = AB_IDLE;
     for (uint32_t i = 0; i < a->n; i++)
         if (run_len(a->run[i]) < minrun) minrun = run_len(a->run[i]);
-    uint32_t score[sizeof AB_BAUDS / sizeof AB_BAUDS[0]];
+    uint32_t score[sizeof AB_BAUDS / sizeof AB_BAUDS[0]], frames[sizeof AB_BAUDS / sizeof AB_BAUDS[0]];
     uint32_t best = UINT32_MAX;
     for (uint32_t b = 0; b < AB_NBAUDS; b++) {
         score[b] = UINT32_MAX;
         uint64_t bit = hz / AB_BAUDS[b];
         if (bit * 4u > (uint64_t)minrun * 5u) continue;   // a bit longer than the shortest run
         ab_stats_t st = ab_decode(a, hz, AB_BAUDS[b], f, 0, 0);
-        if (st.frames < AB_MIN_FRAMES || st.noise || st.errors * 8u > st.frames ||
+        if (!st.frames || st.noise || st.errors * 8u > st.frames ||
             st.misaligned * 8u > st.edges)
             continue;
         score[b] = st.edges ? st.off16 * 16u / st.edges : 0;   // mean distance from a boundary, 1/256 bit
+        frames[b] = st.frames;
         if (score[b] < best) best = score[b];
     }
     for (uint32_t b = 0; b < AB_NBAUDS; b++)
-        if (score[b] != UINT32_MAX && score[b] <= best + AB_SCORE_MARGIN) return AB_BAUDS[b];
+        if (score[b] != UINT32_MAX && score[b] <= best + AB_SCORE_MARGIN)
+            // enough characters at that rate? (a faster one can split one
+            // character in two, so count them only at the chosen rate)
+            return frames[b] >= AB_MIN_FRAMES ? AB_BAUDS[b] : 0;
     return 0;
 }
