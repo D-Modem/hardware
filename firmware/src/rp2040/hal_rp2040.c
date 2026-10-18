@@ -18,6 +18,9 @@
 #include "core.h"
 #include "hal_rp2040.h"
 #include "autobaud.pio.h"
+#if defined(PS_BOARD_W)
+#include "bt.h"
+#endif
 
 #define UART uart0
 #define UART_IRQ UART0_IRQ
@@ -244,6 +247,9 @@ uint8_t hal_lines_in(uint8_t role) {
 void hal_leds(uint8_t mask) {
     for (unsigned i = 0; i < 6; i++)
         if (LED_PINS[i] != LED_NONE) gpio_put(LED_PINS[i], (mask >> i) & 1);
+#if defined(PS_BOARD_W)
+    bt_leds(mask);   // RD and SD are on the radio module
+#endif
 }
 
 // Settings live in the last flash sector.

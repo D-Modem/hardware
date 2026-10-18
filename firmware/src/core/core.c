@@ -135,6 +135,7 @@ void core_init(core_t *c) {
     ring_init(&c->to_rs232);
     c->format = c->uart = DEFAULT_FORMAT;
     c->rx_room = true;
+    c->host_dcd = -1;
     uint8_t blob[CORE_SETTINGS_BLOB];
     if (!(hal_settings_load(blob, sizeof blob) && core_settings_unpack(&c->settings, blob))) {
         c->settings.mode = PS_MODE_AUTO;
@@ -179,6 +180,7 @@ static uint8_t outputs_for(core_t *c) {
         // as a null-modem cable would: the host's DTR is the computer's DCD and DSR
         if (dtr) out |= PS_LINE_DCD | PS_LINE_DSR;
         if (rts) out |= PS_LINE_CTS;
+        if (c->host_dcd >= 0) out = (uint8_t)((out & ~PS_LINE_DCD) | (c->host_dcd ? PS_LINE_DCD : 0));
         flow_line = PS_LINE_CTS;
         out = (uint8_t)((out & ~c->override_mask) | (c->override_value & c->override_mask));
         out &= PS_LINE_DCD | PS_LINE_DSR | PS_LINE_RI | PS_LINE_CTS;
@@ -342,6 +344,8 @@ void core_poll(core_t *c) {
 void core_host_lines(core_t *c, bool dtr, bool rts) {
     c->host_lines = (uint8_t)((dtr ? PS_LINE_DTR : 0) | (rts ? PS_LINE_RTS : 0));
 }
+
+void core_host_dcd(core_t *c, int8_t dcd) { c->host_dcd = dcd; }
 
 void core_host_format(core_t *c, uint32_t baud, uint8_t stop_cdc, uint8_t parity_cdc, uint8_t data_bits) {
     uart_format_t f = {baud ? baud : c->format.baud, data_bits, 1, 0};

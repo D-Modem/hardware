@@ -2,16 +2,20 @@
 # Copyright (C) 2026 Neo-Desktop
 cmake_minimum_required(VERSION 3.13)
 
-# Which board: "hood" (the DB25 hood board) or "pico" (bench rig: a Raspberry
-# Pi Pico wired to the transceivers as SPEC.md 4.5).
-set(PS_BOARD hood CACHE STRING "pico-serial board: hood | pico")
+# Which board: "hood" (the DB25 hood board), "w" (pico-serial W, with the
+# RM2 Bluetooth module, SPEC-W.md) or "pico" (bench rig: a Raspberry Pi Pico
+# wired to the transceivers as SPEC.md 4.5).
+set(PS_BOARD hood CACHE STRING "pico-serial board: hood | w | pico")
 if (PS_BOARD STREQUAL "hood")
     set(PICO_BOARD pico_serial_hood)
+    set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
+elseif (PS_BOARD STREQUAL "w")
+    set(PICO_BOARD pico_serial_w)
     set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
 elseif (PS_BOARD STREQUAL "pico")
     set(PICO_BOARD pico)
 else ()
-    message(FATAL_ERROR "PS_BOARD must be hood or pico")
+    message(FATAL_ERROR "PS_BOARD must be hood, w or pico")
 endif ()
 
 # Pico SDK: PICO_SDK_PATH, or fetched at this tag.
@@ -48,6 +52,7 @@ add_executable(pico_serial
     src/rp2040/usb.c
     src/core/core.c
     src/core/autobaud.c
+    src/core/link.c
 )
 pico_generate_pio_header(pico_serial ${CMAKE_CURRENT_LIST_DIR}/src/rp2040/autobaud.pio)
 target_include_directories(pico_serial PRIVATE src src/core src/rp2040)
@@ -55,6 +60,7 @@ target_compile_options(pico_serial PRIVATE -Wall -Wextra)
 target_compile_definitions(pico_serial PRIVATE
     PS_FW_MAJOR=${PS_FW_MAJOR} PS_FW_MINOR=${PS_FW_MINOR} PS_FW_PATCH=${PS_FW_PATCH}
     $<$<STREQUAL:${PS_BOARD},pico>:PS_BOARD_PICO>
+    $<$<STREQUAL:${PS_BOARD},w>:PS_BOARD_W>
     # picotool can reboot it (into BOOTSEL or the app) through the reset interface;
     # no "1200 baud means reboot": 1200 baud is a real modem speed
     PICO_ENABLE_USB_RESET_VIA_VENDOR_INTERFACE=1
@@ -67,5 +73,13 @@ target_link_libraries(pico_serial PRIVATE
     hardware_uart hardware_flash hardware_watchdog hardware_irq hardware_pio hardware_clocks
     tinyusb_device
 )
+if (PS_BOARD STREQUAL "w")
+    # Bluetooth: BTstack (classic SPP + LE GATT) on the RM2, polled from the main loop
+    target_sources(pico_serial PRIVATE src/rp2040/bt.c)
+    pico_btstack_make_gatt_header(pico_serial PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/rp2040/pico_serial_w.gatt)
+    target_link_libraries(pico_serial PRIVATE
+        pico_cyw43_arch_poll pico_btstack_cyw43 pico_btstack_ble pico_btstack_classic)
+    target_compile_definitions(pico_serial PRIVATE CYW43_LWIP=0)   # no Wi-Fi networking (yet)
+endif ()
 pico_add_extra_outputs(pico_serial)
 set_target_properties(pico_serial PROPERTIES OUTPUT_NAME pico-serial-${PS_BOARD})

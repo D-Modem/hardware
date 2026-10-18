@@ -4,7 +4,11 @@
  */
 // Per-board choices the netlist doesn't decide: LEDs, names, IDs.
 #pragma once
+#if defined(PS_BOARD_W)
+#include "generated/board_pins_w.h"
+#else
 #include "generated/board_pins.h"
+#endif
 
 // USB IDs. 1209:0001 is pid.codes' shared *test* PID: fine on the bench,
 // not for boards given to other people. Apply for a PID (Raspberry Pi's
@@ -26,6 +30,18 @@
 #define LED_PIN_CD 26
 #define LED_PIN_SD 27
 #define LED_PIN_RD 28
+#define LED_PIN_RI LED_NONE
+#elif defined(PS_BOARD_W)
+// pico-serial W (SPEC-W.md). LEDs fitted. PWR/BT shows the Bluetooth state
+// (bt.c); RD and SD are on the RM2's own GPIOs (WLGPIO_LED_*), driven
+// through the radio; there's no RI LED.
+#define PS_BOARD_ID 1
+#define PS_PRODUCT "pico-serial W"
+#define LED_PIN_PWR LED_NONE
+#define LED_PIN_TR PIN_LED_TR
+#define LED_PIN_CD PIN_LED_CD
+#define LED_PIN_SD LED_NONE
+#define LED_PIN_RD LED_NONE
 #define LED_PIN_RI LED_NONE
 #else
 // DB25 hood board. LEDs are optional (not fitted by default); driving the

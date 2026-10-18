@@ -68,6 +68,7 @@ typedef struct {
     uint32_t t_lost;        // peer missing since (0 = present)
 
     uint8_t host_lines;     // PS_LINE_DTR / RTS from the host
+    int8_t host_dcd;        // DCE: -1 = DCD follows the host's DTR; 0/1 = set by the link (link.h)
     uint8_t override_mask, override_value;
     uint8_t outputs, inputs;
     bool rx_room;           // hysteresis on the to-host buffer
@@ -117,6 +118,7 @@ void core_poll(core_t *c);
 
 // Host link events
 void core_host_lines(core_t *c, bool dtr, bool rts);
+void core_host_dcd(core_t *c, int8_t dcd);   // -1: follow DTR (the default)
 void core_host_format(core_t *c, uint32_t baud, uint8_t stop_bits_cdc, uint8_t parity_cdc, uint8_t data_bits);
 void core_host_break(core_t *c, uint16_t duration_ms);
 uint32_t core_host_write(core_t *c, const uint8_t *data, uint32_t len);   // returns bytes accepted
