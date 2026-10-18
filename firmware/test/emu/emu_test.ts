@@ -3,7 +3,8 @@
 // End-to-end test of the real firmware image in the rp2040js emulator:
 // boot, USB enumeration (the emulator plays the host), DCE/DTE detection via
 // the transceivers' status lines, modem-line mapping on the GPIOs, data both
-// ways through the UART, CDC SERIAL_STATE notifications and vendor requests.
+// ways through the UART, CDC SERIAL_STATE notifications, vendor requests, and
+// learning the baud rate from characters driven onto the RX pin (GP1).
 //
 //   firmware/test/emu/run.sh <firmware .bin>
 import { readFileSync } from 'fs';
@@ -18,7 +19,9 @@ const P = {
   B_RTS: 15, A_SHDN_N: 16, B_FORCEOFF_N: 17, RS_FORCEON: 18, A_R1OUTB: 19, A_STATUS: 20, B_INVALID: 21,
 };
 const ITF_CONTROL = 2;
-const REQ = { GET_INFO: 1, SET_MODE: 2, GET_INPUTS: 4 };
+const REQ = { GET_INFO: 1, SET_MODE: 2, GET_INPUTS: 4, AUTOBAUD_RESTART: 9 };
+const INFO = { LEN: 14, BAUD_LOCKED: 0x08, BAUD_LEARNING: 0x10 };
+const A_RX = 1;
 
 let failures = 0, checks = 0;
 function check(cond: boolean, what: string) {
@@ -60,6 +63,52 @@ mcu.usbCtrl.onEndpointWrite = (ep, buf) => {
   }
   cdcWrite(ep, buf);
 };
+
+// rp2040js runs PIO on its own timer, not the simulated clock. The baud-rate
+// learning times the RX line with PIO, so step it once per CPU cycle instead
+// (the firmware runs the system clock at 125 MHz, as the emulator does).
+const pio0 = mcu.pio[0] as any;
+pio0.run = () => {};
+const simAny = sim as any;
+sim.execute = () => {
+  simAny.executeTimer = null;
+  simAny.stopped = false;
+  for (let i = 0; i < 200000 && !simAny.stopped; i++) {
+    let cycles: number;
+    if (mcu.core.waiting) {
+      const n = sim.clock.nanosToNextAlarm;
+      sim.clock.tick(n);
+      cycles = Math.min(Math.ceil(n / 8), 1 << 20);
+    } else {
+      cycles = mcu.core.executeInstruction();
+      sim.clock.tick(cycles * 8);
+    }
+    if (!pio0.stopped) for (let k = 0; k < cycles; k++) pio0.step();
+  }
+  if (!simAny.stopped) simAny.executeTimer = setTimeout(() => sim.execute(), 0);
+};
+
+// A computer typing: drive characters (8N1) onto a receiver output pin, on
+// the simulated clock. Receiver outputs are inverted RS-232: idle = high.
+function sendWave(gpio: number, baud: number, text: string, errPct = 0): Promise<void> {
+  const levels: boolean[] = [];
+  for (const ch of Buffer.from(text)) {
+    levels.push(false);
+    for (let d = 0; d < 8; d++) levels.push(((ch >> d) & 1) === 1);
+    levels.push(true, true);   // stop bit and a little idle
+  }
+  const bitNs = 1e9 / (baud * (1 + errPct / 100));
+  return new Promise((resolve) => {
+    let k = 0;
+    const alarm = sim.clock.createAlarm(() => {
+      pin(gpio).setInputValue(levels[k]);
+      k++;
+      if (k < levels.length) alarm.schedule(bitNs);
+      else resolve();
+    });
+    alarm.schedule(1000);
+  });
+}
 
 sim.rp2040.core.PC = 0x10000000;
 sim.execute();
@@ -113,6 +162,25 @@ async function main() {
   check(!out(P.A_RTS), "host RTS asserts the computer's CTS");
   check(out(P.A_RI), 'RI stays off');
 
+  console.log('learning the baud rate: the computer types "AT\\r" at 9600 baud (1% fast)');
+  const learning = await vendorIn(REQ.GET_INFO, INFO.LEN);
+  check(!!learning && learning.length === INFO.LEN && (learning[8] & INFO.BAUD_LEARNING) !== 0,
+    'GET_INFO (14 bytes) says it is learning the baud rate');
+  mcu.uart[0].feedByte(0x78);   // what the UART makes of it at the wrong rate
+  await runFor(20);
+  check(hostIn.length === 0, 'while learning, the UART\'s bytes are held back');
+  await sendWave(A_RX, 9600, 'AT\r', 1);
+  check(await until(() => hostIn.length >= 3, 500) && Buffer.from(hostIn).toString() === 'AT\r',
+    'the characters it learned from reach the host: "AT\\r"');
+  hostIn.length = 0;
+  const locked = await vendorIn(REQ.GET_INFO, INFO.LEN);
+  if (locked) {
+    const dv = new DataView(locked.buffer, locked.byteOffset);
+    check(dv.getUint32(9, true) === 9600, `UART now at 9600 (got ${dv.getUint32(9, true)})`);
+    check((locked[8] & (INFO.BAUD_LOCKED | INFO.BAUD_LEARNING)) === INFO.BAUD_LOCKED, 'flags: baud locked, not learning');
+    check(locked[13] === 0, 'baud mode AUTO');
+  } else check(false, 'GET_INFO answers');
+
   console.log('data both ways');
   for (const ch of Buffer.from('ATZ\r')) cdc.sendSerialByte(ch);
   check(await until(() => uartOut.length >= 4, 500) && Buffer.from(uartOut).toString() === 'ATZ\r',
@@ -126,17 +194,27 @@ async function main() {
   check(await until(() => (lastState() & 0x03) === 0x03, 500), 'SERIAL_STATE reports DCD (computer attached) + DSR (its DTR)');
 
   console.log('vendor requests');
-  const info = await vendorIn(REQ.GET_INFO, 13);
-  check(!!info && info.length === 13, 'GET_INFO answers 13 bytes');
+  const info = await vendorIn(REQ.GET_INFO, INFO.LEN);
+  check(!!info && info.length === INFO.LEN, 'GET_INFO answers 14 bytes');
   if (info) {
     const dv = new DataView(info.buffer, info.byteOffset);
     check(info[0] === 1, `protocol version 1 (got ${info[0]})`);
     check(info[6] === 1, `role DCE (got ${info[6]})`);
-    check(dv.getUint32(9, true) === 115200, `baud 115200 (got ${dv.getUint32(9, true)})`);
+    check(dv.getUint32(9, true) === 9600, `baud still the learned 9600 (got ${dv.getUint32(9, true)})`);
   }
   const inputs = await vendorIn(REQ.GET_INPUTS, 5);
   check(!!inputs && (inputs[1] & 0x01) === 0x01 && (inputs[3] & 0x01) === 0x01,
     "GET_INPUTS shows the computer's DTR and chip A STATUS");
+
+  console.log('learn again (vendor request): now 115200 baud, 2% slow');
+  vendorOut(REQ.AUTOBAUD_RESTART, 0);
+  await runFor(20);
+  hostIn.length = 0;
+  await sendWave(A_RX, 115200, 'ATI3\r', -2);
+  check(await until(() => hostIn.length >= 5, 500) && Buffer.from(hostIn).toString() === 'ATI3\r',
+    '"ATI3\\r" reaches the host');
+  const again = await vendorIn(REQ.GET_INFO, INFO.LEN);
+  check(!!again && new DataView(again.buffer, again.byteOffset).getUint32(9, true) === 115200, 'UART now at 115200');
 
   console.log('force DTE mode');
   vendorOut(REQ.SET_MODE, 2);
@@ -151,8 +229,13 @@ async function main() {
   // checked here; check the firmware gets through the save (500 ms after the
   // change) without hanging or a watchdog reset, still in DTE mode.
   await runFor(1500);
-  const after = await vendorIn(REQ.GET_INFO, 13);
+  const after = await vendorIn(REQ.GET_INFO, INFO.LEN);
   check(!!after && after[5] === 2 && after[6] === 2, 'still running in DTE mode after the settings save');
+  if (after) {
+    const dv = new DataView(after.buffer, after.byteOffset);
+    check((after[8] & (INFO.BAUD_LOCKED | INFO.BAUD_LEARNING)) === 0 && dv.getUint32(9, true) === 115200,
+      "as DTE the host's baud rate (115200) is used, not learned");
+  }
 
   sim.stop();
   console.log(`${checks} checks, ${failures} failed`);

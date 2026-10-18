@@ -3,6 +3,7 @@
 RP2040 firmware for the DB25 hood board (SPEC.md §5): a USB CDC serial port
 bridged to the DB25. It works out by itself whether a computer (DCE role) or
 a modem (DTE role) is attached, and switches on the matching RS-232 chip.
+As DCE it also learns the computer's baud rate from its typing.
 
 ## Build
 
@@ -45,17 +46,72 @@ ninja -C firmware/build
 | DTE lines | Host DTR → modem's DTR; host RTS → modem's RTS (same buffer hold-off) |
 | To the host | CDC SERIAL_STATE. As DCE: DSR = the computer's DTR, DCD = a computer is attached. As DTE: the modem's DCD, DSR, RI. Framing, parity, overrun and break events also go up |
 | Flow control | `auto`: obeys the far end's flow line only once it has asserted it, so 3-wire cables still work. `on` and `off` can be forced |
+| Baud rate | `auto` (default): as DCE, **learned** from the computer's characters; as DTE, the host's. `host` and `learn` (both roles) can be set; saved in flash. See below |
 | Line coding | 5–8 data bits, none/odd/even parity, 1 or 2 stop bits. Mark/space parity and 1.5 stop bits are mapped to the nearest the UART can do, and flagged in GET_INFO, as are speeds above the transceivers' 250 kbit/s |
 | Break | CDC SEND_BREAK, timed or until cleared |
 | LEDs | PWR, TR, CD, SD, RD, RI, as on a modem's front panel (optional on the board) |
 | Safety | Both transceivers start off (as do the board's pull-downs) and are never on together. Watchdog 1 s |
 | USB IDs | `1209:0001`, pid.codes' shared **test** PID. Get a real PID before giving boards to others (`src/rp2040/board_config.h`) |
 
+## Automatic baud rate
+
+As DCE, the computer types at whatever speed its terminal is set to, and
+the board works out which. The host's SET_LINE_CODING speed is ignored, but
+its data bits, parity and stop bits still apply. As DTE the host's speed is
+used, since a modem follows the speed it's spoken to at; `learn` mode turns
+learning on there too (for a device that talks first, like a GPS).
+
+**Measuring.** A PIO state machine (`src/rp2040/autobaud.pio`) watches the
+RX pin while the UART keeps it: PIO reads every pin's input whatever the
+pin is assigned to. From the first falling edge it times each low and high
+stretch, in units of 2 system clocks (16 ns at 125 MHz), and an interrupt
+passes them to the core.
+
+**Deciding** (`src/core/autobaud.c`). For each standard rate, 110 to
+230 400 baud, it decodes the timings as a UART would, with the host's
+format. A rate fits if:
+- a bit is no longer than the shortest stretch;
+- the level changes inside each character fall on bit boundaries;
+- at least 2 characters decode, and at most 1 in 8 has a framing or
+  parity error.
+
+Of the rates that fit, it takes the slowest whose changes sit about as
+close to bit boundaries as the best one's. That rules out a rate too fast
+that happens to decode, and a slower one that fits characters with no
+1-bit run.
+
+**Then:**
+- it waits for the line to go idle for a character's time, so the switch
+  never lands in the middle of one;
+- the characters it learned from are decoded from the timings and sent to
+  the host, so "AT" isn't lost;
+- the UART switches to the new speed, and GET_INFO reports it.
+
+**Learning again:** after 3 framing errors within 2 s (the computer
+changed speed), on the AUTOBAUD_RESTART request, or when a new peer is
+detected. Until the new speed is known, the board keeps sending at the old
+one and holds back what it receives.
+
+**Limits:**
+- **Two characters** are enough ("AT"). With only two, very noisy lines
+  can rarely fool it: see the tests below. A wrong guess shows up as
+  framing errors and is re-learned.
+- **Standard rates only.** A sender up to about 3% off a standard rate is
+  fine.
+- **Not the format.** 7E1 and 8N1 characters are the same length, so the
+  speed is right either way, but the bytes are only right with the host's
+  format.
+- **Lost characters:** while it re-learns, characters that came at the old
+  speed are lost; so is anything after more than ~40 characters without
+  a decision (it then starts over from the newest).
+
 ## Layout
 
 ```
-src/core/       portable: role detection, line mapping, flow control, settings (no SDK)
-src/rp2040/     HAL (GPIO, UART + IRQ, flash), USB descriptors and callbacks, main
+src/core/       portable: role detection, line mapping, flow control, baud-rate
+                learning, settings (no SDK)
+src/rp2040/     HAL (GPIO, UART + IRQ, PIO line timing, flash), USB descriptors
+                and callbacks, main
 src/generated/  board_pins.h, written by hardware/netlist/build_netlist.py
 boards/         SDK board header for the hood board
 test/           host tests for the core (fake HAL) and the emulator test
@@ -67,14 +123,25 @@ there, and the pin header follows.
 ## Tests
 
 ```sh
-make -C firmware/test run                                   # core: 22 tests, sanitizers on
+make -C firmware/test run                                   # core and baud detector, sanitizers on
 firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware in an emulator
 ```
 
-- **Host tests:** the core's logic against a fake board. The tests were
-  checked by breaking the core on purpose: removing DCE detection, the
-  buffer hysteresis, the DSR mapping, the one-shot error events. Each break
-  is caught.
+- **Host tests:** the core's logic against a fake board (27 tests). The
+  tests were checked by breaking the core on purpose: removing DCE
+  detection, the buffer hysteresis, the DSR mapping, the one-shot error
+  events, holding back data while learning, the re-learn on errors. Each
+  break is caught.
+- **Baud detector tests** (`test_autobaud.c`): waveforms made from text and
+  random bytes at every standard rate, in 8N1, 7E1, 7O1, 8N2 and 8E1, with
+  the sender up to 2.5% off and edges moved by up to 10% of a bit. Also:
+  glitches, a capture starting mid-character, and characters with no
+  single-bit run.
+- **Stress run** (not in CI): 20 000 random messages per setting, with
+  edges moved by up to 8% of a bit and the sender up to 3% off.
+  - Printable text, 2 to 12 characters: no wrong rate.
+  - Random bytes: no wrong rate from 5 characters up. With only 2
+    characters, 2 in 20 000 were wrong.
 - **Emulator test:** boots the real `.bin` in
   [rp2040js](https://github.com/wokwi/rp2040js), which plays the USB host,
   the transceivers' detect lines and the far end's modem lines. It checks:
@@ -85,7 +152,11 @@ firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware 
   - SERIAL_STATE notifications;
   - GET_INFO and GET_INPUTS;
   - forcing DTE mode, and its line mapping;
-  - getting through a settings save without a hang or watchdog reset.
+  - getting through a settings save without a hang or watchdog reset;
+  - learning the baud rate: "AT\r" driven onto GP1 at 9600 baud (1% fast)
+    and later "ATI3\r" at 115200 (2% slow) reach the host, the UART
+    switches, and GET_INFO reports it. rp2040js runs PIO on its own timer,
+    so the test steps PIO once per CPU cycle to keep its timing true.
 
 ## Not yet verified
 
@@ -96,6 +167,10 @@ firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware 
 - **UART pin routing:** the emulator doesn't model the UART-to-GPIO
   routing either, so the swap between chip A's and chip B's UART pins is
   unchecked.
+- **Baud learning on real lines:** real transceivers make low and high
+  stretches slightly unequal (slew). The detector allows for 5/16 of a
+  bit, which should cover this at 230 400 baud, but it needs checking on
+  the bench.
 - **Real host drivers:** Windows' usbser, macOS and Linux cdc_acm, and
   Android's usb-serial-for-android haven't been tried.
 - **Not built yet:**

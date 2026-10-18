@@ -47,7 +47,9 @@ add_executable(pico_serial
     src/rp2040/hal_rp2040.c
     src/rp2040/usb.c
     src/core/core.c
+    src/core/autobaud.c
 )
+pico_generate_pio_header(pico_serial ${CMAKE_CURRENT_LIST_DIR}/src/rp2040/autobaud.pio)
 target_include_directories(pico_serial PRIVATE src src/core src/rp2040)
 target_compile_options(pico_serial PRIVATE -Wall -Wextra)
 target_compile_definitions(pico_serial PRIVATE
@@ -62,7 +64,7 @@ target_compile_definitions(pico_serial PRIVATE
 )
 target_link_libraries(pico_serial PRIVATE
     pico_stdlib pico_unique_id pico_usb_reset
-    hardware_uart hardware_flash hardware_watchdog hardware_irq
+    hardware_uart hardware_flash hardware_watchdog hardware_irq hardware_pio hardware_clocks
     tinyusb_device
 )
 pico_add_extra_outputs(pico_serial)

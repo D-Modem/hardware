@@ -8,6 +8,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#include "autobaud.h"
 #include "hal.h"
 #include "protocol.h"
 #include "ring.h"
@@ -18,6 +19,11 @@
 #define CORE_SETTLE_MS 100u          // after switching off, before detecting again
 #define CORE_SAVE_DELAY_MS 500u      // settle before writing settings to flash
 #define CORE_LED_PULSE_MS 30u
+#define CORE_AB_ERRORS 3u            // this many framing errors...
+#define CORE_AB_WINDOW_MS 2000u      // ...this close together: learn the baud rate again
+#define CORE_AB_TRY_MS 20u           // while data keeps coming, look for the rate this often
+#define CORE_AB_LONG_MS 10000u       // a run this long is just "long" (the timer would wrap)
+#define CORE_RUNS 128u               // runs from the interrupt, waiting for core_poll
 
 // LEDs, in the order of the front panel
 #define CORE_LED_PWR 0x01
@@ -46,9 +52,11 @@
 typedef struct {
     uint8_t mode;   // ps_mode
     uint8_t flow;   // ps_flow
+    uint8_t baud;   // ps_baud
 } core_settings_t;
 
 typedef enum { ST_DETECT, ST_ACTIVE, ST_SETTLE } core_state_t;
+typedef enum { AB_OFF, AB_LEARNING, AB_LOCKED } core_ab_state_t;
 
 typedef struct {
     core_settings_t settings;
@@ -66,7 +74,8 @@ typedef struct {
     bool cts_latched;       // FLOW_AUTO: the far end has used its flow line
     bool hw_cts;
 
-    uart_format_t format;
+    uart_format_t format;   // as the host set it
+    uart_format_t uart;     // what the UART runs at: the host's, or with the learned baud
     uint8_t info_flags;
     uint32_t break_until;   // 0 = no timed break
     bool break_on;
@@ -81,6 +90,20 @@ typedef struct {
     uint32_t t_sd, t_rd;    // LED pulses
     uint32_t seen_to_rs232, seen_from_rs232;
     ps_stats_t stats;
+
+    // baud-rate learning
+    volatile uint8_t ab_state;   // core_ab_state_t; read by the UART interrupt
+    uint32_t ab_baud;            // learned rate, 0 = none yet
+    ab_t ab;                     // runs collected while learning
+    uint32_t ab_seen;            // runs added since the last try
+    uint32_t ab_found;           // the rate they fit, 0 = not sure yet
+    uint32_t t_ab_try, t_run;
+    volatile uint8_t ab_fe;      // framing errors while locked (from the interrupt)
+    uint8_t ab_fe_seen, ab_win_n;
+    uint32_t t_ab_win;
+    uint32_t runs[CORE_RUNS];    // from the timing interrupt
+    volatile uint32_t runs_head, runs_tail;
+    volatile bool runs_lost;
 
     ring_t to_host;         // RS-232 -> host
     ring_t to_rs232;        // host -> RS-232
@@ -108,6 +131,8 @@ bool core_vendor_out(core_t *c, uint8_t req, uint16_t value);
 
 // From the UART interrupt
 static inline void core_isr_rx(core_t *c, uint8_t byte, uint8_t errors) {
+    if (c->ab_state == AB_LEARNING) return;   // received at a rate that's about to change
+    if (errors & RX_ERR_FRAMING && c->ab_state == AB_LOCKED) c->ab_fe++;
     if (errors) c->rx_errors |= errors;
     if (!(errors & RX_ERR_BREAK)) {
         if (!ring_put(&c->to_host, byte)) c->stats.dropped++;
@@ -118,6 +143,14 @@ static inline bool core_isr_tx(core_t *c, uint8_t *byte) {
     if (!ring_get(&c->to_rs232, byte)) return false;
     c->stats.to_rs232++;
     return true;
+}
+
+// From the line-timing interrupt (hal_autobaud): one run of a level.
+static inline void core_isr_run(core_t *c, bool high, uint32_t ticks) {
+    uint32_t h = c->runs_head;
+    if (h - c->runs_tail >= CORE_RUNS) { c->runs_lost = true; return; }
+    c->runs[h % CORE_RUNS] = (high ? 0x80000000u : 0) | (ticks > AB_IDLE ? AB_IDLE : ticks);
+    c->runs_head = h + 1;
 }
 
 // Settings blob (for flash), with a checksum.

@@ -28,6 +28,9 @@ void hal_uart_format(const uart_format_t *f) { hw.format = *f; hw.format_calls++
 void hal_uart_hw_cts(bool on) { hw.hw_cts = on; }
 void hal_uart_break(bool on) { hw.brk = on; }
 void hal_uart_kick_tx(void) { hw.kicks++; }
+void hal_uart_rx_flush(void) { hw.rx_flushes++; }
+void hal_autobaud(uint8_t role) { hw.ab_role = role; hw.ab_calls++; }
+uint32_t hal_autobaud_hz(void) { return FAKE_AB_HZ; }
 void hal_lines_out(uint8_t role, uint8_t asserted) { hw.out_role = role; hw.out = asserted; }
 uint8_t hal_lines_in(uint8_t role) { (void)role; return hw.in; }
 void hal_leds(uint8_t mask) { hw.leds = mask; }

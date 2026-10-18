@@ -34,6 +34,14 @@ void hal_uart_format(const uart_format_t *f);
 void hal_uart_hw_cts(bool on);          // obey the far end's flow-control line
 void hal_uart_break(bool on);
 void hal_uart_kick_tx(void);            // data was queued for the UART
+void hal_uart_rx_flush(void);           // drop what the UART has received (call with interrupts off)
+
+// Baud-rate learning: time the RX line of this role's chip (PS_ROLE_NONE
+// stops). From the first falling edge after the line is high, report each
+// run of one level with core_isr_run(), in ticks of hal_autobaud_hz()
+// (0 = too long to count).
+void hal_autobaud(uint8_t role);
+uint32_t hal_autobaud_hz(void);
 
 // Modem lines for the active role.
 void hal_lines_out(uint8_t role, uint8_t asserted);   // DCE: DCD DSR RI CTS; DTE: DTR RTS

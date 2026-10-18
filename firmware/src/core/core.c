@@ -42,6 +42,52 @@ static void apply_flow(core_t *c) {
     }
 }
 
+// The UART's format: the host's, with the learned baud rate if there is one.
+static void apply_format(core_t *c) {
+    c->uart = c->format;
+    if (c->ab_state != AB_OFF && c->ab_baud) c->uart.baud = c->ab_baud;
+    if (c->uart.baud > 250000) c->info_flags |= PS_INFO_BAUD_OVER_RATING;
+    else c->info_flags &= (uint8_t)~PS_INFO_BAUD_OVER_RATING;
+    if (c->role != PS_ROLE_NONE) hal_uart_format(&c->uart);
+}
+
+static bool ab_wanted(const core_t *c) {
+    if (c->role == PS_ROLE_NONE) return false;
+    if (c->settings.baud == PS_BAUD_LEARN) return true;
+    return c->settings.baud == PS_BAUD_AUTO && c->role == PS_ROLE_DCE;
+}
+
+// Start (or start again) learning the far end's baud rate. Until it's known,
+// received data is held back (the UART would get it wrong); the characters
+// it was learned from are decoded from the timings and passed on.
+static void ab_learn(core_t *c) {
+    hal_autobaud(PS_ROLE_NONE);
+    c->ab_state = AB_LEARNING;
+    ab_reset(&c->ab);
+    c->ab_seen = 0;
+    c->ab_found = 0;
+    c->runs_tail = c->runs_head;
+    c->runs_lost = false;
+    c->t_ab_try = c->t_run = hal_millis();
+    hal_autobaud(c->role);
+}
+
+static void ab_stop(core_t *c) {
+    if (c->ab_state != AB_OFF) hal_autobaud(PS_ROLE_NONE);
+    c->ab_state = AB_OFF;
+    c->ab_baud = 0;
+}
+
+// After a role or setting change: learn, or go back to the host's rate.
+static void ab_update(core_t *c) {
+    if (ab_wanted(c)) {
+        if (c->ab_state == AB_OFF) ab_learn(c);
+    } else if (c->ab_state != AB_OFF) {
+        ab_stop(c);
+        apply_format(c);
+    }
+}
+
 static void activate(core_t *c, uint8_t role) {
     c->role = role;
     c->cts_latched = false;
@@ -50,12 +96,16 @@ static void activate(core_t *c, uint8_t role) {
     hal_uart_hw_cts(false);
     hal_xcvr_power(role);
     hal_uart_route(role);
-    hal_uart_format(&c->format);
+    ab_stop(c);   // a new far end: its rate is learned afresh
+    apply_format(c);
+    ab_update(c);
     c->stats.role_changes++;
     set_state(c, ST_ACTIVE);
 }
 
 static void deactivate(core_t *c) {
+    ab_stop(c);
+    apply_format(c);   // GET_INFO: back to the host's speed
     if (c->role != PS_ROLE_NONE) hal_lines_out(c->role, 0);
     hal_uart_hw_cts(false);
     c->hw_cts = false;
@@ -83,12 +133,13 @@ void core_init(core_t *c) {
     memset(c, 0, sizeof *c);
     ring_init(&c->to_host);
     ring_init(&c->to_rs232);
-    c->format = DEFAULT_FORMAT;
+    c->format = c->uart = DEFAULT_FORMAT;
     c->rx_room = true;
     uint8_t blob[CORE_SETTINGS_BLOB];
     if (!(hal_settings_load(blob, sizeof blob) && core_settings_unpack(&c->settings, blob))) {
         c->settings.mode = PS_MODE_AUTO;
         c->settings.flow = PS_FLOW_AUTO;
+        c->settings.baud = PS_BAUD_AUTO;
     }
     restart(c);
 }
@@ -185,10 +236,94 @@ static void leds(core_t *c, uint32_t now) {
     hal_leds(m);
 }
 
+typedef struct { uint8_t data[AB_MAX_RUNS / 2 + 1]; uint32_t n; uint8_t errors; } ab_out_t;
+static void ab_collect(void *ctx, uint8_t byte, uint8_t errors) {
+    ab_out_t *o = ctx;
+    if (o->n < sizeof o->data) o->data[o->n++] = byte;
+    o->errors |= errors;
+}
+
+static void ab_lock(core_t *c, uint32_t hz, uint32_t baud) {
+    static ab_out_t out;
+    out.n = 0;
+    out.errors = 0;
+    ab_decode(&c->ab, hz, baud, &c->format, ab_collect, &out);
+    hal_autobaud(PS_ROLE_NONE);
+    c->ab_baud = baud;
+    apply_format(c);   // still "learning": the interrupt drops anything received meanwhile
+    uint32_t irq = hal_irq_save();
+    hal_uart_rx_flush();
+    for (uint32_t i = 0; i < out.n; i++) {
+        if (!ring_put(&c->to_host, out.data[i])) c->stats.dropped++;
+        else c->stats.from_rs232++;
+    }
+    c->rx_errors |= out.errors;
+    c->ab_state = AB_LOCKED;
+    c->ab_fe_seen = c->ab_fe;
+    c->ab_win_n = 0;
+    hal_irq_restore(irq);
+}
+
+static void autobaud(core_t *c, uint32_t now) {
+    if (c->ab_state == AB_LOCKED) {
+        // framing errors coming in: the far end changed speed
+        uint8_t fe = c->ab_fe, d = (uint8_t)(fe - c->ab_fe_seen);
+        c->ab_fe_seen = fe;
+        if (!d) return;
+        if (!c->ab_win_n || elapsed(now, c->t_ab_win, CORE_AB_WINDOW_MS)) {
+            c->t_ab_win = now;
+            c->ab_win_n = 0;
+        }
+        c->ab_win_n = (uint8_t)(c->ab_win_n + d);
+        if (c->ab_win_n >= CORE_AB_ERRORS) ab_learn(c);
+        return;
+    }
+    if (c->ab_state != AB_LEARNING) return;
+
+    while (c->runs_tail != c->runs_head) {
+        uint32_t r = c->runs[c->runs_tail % CORE_RUNS];
+        c->runs_tail++;
+        bool high = (r >> 31) != 0;
+        uint32_t len = r & AB_IDLE;
+        // a high run ends with this arrival: long gaps are just "long". 0 is
+        // the HAL's "too long to count".
+        if (!len || (high && elapsed(now, c->t_run, CORE_AB_LONG_MS))) len = AB_IDLE;
+        c->t_run = now;
+        if (!ab_add(&c->ab, high, len)) {
+            ab_drop(&c->ab, AB_MAX_RUNS / 8);
+            ab_add(&c->ab, high, len);
+        }
+        c->ab_seen++;
+    }
+    if (c->runs_lost) {   // timings missed: what's collected no longer adds up
+        c->runs_lost = false;
+        ab_reset(&c->ab);
+    }
+    // look for the rate every CORE_AB_TRY_MS while new timings come in
+    if (c->ab_seen && elapsed(now, c->t_ab_try, CORE_AB_TRY_MS)) {
+        c->ab_seen = 0;
+        c->t_ab_try = now;
+        c->ab_found = ab_detect(&c->ab, hal_autobaud_hz(), &c->format);
+        if (!c->ab_found && c->ab.n > AB_SLIDE_RUNS) {
+            ab_drop(&c->ab, 1);   // maybe it began mid-character, or with a glitch
+            c->ab_seen = 1;       // try again without it
+        }
+    }
+    if (!c->ab_found) return;
+    // switch the UART over between characters: once the line has been idle
+    // (high) for a character's time, or if the timings are piling up
+    const uart_format_t *f = &c->format;
+    uint32_t bits = 1u + f->data_bits + (f->parity ? 1u : 0u) + f->stop_bits;
+    uint32_t char_ms = (bits * 1000u + c->ab_found - 1) / c->ab_found + 1;
+    bool idle = c->ab.n && !(c->ab.run[c->ab.n - 1] >> 31) && elapsed(now, c->t_run, char_ms);
+    if (idle || c->ab.n >= AB_MAX_RUNS * 3 / 4) ab_lock(c, hal_autobaud_hz(), c->ab_found);
+}
+
 void core_poll(core_t *c) {
     uint32_t now = hal_millis();
     if (c->settings.mode == PS_MODE_AUTO) detect(c, now);
     lines(c, now);
+    autobaud(c, now);
 
     if (c->stats.to_rs232 != c->seen_to_rs232) { c->seen_to_rs232 = c->stats.to_rs232; c->t_sd = now ? now : 1; }
     if (c->stats.from_rs232 != c->seen_from_rs232) { c->seen_from_rs232 = c->stats.from_rs232; c->t_rd = now ? now : 1; }
@@ -217,10 +352,9 @@ void core_host_format(core_t *c, uint32_t baud, uint8_t stop_cdc, uint8_t parity
     else { f.stop_bits = 2; if (stop_cdc == 1) flags |= PS_INFO_CODING_ADJUSTED; }
     if (parity_cdc <= 2) f.parity = parity_cdc;
     else { f.parity = 0; flags |= PS_INFO_CODING_ADJUSTED; }
-    if (f.baud > 250000) flags |= PS_INFO_BAUD_OVER_RATING;
-    c->info_flags = (uint8_t)((c->info_flags & ~(PS_INFO_CODING_ADJUSTED | PS_INFO_BAUD_OVER_RATING)) | flags);
+    c->info_flags = (uint8_t)((c->info_flags & ~PS_INFO_CODING_ADJUSTED) | flags);
     c->format = f;
-    if (c->role != PS_ROLE_NONE) hal_uart_format(&c->format);
+    apply_format(c);   // a learned baud rate stays; data bits, parity and stop bits are the host's
 }
 
 void core_host_break(core_t *c, uint16_t ms) {
@@ -276,9 +410,12 @@ int core_vendor_in(core_t *c, uint8_t req, uint16_t value, uint8_t *buf, uint16_
     (void)value;
     switch (req) {
     case PS_REQ_GET_INFO: {
+        uint8_t flags = c->info_flags;
+        if (c->hw_cts) flags |= PS_INFO_FLOW_ACTIVE;
+        if (c->ab_state == AB_LOCKED) flags |= PS_INFO_BAUD_LOCKED;
+        if (c->ab_state == AB_LEARNING) flags |= PS_INFO_BAUD_LEARNING;
         ps_info_t i = {PS_PROTOCOL_VERSION, PS_FW_MAJOR, PS_FW_MINOR, PS_FW_PATCH, PS_BOARD_ID,
-                       c->settings.mode, c->role, c->settings.flow,
-                       (uint8_t)(c->info_flags | (c->hw_cts ? PS_INFO_FLOW_ACTIVE : 0)), c->format.baud};
+                       c->settings.mode, c->role, c->settings.flow, flags, c->uart.baud, c->settings.baud};
         uint16_t n = max < sizeof i ? max : (uint16_t)sizeof i;
         memcpy(buf, &i, n);
         return n;
@@ -322,6 +459,17 @@ bool core_vendor_out(core_t *c, uint8_t req, uint16_t value) {
             apply_flow(c);
         }
         return true;
+    case PS_REQ_SET_BAUD_MODE:
+        if (value > PS_BAUD_LEARN) return false;
+        if (value != c->settings.baud) {
+            c->settings.baud = (uint8_t)value;
+            mark_dirty(c);
+            ab_update(c);
+        }
+        return true;
+    case PS_REQ_AUTOBAUD_RESTART:
+        if (c->ab_state != AB_OFF) ab_learn(c);   // no effect when not learning baud rates
+        return true;
     case PS_REQ_SET_OUTPUTS:
         c->override_mask = (uint8_t)(value >> 8);
         c->override_value = (uint8_t)value;
@@ -353,6 +501,7 @@ void core_settings_pack(const core_settings_t *s, uint8_t out[CORE_SETTINGS_BLOB
     out[4] = 1;   // version
     out[5] = s->mode;
     out[6] = s->flow;
+    out[7] = s->baud;
     uint32_t crc = crc32(out, CORE_SETTINGS_BLOB - 4);
     memcpy(out + CORE_SETTINGS_BLOB - 4, &crc, 4);
 }
@@ -361,8 +510,10 @@ bool core_settings_unpack(core_settings_t *s, const uint8_t in[CORE_SETTINGS_BLO
     uint32_t crc;
     memcpy(&crc, in + CORE_SETTINGS_BLOB - 4, 4);
     if (memcmp(in, "PSER", 4) != 0 || in[4] != 1 || crc != crc32(in, CORE_SETTINGS_BLOB - 4)) return false;
-    if (in[5] > PS_MODE_DTE || in[6] > PS_FLOW_OFF) return false;
+    // byte 7 was 0 before baud-rate learning existed: PS_BAUD_AUTO
+    if (in[5] > PS_MODE_DTE || in[6] > PS_FLOW_OFF || in[7] > PS_BAUD_LEARN) return false;
     s->mode = in[5];
     s->flow = in[6];
+    s->baud = in[7];
     return true;
 }

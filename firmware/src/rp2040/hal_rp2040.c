@@ -8,13 +8,16 @@
 // reads low on a receiver output.
 #include <string.h>
 #include "pico/stdlib.h"
+#include "hardware/clocks.h"
 #include "hardware/flash.h"
 #include "hardware/irq.h"
+#include "hardware/pio.h"
 #include "hardware/sync.h"
 #include "hardware/uart.h"
 #include "board_config.h"
 #include "core.h"
 #include "hal_rp2040.h"
+#include "autobaud.pio.h"
 
 #define UART uart0
 #define UART_IRQ UART0_IRQ
@@ -74,6 +77,44 @@ static void uart_irq(void) {
     }
 }
 
+// Baud-rate learning: a PIO state machine times the RX line (autobaud.pio).
+#define AB_PIO pio0
+static uint s_ab_sm, s_ab_offset;
+static pio_sm_config s_ab_cfg;
+
+static void ab_irq(void) {
+    while (!pio_sm_is_rx_fifo_empty(AB_PIO, s_ab_sm)) {
+        uint32_t raw = pio_sm_get(AB_PIO, s_ab_sm);
+        core_isr_run(&g_core, (raw >> 31) != 0, ~raw & 0x7FFFFFFFu);
+    }
+}
+
+static void ab_init(void) {
+    s_ab_sm = (uint)pio_claim_unused_sm(AB_PIO, true);
+    s_ab_offset = pio_add_program(AB_PIO, &autobaud_program);
+    s_ab_cfg = autobaud_program_get_default_config(s_ab_offset);
+    sm_config_set_in_shift(&s_ab_cfg, true, false, 32);   // right: "in x, 31; in y, 1" puts y in bit 31
+    sm_config_set_fifo_join(&s_ab_cfg, PIO_FIFO_JOIN_RX);
+    sm_config_set_clkdiv_int_frac(&s_ab_cfg, 1, 0);
+    irq_set_exclusive_handler(PIO0_IRQ_0, ab_irq);
+    pio_set_irq0_source_enabled(AB_PIO, (enum pio_interrupt_source)(pis_sm0_rx_fifo_not_empty + s_ab_sm), true);
+    irq_set_enabled(PIO0_IRQ_0, true);
+}
+
+void hal_autobaud(uint8_t role) {
+    pio_sm_set_enabled(AB_PIO, s_ab_sm, false);
+    pio_sm_clear_fifos(AB_PIO, s_ab_sm);
+    if (role != PS_ROLE_DCE && role != PS_ROLE_DTE) return;
+    // the pin stays the UART's: PIO reads every pin's input
+    uint pin = PINS[role].rx;
+    sm_config_set_in_pins(&s_ab_cfg, pin);
+    sm_config_set_jmp_pin(&s_ab_cfg, pin);
+    pio_sm_init(AB_PIO, s_ab_sm, s_ab_offset, &s_ab_cfg);
+    pio_sm_set_enabled(AB_PIO, s_ab_sm, true);
+}
+
+uint32_t hal_autobaud_hz(void) { return clock_get_hz(clk_sys) / 2u; }
+
 void hal_init(void) {
     // transceivers off until the core decides (the board also pulls these low)
     out_pin(PIN_A_SHDN_N, false);
@@ -105,6 +146,8 @@ void hal_init(void) {
     irq_set_exclusive_handler(UART_IRQ, uart_irq);
     irq_set_enabled(UART_IRQ, true);
     uart_set_irq_enables(UART, true, false);   // RX (and RX timeout); TX when there's data
+
+    ab_init();
 }
 
 uint32_t hal_millis(void) { return to_ms_since_boot(get_absolute_time()); }
@@ -148,6 +191,11 @@ void hal_uart_format(const uart_format_t *f) {
     uart_set_baudrate(UART, f->baud);
     uart_parity_t par = f->parity == 1 ? UART_PARITY_ODD : f->parity == 2 ? UART_PARITY_EVEN : UART_PARITY_NONE;
     uart_set_format(UART, f->data_bits, f->stop_bits, par);
+}
+
+void hal_uart_rx_flush(void) {
+    uart_hw_t *hw = uart_get_hw(UART);
+    while (!(hw->fr & UART_UARTFR_RXFE_BITS)) (void)hw->dr;
 }
 
 void hal_uart_hw_cts(bool on) { uart_set_hw_flow(UART, on, false); }

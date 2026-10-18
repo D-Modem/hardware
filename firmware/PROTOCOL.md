@@ -25,13 +25,15 @@ An unknown request or an out-of-range value stalls.
 
 | bRequest | Name | Dir | wValue | Data |
 |---|---|---|---|---|
-| 1 | GET_INFO | IN | 0 | `ps_info_t`, 13 bytes |
+| 1 | GET_INFO | IN | 0 | `ps_info_t`, 14 bytes |
 | 2 | SET_MODE | OUT | 0 auto, 1 DCE, 2 DTE | — (saved in flash) |
 | 3 | SET_OUTPUTS | OUT | `mask << 8 \| value` | — (not saved) |
 | 4 | GET_INPUTS | IN | 0 | `ps_inputs_t`, 5 bytes |
 | 5 | SET_FLOW | OUT | 0 auto, 1 on, 2 off | — (saved) |
 | 6 | GET_STATS | IN | 0 | `ps_stats_t`, 32 bytes |
 | 7 | CLEAR_STATS | OUT | 0 | — |
+| 8 | SET_BAUD_MODE | OUT | 0 auto, 1 host, 2 learn | — (saved) |
+| 9 | AUTOBAUD_RESTART | OUT | 0 | — (no effect unless learning is in use) |
 
 All multi-byte fields are little-endian.
 
@@ -59,9 +61,29 @@ default source, so it needs SET_OUTPUTS. An override of the flow line (CTS
 as DCE, RTS as DTE) is still held off while the board's buffer to the host
 is ¾ full.
 
+## Baud rate
+
+Where the UART's speed comes from (SET_BAUD_MODE):
+
+| wValue | Mode | As DCE | As DTE |
+|---|---|---|---|
+| 0 | auto (default) | learned | the host's |
+| 1 | host | the host's | the host's |
+| 2 | learn | learned | learned |
+
+"The host's" is the speed in the last CDC SET_LINE_CODING. "Learned" is
+measured from the far end's characters: see
+[README.md](README.md#automatic-baud-rate). Data bits, parity and stop
+bits are always the host's.
+
+While learning, received bytes are held back. Once the speed is known
+(GET_INFO flag `0x08`), the characters it was learned from are sent on, and
+the UART switches to it. GET_INFO's `baud` is the speed the UART runs at,
+learned or not. AUTOBAUD_RESTART starts learning again.
+
 ## Structures
 
-`ps_info_t` (13 bytes):
+`ps_info_t` (14 bytes):
 
 | Offset | Size | Field |
 |---|---|---|
@@ -71,8 +93,13 @@ is ¾ full.
 | 5 | 1 | mode setting: 0 auto, 1 DCE, 2 DTE |
 | 6 | 1 | role now: 0 none, 1 DCE, 2 DTE |
 | 7 | 1 | flow setting |
-| 8 | 1 | flags: `0x01` last line coding adjusted, `0x02` baud above 250 kbit/s, `0x04` CTS flow control active |
-| 9 | 4 | baud now |
+| 8 | 1 | flags: `0x01` last line coding adjusted, `0x02` baud above 250 kbit/s, `0x04` CTS flow control active, `0x08` baud learned, `0x10` learning the baud now |
+| 9 | 4 | baud the UART runs at now |
+| 13 | 1 | baud mode setting: 0 auto, 1 host, 2 learn |
+
+Fields may be added at the end in later firmware without changing the
+protocol version. Ask for at least the length you understand and read
+what comes back.
 
 `ps_inputs_t` (5 bytes):
 

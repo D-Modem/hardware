@@ -2,13 +2,21 @@
 # Copyright (C) 2026 Neo-Desktop
 # Host tests for the portable core: make -C firmware/test
 CFLAGS ?= -std=c11 -O1 -g -Wall -Wextra -Werror -Wconversion -Wno-sign-conversion -fsanitize=address,undefined
+CORE = ../src/core/core.c ../src/core/autobaud.c
+DEPS = $(CORE) $(wildcard ../src/core/*.h) fake_hal.h wave.h wave.c
 
-test_core: test_core.c fake_hal.c ../src/core/core.c ../src/core/core.h ../src/core/hal.h ../src/core/ring.h ../src/core/protocol.h fake_hal.h
-	$(CC) $(CFLAGS) -o $@ test_core.c fake_hal.c ../src/core/core.c
+all: test_core test_autobaud
 
-.PHONY: run clean
-run: test_core
+test_core: test_core.c fake_hal.c $(DEPS)
+	$(CC) $(CFLAGS) -o $@ test_core.c fake_hal.c wave.c $(CORE) -lm
+
+test_autobaud: test_autobaud.c $(DEPS)
+	$(CC) $(CFLAGS) -o $@ test_autobaud.c wave.c ../src/core/autobaud.c -lm
+
+.PHONY: all run clean
+run: all
 	./test_core
+	./test_autobaud
 
 clean:
-	rm -f test_core
+	rm -f test_core test_autobaud

@@ -9,6 +9,7 @@
 #include <string.h>
 #include "../src/core/core.h"
 #include "fake_hal.h"
+#include "wave.h"
 
 static int failures, checks;
 #define CHECK(cond) do { checks++; if (!(cond)) { failures++; \
@@ -26,6 +27,14 @@ static void start_auto(void) {
     core_init(&c);
     CHECK(c.role == PS_ROLE_NONE);
     CHECK(hw.xcvr == PS_ROLE_NONE);
+}
+
+// a computer attached, at the host's baud rate (received bytes go straight through)
+static void start_dce_host_baud(void) {
+    start_auto();
+    CHECK(core_vendor_out(&c, PS_REQ_SET_BAUD_MODE, PS_BAUD_HOST));
+    hw.peer_dce = true; run_ms(500);
+    CHECK(c.role == PS_ROLE_DCE && c.ab_state == AB_OFF);
 }
 
 TEST(detects_computer_as_dce) {
@@ -88,7 +97,7 @@ TEST(short_loss_recovers) {
 }
 
 TEST(forced_mode_ignores_detection) {
-    core_settings_t s = {PS_MODE_DTE, PS_FLOW_AUTO};
+    core_settings_t s = {PS_MODE_DTE, PS_FLOW_AUTO, PS_BAUD_AUTO};
     uint8_t blob[CORE_SETTINGS_BLOB];
     core_settings_pack(&s, blob);
     memcpy(hw.flash, blob, sizeof blob); hw.flash_valid = true;
@@ -131,8 +140,7 @@ TEST(overrides) {
 }
 
 TEST(full_buffer_holds_the_far_end) {
-    start_auto();
-    hw.peer_dce = true; run_ms(500);
+    start_dce_host_baud();
     core_host_lines(&c, false, true); run_ms(5);
     CHECK(hw.out & PS_LINE_CTS);
     for (uint32_t i = 0; i < RING_SIZE * 3 / 4; i++) core_isr_rx(&c, 'x', 0);
@@ -222,8 +230,7 @@ TEST(break_timing) {
 }
 
 TEST(data_both_ways) {
-    start_auto();
-    hw.peer_dce = true; run_ms(500);
+    start_dce_host_baud();
     const uint8_t msg[] = "ATDT5551234\r";
     CHECK(core_host_write(&c, msg, sizeof msg - 1) == sizeof msg - 1);
     CHECK(hw.kicks > 0);
@@ -259,10 +266,10 @@ TEST(vendor_info_and_mode) {
 }
 
 TEST(settings_blob) {
-    core_settings_t a = {PS_MODE_DTE, PS_FLOW_OFF}, b = {0, 0};
+    core_settings_t a = {PS_MODE_DTE, PS_FLOW_OFF, PS_BAUD_LEARN}, b = {0, 0, 0};
     uint8_t blob[CORE_SETTINGS_BLOB];
     core_settings_pack(&a, blob);
-    CHECK(core_settings_unpack(&b, blob) && b.mode == PS_MODE_DTE && b.flow == PS_FLOW_OFF);
+    CHECK(core_settings_unpack(&b, blob) && b.mode == PS_MODE_DTE && b.flow == PS_FLOW_OFF && b.baud == PS_BAUD_LEARN);
     blob[5] ^= 1;
     CHECK(!core_settings_unpack(&b, blob));       // checksum catches it
     memset(blob, 0xFF, sizeof blob);              // erased flash
@@ -286,6 +293,7 @@ TEST(ring_wraps) {
 
 TEST(leds) {
     start_auto();
+    core_vendor_out(&c, PS_REQ_SET_BAUD_MODE, PS_BAUD_HOST);
     run_ms(5);
     CHECK(hw.leds == CORE_LED_PWR);
     hw.peer_dce = true; run_ms(500);
@@ -295,6 +303,154 @@ TEST(leds) {
     CHECK(hw.leds == (CORE_LED_PWR | CORE_LED_TR | CORE_LED_CD | CORE_LED_RD));
     run_ms(CORE_LED_PULSE_MS + 10);
     CHECK(!(hw.leds & CORE_LED_RD));
+}
+
+// --- baud-rate learning ---
+static wave_t wv;
+static const uart_format_t F8N1 = {0, 8, 1, 0};
+
+static void send_runs(uint32_t baud, const char *msg, const uart_format_t *f) {
+    wave_make(&wv, FAKE_AB_HZ, baud, 0.01, f, (const uint8_t *)msg, strlen(msg), 1, 0.03);
+    for (uint32_t i = 0; i < wv.n; i++) core_isr_run(&c, wv.high[i], wv.ticks[i]);
+}
+static bool host_got(const char *want) {
+    uint8_t buf[128];
+    uint32_t n = core_host_read(&c, buf, sizeof buf);
+    return n == strlen(want) && memcmp(buf, want, n) == 0;
+}
+static ps_info_t info(void) {
+    ps_info_t i;
+    uint8_t buf[sizeof i];
+    CHECK(core_vendor_in(&c, PS_REQ_GET_INFO, 0, buf, sizeof buf) == (int)sizeof i);
+    memcpy(&i, buf, sizeof i);
+    return i;
+}
+
+TEST(autobaud_learns_as_dce) {
+    start_auto();
+    hw.peer_dce = true; run_ms(500);
+    CHECK(c.ab_state == AB_LEARNING && hw.ab_role == PS_ROLE_DCE);
+    CHECK(info().flags & PS_INFO_BAUD_LEARNING);
+    CHECK(hw.format.baud == 115200);   // the host's until learned
+    core_isr_rx(&c, 'x', RX_ERR_FRAMING);   // the UART at the wrong rate: dropped
+    CHECK(ring_count(&c.to_host) == 0 && c.rx_errors == 0);
+    send_runs(9600, "AT\r", &F8N1);
+    run_ms(120);
+    CHECK(c.ab_state == AB_LOCKED && hw.ab_role == PS_ROLE_NONE);
+    CHECK(hw.format.baud == 9600 && hw.rx_flushes == 1);
+    CHECK(host_got("AT\r"));                 // the characters it learned from aren't lost
+    CHECK(c.stats.from_rs232 == 3);
+    ps_info_t i = info();
+    CHECK(i.baud == 9600 && (i.flags & PS_INFO_BAUD_LOCKED) && !(i.flags & PS_INFO_BAUD_LEARNING));
+    CHECK(i.baud_mode == PS_BAUD_AUTO);
+    core_isr_rx(&c, 'Z', 0);                 // now the UART's bytes go through
+    CHECK(host_got("Z"));
+    // the host changing the format keeps the learned rate
+    core_host_format(&c, 115200, 0, 2, 7);
+    CHECK(hw.format.baud == 9600 && hw.format.data_bits == 7 && hw.format.parity == 2);
+    CHECK(info().baud == 9600);
+}
+
+TEST(autobaud_relearns_on_framing_errors) {
+    start_auto();
+    hw.peer_dce = true; run_ms(500);
+    send_runs(2400, "ATZ\r", &F8N1); run_ms(120);
+    CHECK(c.ab_state == AB_LOCKED && hw.format.baud == 2400);
+    host_got("ATZ\r");
+    // scattered errors: not enough
+    core_isr_rx(&c, 0, RX_ERR_FRAMING); run_ms(1500);
+    core_isr_rx(&c, 0, RX_ERR_FRAMING); run_ms(1500);
+    core_isr_rx(&c, 0, RX_ERR_FRAMING); run_ms(1500);
+    CHECK(c.ab_state == AB_LOCKED);
+    // the computer switched to 115200: a burst of errors
+    for (int k = 0; k < 3; k++) { core_isr_rx(&c, 0, RX_ERR_FRAMING); run_ms(10); }
+    CHECK(c.ab_state == AB_LEARNING && hw.ab_role == PS_ROLE_DCE);
+    CHECK(hw.format.baud == 2400);           // sends at the old rate until it knows
+    host_got("\0\0\0\0\0\0");
+    send_runs(115200, "AT&F\r", &F8N1); run_ms(120);
+    CHECK(c.ab_state == AB_LOCKED && hw.format.baud == 115200);
+    CHECK(host_got("AT&F\r"));
+}
+
+TEST(autobaud_vendor_restart_and_modes) {
+    start_auto();
+    hw.peer_dce = true; run_ms(500);
+    send_runs(19200, "at\r", &F8N1); run_ms(120);
+    CHECK(hw.format.baud == 19200);
+    CHECK(core_vendor_out(&c, PS_REQ_AUTOBAUD_RESTART, 0));
+    CHECK(c.ab_state == AB_LEARNING);
+    send_runs(300, "AT\r", &F8N1); run_ms(120);
+    CHECK(hw.format.baud == 300);
+    // HOST: back to the host's rate, no learning
+    CHECK(core_vendor_out(&c, PS_REQ_SET_BAUD_MODE, PS_BAUD_HOST));
+    CHECK(c.ab_state == AB_OFF && hw.ab_role == PS_ROLE_NONE && hw.format.baud == 115200);
+    CHECK(core_vendor_out(&c, PS_REQ_AUTOBAUD_RESTART, 0) && c.ab_state == AB_OFF);   // no effect
+    CHECK(!core_vendor_out(&c, PS_REQ_SET_BAUD_MODE, 3));
+    run_ms(CORE_SAVE_DELAY_MS + 20);
+    core_settings_t st;
+    CHECK(core_settings_unpack(&st, hw.flash) && st.baud == PS_BAUD_HOST);
+    CHECK(info().baud_mode == PS_BAUD_HOST);
+    // AUTO again: learns again
+    CHECK(core_vendor_out(&c, PS_REQ_SET_BAUD_MODE, PS_BAUD_AUTO));
+    CHECK(c.ab_state == AB_LEARNING);
+}
+
+TEST(autobaud_dte) {
+    start_auto();
+    hw.peer_dte = true; run_ms(500);
+    CHECK(c.role == PS_ROLE_DTE && c.ab_state == AB_OFF && hw.ab_calls == 0);   // AUTO: a modem follows the host
+    core_isr_rx(&c, 'K', 0);
+    CHECK(host_got("K"));
+    CHECK(core_vendor_out(&c, PS_REQ_SET_BAUD_MODE, PS_BAUD_LEARN));
+    CHECK(c.ab_state == AB_LEARNING && hw.ab_role == PS_ROLE_DTE);
+    send_runs(57600, "$GPGGA,", &F8N1); run_ms(120);   // a device that just talks
+    CHECK(hw.format.baud == 57600 && host_got("$GPGGA,"));
+    // unplugged: stops, and starts afresh with the next device
+    hw.peer_dte = false; run_ms(CORE_LOST_MS + 200);
+    CHECK(c.role == PS_ROLE_NONE && c.ab_state == AB_OFF && hw.ab_role == PS_ROLE_NONE);
+    hw.peer_dte = true; run_ms(500);
+    CHECK(c.ab_state == AB_LEARNING && hw.format.baud == 115200);
+}
+
+TEST(autobaud_rough_starts) {
+    start_auto();
+    hw.peer_dce = true; run_ms(500);
+    // a glitch, then idle, then typing
+    core_isr_run(&c, false, 200); core_isr_run(&c, true, FAKE_AB_HZ / 10);
+    run_ms(120);
+    send_runs(4800, "ATDT5551212\r", &F8N1);
+    run_ms(200);
+    CHECK(c.ab_state == AB_LOCKED && hw.format.baud == 4800);
+    // timings lost (the interrupt's queue overflowed): starts over, still learns
+    CHECK(core_vendor_out(&c, PS_REQ_AUTOBAUD_RESTART, 0));
+    for (uint32_t k = 0; k < CORE_RUNS + 5; k++) core_isr_run(&c, k & 1, 1000);
+    CHECK(c.runs_lost);
+    run_ms(120);
+    CHECK(!c.runs_lost && c.ab_state == AB_LEARNING);
+    core_isr_run(&c, true, FAKE_AB_HZ / 10);   // idle
+    send_runs(38400, "AT\r", &F8N1); run_ms(200);
+    CHECK(c.ab_state == AB_LOCKED && hw.format.baud == 38400);
+    // a pause longer than the timer can count, between characters
+    host_got("");
+    uint8_t junk[64]; while (core_host_read(&c, junk, sizeof junk)) {}
+    CHECK(core_vendor_out(&c, PS_REQ_AUTOBAUD_RESTART, 0));
+    send_runs(1200, "A", &F8N1); run_ms(120);
+    CHECK(c.ab_state == AB_LEARNING);
+    run_ms(CORE_AB_LONG_MS + 1000);
+    core_isr_run(&c, true, 5);                  // the count wrapped: looks short
+    send_runs(1200, "T\r", &F8N1); run_ms(120);
+    CHECK(c.ab_state == AB_LOCKED && hw.format.baud == 1200);
+    CHECK(host_got("AT\r"));
+    // a run the HAL couldn't count (0) is "long" too
+    CHECK(core_vendor_out(&c, PS_REQ_AUTOBAUD_RESTART, 0));
+    send_runs(600, "A", &F8N1); run_ms(30);
+    core_isr_run(&c, true, 0);
+    send_runs(600, "T\r", &F8N1); run_ms(200);
+    CHECK(c.ab_state == AB_LOCKED && hw.format.baud == 600);
+    CHECK(host_got("AT\r"));
+    // unplugged: GET_INFO is back to the host's speed
+    hw.peer_dce = false; run_ms(CORE_LOST_MS + 200);
+    CHECK(info().baud == 115200 && !(info().flags & (PS_INFO_BAUD_LOCKED | PS_INFO_BAUD_LEARNING)));
 }
 
 int main(void) {
@@ -320,6 +476,11 @@ int main(void) {
     RUN(settings_blob);
     RUN(ring_wraps);
     RUN(leds);
+    RUN(autobaud_learns_as_dce);
+    RUN(autobaud_relearns_on_framing_errors);
+    RUN(autobaud_vendor_restart_and_modes);
+    RUN(autobaud_dte);
+    RUN(autobaud_rough_starts);
     printf("%d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

@@ -1,0 +1,38 @@
+; SPDX-License-Identifier: AGPL-3.0-only
+; Copyright (C) 2026 Neo-Desktop
+;
+; Times the RS-232 RX line for baud-rate learning (hal_autobaud). From the
+; first falling edge after the line is high, pushes one word per run of one
+; level: bit 31 = the level (1 high), bits 30..0 = 0x7FFFFFFF - length, the
+; length in counts of 2 system clocks. Reads the pin through the input
+; synchroniser, so the UART keeps the pin; jmp_pin and in_base = the RX pin.
+; A run of 2^32 counts or more (68 s) is waited out and reported as 0, which
+; the core takes as "long".
+
+.program autobaud
+    wait 1 pin 0            ; idle
+    wait 0 pin 0            ; first start bit
+low_start:
+    mov x, ~null
+low_loop:
+    jmp pin low_end         ; 2 clocks a count
+    jmp x-- low_loop
+    wait 1 pin 0
+low_end:
+    set y, 0
+    in x, 31
+    in y, 1
+    push noblock
+    mov x, ~null
+high_loop:
+    jmp pin high_more       ; 2 clocks a count
+    jmp high_end
+high_more:
+    jmp x-- high_loop
+    wait 0 pin 0
+high_end:
+    set y, 1
+    in x, 31
+    in y, 1
+    push noblock
+    jmp low_start

@@ -305,7 +305,8 @@ fitted, GP22–27 become spare pins.
 > - detection samples every 50 ms and needs 3 matching samples;
 > - the vendor protocol is in [firmware/PROTOCOL.md](firmware/PROTOCOL.md);
 > - no 1200-baud reboot, since 1200 baud is a real modem speed;
-> - TinyUSB 0.21 is used for SERIAL_STATE.
+> - TinyUSB 0.21 is used for SERIAL_STATE;
+> - the baud rate is learned from the computer's typing (§5.7).
 
 ### 5.1 USB
 
@@ -386,6 +387,25 @@ flow control on or off.
 - `SET_FLOW(auto|on|off)`
 - `SET_LEDS` (if LEDs are fitted)
 
+### 5.7 Baud rate
+
+As DCE, the board **learns the computer's baud rate** from what it types,
+as a Hayes modem does, and the host's `SET_LINE_CODING` speed is ignored.
+So the phone app doesn't need to know what speed the terminal is set to.
+
+- **How:** a PIO state machine times each low and high stretch on the RX
+  pin (GP1 as DCE, GP13 as DTE) while the UART keeps the pin. The firmware
+  tries every standard rate from 110 to 230 400 baud and picks the one the
+  timings fit (firmware/README.md, "Automatic baud rate").
+- **Nothing lost:** the characters it learned from (for example "AT") are
+  decoded from the timings and passed on. Two characters are enough.
+- **Re-learning:** 3 framing errors within 2 s (the computer changed
+  speed), a vendor request, or a new peer on the DB25.
+- **Data format** (data bits, parity, stop bits) still comes from the host.
+- **As DTE**, the host's speed is used by default: a modem follows the
+  speed it's spoken to at. Learning can be turned on for DTE too (a device
+  that talks first, such as a GPS), or off for both, with a vendor request.
+
 ---
 
 ## 6. dmodem-android compatibility
@@ -396,7 +416,8 @@ Works today with **no app change** (DCE mode):
   interfaces).
 - The app's default "its DTR is the modem's carrier" setting becomes the
   computer's DCD, the same as a null-modem cable on an ordinary adapter.
-- Data, speed and format pass through.
+- Data and format pass through. The speed is learned from the computer
+  (§5.7), so the app's speed setting doesn't have to match the terminal's.
 
 Needs app work:
 - **Hanging up when the computer drops DTR.** usb-serial-for-android's CDC
