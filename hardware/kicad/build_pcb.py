@@ -55,12 +55,13 @@ NETCLASSES = {
     "Default": ((0.15, 0.127, 0.55, 0.3), []),
     # GND is the In1 plane: every GND pad gets its own via (fanout()), and the
     # autorouter leaves it alone
+    # net names as KiCad gives them: power symbols global, labels "/NAME"
     "Plane": ((0.25, 0.15, 0.5, 0.25), ["GND"]),
     "Power": ((0.25, 0.15, 0.55, 0.3), ["+3V3", "+1V1"]),
-    "VBUS": ((0.4, 0.15, 0.6, 0.3), ["VBUS", "VBUS_IN"]),      # 0.5 A
-    "Pump": ((0.25, 0.15, 0.55, 0.3), ["CP*"]),                # the charge pumps' +-5.5 V
-    "RS232": ((0.2, 0.15, 0.55, 0.3), ["RS_*", "DB25_FG"]),
-    "USB": ((0.2, 0.15, 0.55, 0.3), ["USB_*"]),
+    "VBUS": ((0.4, 0.15, 0.6, 0.3), ["VBUS", "/VBUS_IN"]),     # 0.5 A
+    "Pump": ((0.25, 0.15, 0.55, 0.3), ["/CP*"]),               # the charge pumps' +-5.5 V
+    "RS232": ((0.2, 0.15, 0.55, 0.3), ["/RS_*", "/DB25_FG"]),
+    "USB": ((0.2, 0.15, 0.55, 0.3), ["/USB_*"]),
 }
 
 # Layers: F.Cu signals; In1.Cu a solid GND plane (every signal's reference);
@@ -70,6 +71,10 @@ NETCLASSES = {
 PLANES = {"In1.Cu": "GND"}
 POURS = [("In2.Cu", "+3V3"), ("F.Cu", "GND"), ("B.Cu", "GND")]   # after routing
 FANOUT_NETS = ("GND", "+3V3")
+# other pads that get a stub and via up front: the ESD chip's VBUS pin sits
+# between D+ and D-, where a track can only leave toward the USB-C pads; its
+# via goes under the chip's body instead, leaving room for the D- crossover
+FANOUT_EXTRA = {("U4", "5")}
 
 # ---------------------------------------------------------------------------
 # Placement: ref -> (x, y, rotation degrees, side). Bottom-side parts are
@@ -84,8 +89,8 @@ PLACE = {
     "J1": (0.0, MOUTH - 3.65, 0, "F"),     # USB-C, mouth flush with the back edge
     # --- top: RP2040 (USB and flash pins face back), flash, clock, buttons
     "U1": (*MCU, 180, "F"),
-    "U2": (9.3, 20.6, 0, "F"),
-    "C18": (14.6, 18.7, 90, "F"),          # flash VCC
+    "U2": (10.2, 21.8, 0, "F"),            # back and right: room for U1's GPIO vias
+    "C18": (15.7, 20.3, 90, "F"),          # flash VCC
     "Y1": (2.8, 10.4, 0, "F"),
     "R8": (-0.5, 10.6, 90, "F"),           # XOUT series
     "C16": (-1.7, 10.6, 90, "F"),          # XIN load
@@ -106,8 +111,8 @@ PLACE = {
     "C2": (-12.0, 25.6, 0, "F"),           # VBUS 10uF
     "U3": (-12.0, 22.6, 0, "F"),           # LDO
     "C3": (-7.6, 21.3, 0, "F"),            # 3V3 10uF
-    "R4": (-7.2, 19.3, 0, "F"),            # VBUS divider
-    "R5": (-7.2, 18.2, 0, "F"),
+    "R4": (-11.0, 19.0, 0, "F"),           # VBUS divider, out of U1's left-side escape
+    "R5": (-11.0, 20.1, 0, "F"),
     # --- bottom: transceivers, RS-232 pins toward the DB25, charge pumps at the pin-1 end
     "U6": (CHIP_B_X, CHIP_Y, 270, "B"),    # chip B, DTE
     "C26": (-16.9, 6.2, 0, "B"), "C28": (-16.9, 7.7, 0, "B"),       # C2 flying, V- (0603)
@@ -124,18 +129,21 @@ PLACE = {
     # leaving a ring free for the pins' own escape vias
     "C4": (4.6, 20.0, 90, "B"), "C5": (4.6, 17.0, 90, "B"),            # IOVDD 1, 10
     "C6": (-0.8, 11.0, 0, "B"), "C14": (-2.9, 11.0, 0, "B"),           # IOVDD 22, DVDD 23
-    "C7": (-6.4, 16.0, 90, "B"), "C8": (-6.4, 19.6, 90, "B"),          # IOVDD 33, 42
-    # back edge: two staggered rows
-    "C11": (-4.6, 22.9, 90, "B"), "C13": (-2.6, 22.9, 90, "B"), "C9": (-0.6, 22.9, 90, "B"),   # AVDD 43, VREG_VOUT 45, IOVDD 49
-    "C12": (-3.6, 25.0, 90, "B"), "C10": (-1.6, 25.0, 90, "B"), "C15": (0.4, 25.0, 90, "B"),   # VREG_VIN 44, USB_VDD 48, DVDD 50
+    # at U1's left corners, clear of the left side's escape (LEDs, GP28, GP29)
+    "C7": (-6.0, 15.0, 0, "B"), "C8": (-5.9, 21.0, 0, "B"),            # IOVDD 33, 42
+    # back edge: two short columns either side of the USB D+/D- corridor
+    # (x -3.0..-1.2), so no via lands between U1 and the series resistors
+    "C11": (-4.9, 22.2, 0, "B"), "C12": (-4.9, 23.4, 0, "B"), "C13": (-4.9, 24.6, 0, "B"),   # AVDD 43, VREG_VIN 44, VREG_VOUT 45
+    "C10": (0.4, 21.6, 0, "B"), "C9": (0.4, 22.65, 0, "B"), "C15": (0.4, 23.7, 0, "B"),       # USB_VDD 48, IOVDD 49, DVDD 50
     # --- bottom, back of the tongue: USB shield
     "R3": (-2.2, 36.6, 0, "B"), "C1": (2.2, 36.6, 0, "B"),
 }
-# test pads: bottom, a 2.6 mm grid behind chip A (pogo-pin friendly)
-for i, ref in enumerate(["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "TP7", "TP8", "TP9", "TP10"]):
-    PLACE[ref] = (7.0 + 2.6 * (i % 5), 17.6 + 2.6 * (i // 5), 0, "B")
-PLACE["TP11"] = (7.0, 22.8, 0, "B")
-PLACE["TP12"] = (9.6, 22.8, 0, "B")
+# test pads: bottom, a 2.6 mm grid behind the flash (pogo-pin friendly), leaving
+# the space between U1 and chip A free for the GPIO lines' vias
+_tp = [t for t in (f"TP{n}" for n in range(1, 13)) if t != "TP8"]
+for i, ref in enumerate(_tp):
+    PLACE[ref] = (6.5 + 2.6 * (i % 4), 21.0 + 2.6 * (i // 4), 0, "B")
+PLACE["TP8"] = (-9.5, 23.8, 0, "B")      # GP28: near its pin, on U1's left
 # optional LEDs (not fitted): bottom, behind chip B, LED then its resistor
 for i, n in enumerate(range(2, 8)):
     x, y = (-16.4 if i < 3 else -10.6), 17.4 + 2.0 * (i % 3)
@@ -187,13 +195,39 @@ def outline(board):
         board.Add(s)
 
 
+def schematic_nets():
+    """(ref, pin) -> net name exactly as KiCad names it from the schematic: local
+    labels are "/NAME", power symbols "NAME", open pins "unconnected-(...)". Using
+    KiCad's own names is what makes the PCB match the schematic (DRC parity)."""
+    import re, tempfile
+    sch = os.path.join(HERE, f"{PROJECT}.kicad_sch")
+    with tempfile.TemporaryDirectory() as td:
+        out = os.path.join(td, "sch.net")
+        subprocess.run(["kicad-cli", "sch", "export", "netlist", "--format", "kicadsexpr", "-o", out, sch],
+                       check=True, capture_output=True)
+        text = open(out).read()
+    pin_net = {}
+    for m in re.finditer(r'\(net \(code "\d+"\) \(name "([^"]*)"\)(.*?)(?=\(net \(code|\Z)', text, re.S):
+        for ref, pin in re.findall(r'\(node \(ref "([^"]+)"\) \(pin "([^"]+)"\)', m.group(2)):
+            pin_net[(ref, pin)] = m.group(1)
+    # the same circuit as the netlist script, names aside
+    mine = {(r, p): n for n, mem in N.nets.items() for r, p in mem}
+    for k, n in mine.items():
+        if pin_net.get(k, "").lstrip("/") != n:
+            sys.exit(f"schematic and netlist script disagree at {k}: {pin_net.get(k)} vs {n}")
+    extra = [k for k, n in pin_net.items() if k not in mine and not n.startswith("unconnected-")]
+    if extra:
+        sys.exit(f"schematic has connections the netlist script doesn't: {extra[:5]}")
+    return pin_net
+
+
 def add_parts(board, fpdir):
+    pin_net = schematic_nets()
     nets = {}
-    for name in sorted(N.nets):
+    for name in sorted(set(pin_net.values())):
         ni = pcbnew.NETINFO_ITEM(board, name)
         board.Add(ni)
         nets[name] = ni
-    pin_net = {(r, p): n for n, mem in N.nets.items() for r, p in mem}
     fps = {}
     for ref, p in N.parts.items():
         lib, name = p["footprint"].split(":")
@@ -209,7 +243,7 @@ def add_parts(board, fpdir):
                 fp.SetField(k, v)
                 fp.GetFieldByName(k).SetVisible(False)
         if p["dnp"]:
-            fp.SetDNP(True); fp.SetExcludedFromBOM(True); fp.SetExcludedFromPosFiles(True)
+            fp.SetDNP(True); fp.SetExcludedFromPosFiles(True)   # in the BOM, marked DNP, as in the schematic
         if p["assembly"] != "jlc":
             fp.SetExcludedFromPosFiles(True)
             if p["assembly"] == "none":
@@ -247,9 +281,9 @@ SILK = [
     (f"pico-serial rev {REVISION}", -9.8, 9.4, 1.0, "F", "c"),
     ("DCE / DTE auto", -9.8, 10.9, 0.8, "F", "c"),
     ("DTE: male-male changer", -9.8, 12.2, 0.8, "F", "c"),
-    # the licence notice and Source Location, CERN-OHL-S-2.0 section 4 (LICENSING.md)
-    ("github.com/Neo-Desktop/pico-serial", 0.0, 26.8, 0.8, "B", "c"),
-    ("CERN-OHL-S-2.0", 0.0, 28.0, 0.8, "B", "c"),
+    # the licence and its Source Location, CERN-OHL-S-2.0 section 4 (LICENSING.md)
+    ("github.com/Neo-Desktop/pico-serial", 0.0, 4.45, 0.8, "B", "c"),  # between the cups and the chips
+    ("CERN-OHL-S-2.0", -9.8, 7.9, 0.8, "F", "c"),
 ]
 
 
@@ -325,6 +359,32 @@ def hole_keepouts(board):
         board.Add(z)
 
 
+def edge_keepout(board):
+    """No tracks or vias within the edge clearance (Freerouting doesn't apply KiCad's):
+    a thin strip inside each edge."""
+    w = RULES["edge_clearance"] + 0.05
+    n = len(OUTLINE)
+    area2 = sum(OUTLINE[k][0] * OUTLINE[(k + 1) % n][1] - OUTLINE[(k + 1) % n][0] * OUTLINE[k][1] for k in range(n))
+    side = 1 if area2 > 0 else -1   # which normal points inside
+    ls = pcbnew.LSET()
+    for name in ("F.Cu", "In1.Cu", "In2.Cu", "B.Cu"):
+        ls.AddLayer(board.GetLayerID(name))
+    for k in range(n):
+        (x1, y1), (x2, y2) = OUTLINE[k], OUTLINE[(k + 1) % n]
+        L = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        nx, ny = -side * (y2 - y1) / L * w, side * (x2 - x1) / L * w
+        z = pcbnew.ZONE(board)
+        z.SetIsRuleArea(True)
+        z.SetDoNotAllowTracks(True); z.SetDoNotAllowVias(True)
+        z.SetDoNotAllowCopperPour(False); z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+        z.SetLayerSet(ls)
+        ol = z.Outline()
+        ol.NewOutline()
+        for x, y in ((x1, y1), (x2, y2), (x2 + nx, y2 + ny), (x1 + nx, y1 + ny)):
+            ol.Append(mm(x), mm(y))
+        board.Add(z)
+
+
 def ep_vias(board, fps):
     """GND vias in the RP2040's exposed pad (heat, and its ground)."""
     u1 = fps["U1"]
@@ -392,14 +452,17 @@ def fanout(board):
     for pad in pads:
         net = pad.GetNetname()
         fp = pad.GetParentFootprint()
-        if net not in FANOUT_NETS or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
+        if (net not in FANOUT_NETS and (fp.GetReference(), pad.GetNumber()) not in FANOUT_EXTRA) \
+                or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
             continue
-        if fp.GetReference() == "U1" and (pad.GetNumber() == "57" or net == "+3V3"):
-            continue   # exposed pad has its own vias; +3V3 pins are routed (vias here block the escape)
+        if fp.GetReference() == "U1" and pad.GetNumber() == "57":
+            continue   # exposed pad: has its own vias
         layer = lay(pad)
         pc = pad.GetPosition()
         bb = pad.GetBoundingBox()
         hw, hh = pcbnew.ToMM(bb.GetWidth()) / 2, pcbnew.ToMM(bb.GetHeight()) / 2
+        # U1: under the QFN, between its pads and the exposed pad, so the ring outside stays free
+        inward = fp.GetReference() == "U1" or (fp.GetReference(), pad.GetNumber()) in FANOUT_EXTRA
         if fp.GetReference() == "J2":
             out = (0, 1)
         else:
@@ -408,6 +471,8 @@ def fanout(board):
             out = ((1 if dx > 0 else -1), 0) if abs(dx) >= abs(dy) else (0, (1 if dy > 0 else -1))
         dirs = [out, (out[1], out[0]), (-out[1], -out[0]), (out[0] + out[1], out[1] + out[0]),
                 (out[0] - out[1], out[1] - out[0]), (-out[0], -out[1])]
+        if inward:
+            dirs = [(-out[0], -out[1])]
         w = min(0.25, 2 * min(hw, hh))
         done = False
         for ddx, ddy in dirs:
@@ -465,6 +530,253 @@ def route(board, jar, passes, workdir):
         sys.exit("SES import failed")
 
 
+# ---------------------------------------------------------------------------
+# A small grid router to finish what Freerouting leaves (usually a few short
+# links in crowded spots): A* on a 0.1 mm grid over F.Cu, In2.Cu and B.Cu,
+# every step checked against KiCad's own copper shapes.
+# ---------------------------------------------------------------------------
+GRID = 0.1
+DEBUG = False
+ALL_CU = {pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu}
+VIA_COST = 12.0
+
+
+def _islands(board, net):
+    """The net's pads, tracks and vias, grouped by what's joined (zones aside)."""
+    conn = board.GetConnectivity()
+    key = lambda it: it.m_Uuid.AsString()   # the Python wrappers differ call to call
+    pads = [p for p in board.GetPads() if p.GetNetname() == net]
+    seen, groups = set(), []
+    for p in pads:
+        if key(p) in seen:
+            continue
+        group, todo = [], [p]
+        seen.add(key(p))
+        while todo:
+            it = todo.pop()
+            group.append(it)
+            for q in list(conn.GetConnectedTracks(it)) + list(conn.GetConnectedPads(it)):
+                if q.GetNetname() == net and key(q) not in seen:
+                    seen.add(key(q))
+                    todo.append(q)
+        groups.append(group)
+    return groups
+
+
+def _geom(item):
+    """An item's copper as plain numbers, read from KiCad once:
+    ("seg", x1, y1, x2, y2, r) | ("circ", x, y, r) | ("rect", x, y, hw, hh, angle), and its layers."""
+    import math
+    T = pcbnew.ToMM
+    item = item.Cast()   # connectivity hands vias back as plain tracks
+    if item.Type() == pcbnew.PCB_VIA_T:
+        p = item.GetPosition()
+        return ("circ", T(p.x), T(p.y), T(item.GetWidth(pcbnew.F_Cu)) / 2), ALL_CU
+    if item.Type() == pcbnew.PCB_TRACE_T:
+        a, b = item.GetStart(), item.GetEnd()
+        return ("seg", T(a.x), T(a.y), T(b.x), T(b.y), T(item.GetWidth()) / 2), {item.GetLayer()}
+    p = item.GetPosition()
+    layers = {L for L in ALL_CU if item.IsOnLayer(L)}
+    if item.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH:
+        return ("circ", T(p.x), T(p.y), T(item.GetDrillSize().x) / 2), ALL_CU
+    sz = item.GetSize(pcbnew.F_Cu) if hasattr(item, "GetSize") else item.GetSize()
+    hw, hh = T(sz.x) / 2, T(sz.y) / 2
+    if item.GetShape(pcbnew.F_Cu) == pcbnew.PAD_SHAPE_CIRCLE:
+        return ("circ", T(p.x), T(p.y), hw), layers
+    return ("rect", T(p.x), T(p.y), hw, hh, math.radians(item.GetOrientationDegrees())), layers
+
+
+def _dist(g, X, Y):
+    """Distance (mm, 0 inside) from grid points X, Y (numpy arrays) to the shape."""
+    import numpy as np
+    if g[0] == "circ":
+        return np.maximum(np.hypot(X - g[1], Y - g[2]) - g[3], 0)
+    if g[0] == "seg":
+        x1, y1, x2, y2, r = g[1:]
+        dx, dy = x2 - x1, y2 - y1
+        L2 = dx * dx + dy * dy
+        t = np.clip(((X - x1) * dx + (Y - y1) * dy) / L2, 0, 1) if L2 else 0
+        return np.maximum(np.hypot(X - x1 - t * dx, Y - y1 - t * dy) - r, 0)
+    x, y, hw, hh, a = g[1:]
+    c, s_ = np.cos(a), np.sin(a)
+    lx, ly = (X - x) * c - (Y - y) * s_, (X - x) * s_ + (Y - y) * c
+    ex, ey = np.maximum(np.abs(lx) - hw, 0), np.maximum(np.abs(ly) - hh, 0)
+    return np.hypot(ex, ey)
+
+
+def _route_link(board, net, src, dst, layers, narrow=False):
+    """A* from island src to island dst over a grid; True if it added the link.
+    narrow: use the default class's width and via (a short stub, e.g. VBUS to
+    the ESD chip's reference pin, between pins a wide track can't pass)."""
+    import heapq
+    import numpy as np
+    T = pcbnew.ToMM
+    nc = board.GetDesignSettings().m_NetSettings.GetEffectiveNetClass(net)
+    w = T(nc.GetTrackWidth()); vd = T(nc.GetViaDiameter()); vdr = T(nc.GetViaDrill())
+    clr = T(nc.GetClearance()) + 0.005
+    if narrow:
+        (w, _, vd, vdr), _ = NETCLASSES["Default"]
+    items = src + dst
+    xs = [T(i.GetPosition().x) for i in items]; ys = [T(i.GetPosition().y) for i in items]
+    # grid aligned with a source pad's centre, so it can leave fine-pitch pads straight out
+    anchor = next((i for i in src if i.Type() == pcbnew.PCB_PAD_T), src[0]).GetPosition()
+    ax, ay = T(anchor.x), T(anchor.y)
+    x0 = ax - GRID * round((ax - (min(xs) - 3)) / GRID)
+    y0 = ay - GRID * round((ay - (min(ys) - 3)) / GRID)
+    nx = int((max(xs) + 3 - x0) / GRID) + 1
+    ny = int((max(ys) + 3 - y0) / GRID) + 1
+    X, Y = np.meshgrid(x0 + GRID * np.arange(nx), y0 + GRID * np.arange(ny), indexing="ij")
+    lid = [board.GetLayerID(l) for l in layers]
+    # inside the board, away from the edge
+    if DEBUG:
+        print(f"  grid {nx}x{ny}", flush=True)
+    inside_t = np.vectorize(lambda x, y: _inside(OUTLINE, x, y, w / 2 + RULES["edge_clearance"]))(X, Y)
+    inside_v = np.vectorize(lambda x, y: _inside(OUTLINE, x, y, vd / 2 + RULES["edge_clearance"]))(X, Y)
+    free = {L: inside_t.copy() for L in lid}
+    vfree = inside_v.copy()
+    xa, ya = x0 - 1, y0 - 1
+    xb, yb = x0 + nx * GRID + 1, y0 + ny * GRID + 1
+    for o in list(board.GetPads()) + list(board.GetTracks()):
+        if o.GetNetname() == net:
+            continue
+        bb = o.GetBoundingBox()
+        if T(bb.GetRight()) < xa or T(bb.GetLeft()) > xb or T(bb.GetBottom()) < ya or T(bb.GetTop()) > yb:
+            continue
+        g, ls = _geom(o)
+        d = _dist(g, X, Y)
+        for L in lid:
+            if L in ls:
+                free[L] &= d >= w / 2 + clr
+        vfree &= d >= vd / 2 + clr
+    for o in src + dst:   # no via inside a pad of the link's own ends
+        if o.Type() == pcbnew.PCB_PAD_T:
+            vfree &= _dist(_geom(o)[0], X, Y) > vd / 2
+    # start and goal: grid points on each island's copper
+    def cells(group):
+        out = set()
+        for it in group:
+            g, ls = _geom(it)
+            d = _dist(g, X, Y)
+            ii, jj = np.nonzero(d <= 1e-6)
+            for li, L in enumerate(lid):
+                if L in ls:
+                    out.update(zip(ii.tolist(), jj.tolist(), [li] * len(ii)))
+        return out
+    start, goal = cells(src), cells(dst)
+    if DEBUG:
+        def _name(it):
+            it = it.Cast()
+            return f"{it.GetParentFootprint().GetReference()}.{it.GetNumber()}" if it.Type() == pcbnew.PCB_PAD_T else it.GetClass()
+        print("   src", [_name(i) for i in src][:6], "dst", [_name(i) for i in dst][:6])
+        for li, L in enumerate(lid):
+            print("   layer", layers[li], "free", round(float(free[L].mean()), 3), "start here", sum(1 for c in start if c[2] == li))
+    if not start or not goal:
+        return False
+    gpts = np.array([(a, b) for a, b, _ in goal])
+    gmin, gmax = gpts.min(axis=0), gpts.max(axis=0)
+    def h(i, j):   # distance to the goal's bounding box: never more than the real cost
+        dx = max(gmin[0] - i, 0, i - gmax[0]); dy = max(gmin[1] - j, 0, j - gmax[1])
+        return GRID * (dx * dx + dy * dy) ** 0.5
+    ok = lambda i, j, li: bool(free[lid[li]][i, j])
+    openq, came, cost = [], {}, {}
+    for st in start:
+        cost[st] = 0.0
+        heapq.heappush(openq, (h(st[0], st[1]), st))
+    steps = [(1, 0, 1.0), (-1, 0, 1.0), (0, 1, 1.0), (0, -1, 1.0),
+             (1, 1, 1.414), (1, -1, 1.414), (-1, 1, 1.414), (-1, -1, 1.414)]
+    end, n_exp, done = None, 0, set()
+    while openq and n_exp < 600000:
+        _, cur = heapq.heappop(openq)
+        if cur in done:
+            continue
+        done.add(cur)
+        n_exp += 1
+        if cur in goal:
+            end = cur
+            break
+        i, j, li = cur
+        nbrs = []
+        for di, dj, c in steps:
+            a, b2 = i + di, j + dj
+            if not (0 <= a < nx and 0 <= b2 < ny):
+                continue
+            if di and dj:   # diagonal: only past two free cells, so it never clips a corner
+                if not all(sd in start or sd in goal or ok(*sd) for sd in ((i + di, j, li), (i, j + dj, li))):
+                    continue
+            nbrs.append(((a, b2, li), c * GRID))
+        if vfree[i, j]:
+            for lj in range(len(lid)):
+                if lj != li:
+                    nbrs.append(((i, j, lj), VIA_COST * GRID))
+        for nb, c in nbrs:
+            if nb not in goal and nb not in start and not ok(*nb):
+                continue
+            nc2 = cost[cur] + c
+            if nc2 < cost.get(nb, 1e18):
+                cost[nb] = nc2
+                came[nb] = cur
+                heapq.heappush(openq, (nc2 + h(nb[0], nb[1]), nb))
+    if DEBUG:
+        print(f"  {net}: start {len(start)} goal {len(goal)} expanded {n_exp} grid {nx}x{ny} found {end is not None}")
+    if end is None:
+        return False
+    path = [end]
+    while path[-1] in came:
+        path.append(came[path[-1]])
+    path.reverse()
+    netinfo = board.FindNet(net)
+    # straight runs -> segments; layer changes -> vias
+    pts = lambda c: pcbnew.VECTOR2I(mm(x0 + c[0] * GRID), mm(y0 + c[1] * GRID))
+    seg_start = path[0]
+    for k in range(1, len(path)):
+        a, b2 = path[k - 1], path[k]
+        if a[2] != b2[2]:
+            if (seg_start[0], seg_start[1]) != (a[0], a[1]):
+                _track(board, netinfo, pts(seg_start), pts(a), lid[a[2]], w)
+            v = pcbnew.PCB_VIA(board)
+            v.SetPosition(pts(a)); v.SetWidth(mm(vd)); v.SetDrill(mm(vdr)); v.SetNet(netinfo)
+            board.Add(v)
+            seg_start = b2
+            continue
+        nxt = path[k + 1] if k + 1 < len(path) else None
+        if nxt is None or nxt[2] != b2[2] or (nxt[0] - b2[0], nxt[1] - b2[1]) != (b2[0] - a[0], b2[1] - a[1]):
+            _track(board, netinfo, pts(seg_start), pts(b2), lid[b2[2]], w)
+            seg_start = b2
+    return True
+
+
+def _track(board, net, a, b, layer, w):
+    if a == b:
+        return
+    t = pcbnew.PCB_TRACK(board)
+    t.SetStart(a); t.SetEnd(b); t.SetLayer(layer); t.SetWidth(mm(w)); t.SetNet(net)
+    board.Add(t)
+
+
+def finish(board):
+    """Route what's left, net by net, joining islands two at a time."""
+    layers = ["F.Cu", "In2.Cu", "B.Cu"]
+    board.BuildConnectivity()
+    left = []
+    for net in sorted({p.GetNetname() for p in board.GetPads() if p.GetNetname()}):
+        if net in PLANES.values():
+            continue
+        for _ in range(20):
+            groups = _islands(board, net)
+            if len(groups) < 2:
+                break
+            if DEBUG:
+                print(f"  {net}: {len(groups)} islands", flush=True)
+            groups.sort(key=len)
+            rest = [it for g in groups[1:] for it in g]
+            if not (_route_link(board, net, groups[0], rest, layers) or
+                    _route_link(board, net, groups[0], rest, layers, narrow=True)):
+                left.append(net)
+                break
+            board.BuildConnectivity()
+    return left
+
+
 def unrouted(board):
     """Connections still missing, with the planes filled (GND joins through In1)."""
     fill(board)
@@ -509,19 +821,8 @@ def fab(outdir):
     shutil.rmtree(g)
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--kicad-fp", help="KiCad 9.0 footprint library checkout")
-    ap.add_argument("--route", action="store_true", help="autoroute with Freerouting")
-    ap.add_argument("--ses", help="import this Freerouting session instead of routing")
-    ap.add_argument("--freerouting", default=os.environ.get("FREEROUTING_JAR", "freerouting-1.9.0.jar"))
-    ap.add_argument("--passes", type=int, default=40)
-    ap.add_argument("--rounds", type=int, default=4, help="routing rounds, each starting from the last")
-    ap.add_argument("--workdir", default=os.path.join(HERE, "route"))
-    ap.add_argument("--fab", action="store_true", help="also write Gerbers, drill and the JLC CPL file to fab/")
-    args = ap.parse_args()
-    fpdir = footprint_dir(args)
-
+def build(fpdir):
+    """The placed, unrouted board, with its planes, keep-outs and fanout vias."""
     board = pcbnew.NewBoard(PCB)
     board.SetCopperLayerCount(4)
     set_rules(board)
@@ -530,29 +831,77 @@ def main():
     place(fps)
     planes(board)
     hole_keepouts(board)
+    edge_keepout(board)
     ep_vias(board, fps)
     fanout(board)
     silk(board)
+    return board, fps
+
+
+def autoroute(board, args, passes):
+    """Freerouting in rounds, each from the last, then the finisher. Returns what's left."""
+    left = None
+    for rnd in range(args.rounds):
+        route(board, args.freerouting, passes if rnd == 0 else max(10, passes // 2), args.workdir)
+        n = unrouted(board)
+        print(f"  round {rnd + 1}: {n} connections unrouted")
+        if n == 0 or (left is not None and n >= left):
+            break
+        left = n
+    if unrouted(board):
+        stuck = finish(board)
+        print(f"  finisher: {unrouted(board)} connections unrouted" + (f" ({' '.join(stuck)})" if stuck else ""))
+    return unrouted(board)
+
+
+# Freerouting is deterministic: the same board and pass count give the same
+# result. When one pass count leaves something, the next may not.
+PASS_COUNTS = (40, 30, 50, 35, 45)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--kicad-fp", help="KiCad 9.0 footprint library checkout")
+    ap.add_argument("--route", action="store_true", help="autoroute with Freerouting")
+    ap.add_argument("--ses", help="import this Freerouting session instead of routing")
+    ap.add_argument("--freerouting", default=os.environ.get("FREEROUTING_JAR", "freerouting-1.9.0.jar"))
+    ap.add_argument("--passes", type=int, nargs="+", default=list(PASS_COUNTS),
+                    help="Freerouting pass counts to try, in turn, until one routes everything")
+    ap.add_argument("--rounds", type=int, default=4, help="routing rounds, each starting from the last")
+    ap.add_argument("--workdir", default=os.path.join(HERE, "route"))
+    ap.add_argument("--fab", action="store_true", help="also write Gerbers, drill and the JLC CPL file to fab/")
+    args = ap.parse_args()
+    fpdir = footprint_dir(args)
+
+    board, fps = build(fpdir)
+    left = 0
     if args.ses:
         if not pcbnew.ImportSpecctraSES(board, args.ses):
             sys.exit("SES import failed")
+        if unrouted(board):
+            finish(board)
+        left = unrouted(board)
     elif args.route:
         os.makedirs(args.workdir, exist_ok=True)
-        # route, then route again from that result until nothing is left or a round doesn't help
-        left = None
-        for rnd in range(args.rounds):
-            route(board, args.freerouting, args.passes if rnd == 0 else max(10, args.passes // 2), args.workdir)
-            n = unrouted(board)
-            print(f"round {rnd + 1}: {n} connections unrouted")
-            if n == 0 or (left is not None and n >= left):
+        best = None
+        for passes in args.passes:
+            if best is not None:
+                board, fps = build(fpdir)
+            print(f"routing with {passes} passes")
+            n = autoroute(board, args, passes)
+            if best is None or n < best[0]:
+                best = (n, board, passes)
+            if n == 0:
                 break
-            left = n
+        left, board, passes = best
+        print(f"kept: {passes} passes, {left} connections unrouted")
     pours(board)
     fill(board)
     pcbnew.SaveBoard(PCB, board)
     if args.fab:
         fab(os.path.join(HERE, "fab"))
-    print(f"ok: {len(fps)} footprints, {len(N.nets)} nets -> {os.path.relpath(PCB)}")
+    print(f"ok: {len(fps)} footprints, {len(N.nets)} nets -> {os.path.relpath(PCB)}"
+          + (f"; {left} connections NOT routed" if left else ""))
 
 
 if __name__ == "__main__":

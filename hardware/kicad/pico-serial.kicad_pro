@@ -386,23 +386,23 @@
       },
       {
         "netclass": "VBUS",
-        "pattern": "VBUS_IN"
+        "pattern": "/VBUS_IN"
       },
       {
         "netclass": "Pump",
-        "pattern": "CP*"
+        "pattern": "/CP*"
       },
       {
         "netclass": "RS232",
-        "pattern": "RS_*"
+        "pattern": "/RS_*"
       },
       {
         "netclass": "RS232",
-        "pattern": "DB25_FG"
+        "pattern": "/DB25_FG"
       },
       {
         "netclass": "USB",
-        "pattern": "USB_*"
+        "pattern": "/USB_*"
       }
     ]
   },

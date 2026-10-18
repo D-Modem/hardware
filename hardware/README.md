@@ -156,8 +156,13 @@ python3 hardware/kicad/build_pcb.py --kicad-fp kicad-footprints \
   is; it wants a display, hence `xvfb-run`.
 - **Routing:** Freerouting routes everything but GND, which the plane and
   the vias already connect. It runs in rounds, each starting from the
-  last, until nothing is left (`--passes`, `--rounds`). Each run comes out
-  a little different.
+  last (`--rounds`). Then a small grid router in the script (A* on a
+  0.1 mm grid over the three signal layers, checked against KiCad's own
+  copper shapes) joins anything still apart.
+- **Repeatable:** Freerouting gives the same result for the same board and
+  pass count. If a pass count leaves something unrouted, the script tries
+  the next in `--passes` (40, 30, 50, 35, 45) and keeps the first that
+  routes everything. It says which it kept, and warns if none did.
 - **Without `--route`** it writes the placed, unrouted board (with its
   vias and planes); `--ses` imports a saved Freerouting session instead.
 - **`--fab`** writes `fab/pico-serial-gerbers.zip` and
