@@ -57,11 +57,17 @@ static const uint8_t desc_config[] = {
 };
 TU_VERIFY_STATIC(sizeof desc_config == CONFIG_LEN, "config descriptor length");
 
+// TinyUSB, on GET_DESCRIPTOR(DEVICE): the device descriptor above.
 const uint8_t *tud_descriptor_device_cb(void) { return (const uint8_t *)&desc_device; }
+// TinyUSB, on GET_DESCRIPTOR(CONFIGURATION): the one configuration (index is always 0).
 const uint8_t *tud_descriptor_configuration_cb(uint8_t index) { (void)index; return desc_config; }
 
 static uint16_t desc_str[33];
 
+// TinyUSB, on GET_DESCRIPTOR(STRING): string `index` as a USB string
+// descriptor (UTF-16, ASCII only, at most 32 characters) built in desc_str,
+// valid until the next call. The serial number is the flash chip's unique ID.
+// NULL for an index we don't have, which TinyUSB answers with a STALL.
 const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
     (void)langid;
     char serial[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
@@ -92,9 +98,15 @@ const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 static uint8_t s_control_itf = 0xFF;
 static uint8_t s_control_buf[64];
 
+// Class driver init, at tusb_init(): nothing to set up.
 static void psd_init(void) {}
+// Class driver reset, on bus reset or unplug: forget our interface number until opened again.
 static void psd_reset(uint8_t rhport) { (void)rhport; s_control_itf = 0xFF; }
 
+// Class driver open, once per interface when the host sets the configuration:
+// claims the "pico-serial control" interface (vendor class, our subclass and
+// protocol) and remembers its number. Returns the descriptor bytes used, or 0
+// to leave the interface to another driver.
 static uint16_t psd_open(uint8_t rhport, const tusb_desc_interface_t *d, uint16_t max_len) {
     (void)rhport;
     TU_VERIFY(d->bInterfaceClass == TUSB_CLASS_VENDOR_SPECIFIC && d->bInterfaceSubClass == PS_ITF_SUBCLASS &&
@@ -104,6 +116,11 @@ static uint16_t psd_open(uint8_t rhport, const tusb_desc_interface_t *d, uint16_
     return sizeof(tusb_desc_interface_t);
 }
 
+// A vendor request to the control interface (protocol.h), at each control
+// stage. IN requests answer with core_vendor_in()'s data; OUT requests carry
+// no data stage, only wValue, and go to core_vendor_out() (or, on the W
+// board, the two Bluetooth requests). false stalls the request: not ours, an
+// unknown request, or a bad argument.
 static bool psd_control_xfer_cb(uint8_t rhport, uint8_t stage, const tusb_control_request_t *r) {
     if (r->bmRequestType_bit.type != TUSB_REQ_TYPE_VENDOR || r->bmRequestType_bit.recipient != TUSB_REQ_RCPT_INTERFACE ||
         (r->wIndex & 0xFF) != s_control_itf)
@@ -130,6 +147,8 @@ bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, const tusb_contro
     return psd_control_xfer_cb(rhport, stage, r);
 }
 
+// Class driver transfer-complete callback: the interface has no endpoints,
+// so it never fires; TinyUSB requires one.
 static bool psd_xfer_cb(uint8_t rhport, uint8_t ep, xfer_result_t res, uint32_t n) {
     (void)rhport; (void)ep; (void)res; (void)n;
     return true;
@@ -148,6 +167,8 @@ static const usbd_class_driver_t ps_control_driver = {
 
 static usbd_class_driver_t s_drivers[2];
 
+// TinyUSB, at init: the application's own class drivers, tried before the
+// built-in ones (our control interface and Raspberry Pi's reset interface).
 const usbd_class_driver_t *usbd_app_driver_get_cb(uint8_t *count) {
     s_drivers[0] = ps_control_driver;
     s_drivers[1] = usb_reset_interface_driver;
@@ -162,18 +183,24 @@ const usbd_class_driver_t *usbd_app_driver_get_cb(uint8_t *count) {
 // the RS-232 port (link.h): on the wired boards it always does.
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts) { (void)itf; link_lines(&g_links, &g_core, LINK_USB, dtr, rts); }
 
+// CDC SET_LINE_CODING (the host opened the port or changed baud/format).
 void tud_cdc_line_coding_cb(uint8_t itf, const cdc_line_coding_t *lc) {
     (void)itf;
     link_format(&g_links, &g_core, LINK_USB, lc->bit_rate, lc->stop_bits, lc->parity, lc->data_bits);
 }
 
+// CDC SEND_BREAK: hold a break on the RS-232 line for ms milliseconds
+// (0xFFFF: until the next SEND_BREAK, 0: end it).
 void tud_cdc_send_break_cb(uint8_t itf, uint16_t ms) { (void)itf; link_break(&g_links, &g_core, LINK_USB, ms); }
 
+// The host configured the device: USB is up as a link.
 void tud_mount_cb(void) {
     g_core.serial_state_valid = false;   // re-announce the lines
     link_up(&g_links, &g_core, LINK_USB, true);
 }
+// Unplugged or deconfigured: USB is down as a link.
 void tud_umount_cb(void) { link_up(&g_links, &g_core, LINK_USB, false); }
+// Bus suspended (host asleep): treat the port as closed (DTR and RTS off).
 void tud_suspend_cb(bool remote_wakeup_en) {
     (void)remote_wakeup_en;
     link_lines(&g_links, &g_core, LINK_USB, false, false);
@@ -182,6 +209,7 @@ void tud_suspend_cb(bool remote_wakeup_en) {
 static uint16_t s_pending_state;
 static bool s_pending;
 
+// See usb.h. Full-speed device on the RP2040's only USB port.
 void usb_init(void) {
     const tusb_rhport_init_t init = {.role = TUSB_ROLE_DEVICE, .speed = TUSB_SPEED_FULL};
     tusb_init(0, &init);

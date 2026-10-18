@@ -76,8 +76,10 @@ static bool s_spp_pending;
 // LEDs
 static uint8_t s_wl_leds = 0xFF;    // RD/SD as last written to the RM2
 
+// Whether a phone may pair now (SPEC-W 4.5); outside the window only bonded phones get in.
 static bool pairing_open(void) { return s_pair_until != 0; }
 
+// Milliseconds since boot (wraps after 49 days; compare with subtraction).
 static uint32_t now_ms(void) { return to_ms_since_boot(get_absolute_time()); }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +89,9 @@ static uint32_t now_ms(void) { return to_ms_since_boot(get_absolute_time()); }
 static uint8_t s_adv[3 + 18];
 static uint8_t s_scan[2 + sizeof s_name];
 
+// (Re)starts LE advertising with the current name and discoverable flag.
+// Called once the stack is up and whenever the pairing window opens or
+// closes; does nothing before then.
 static void advertise(void) {
     if (!s_working) return;
     static const uint8_t nus[16] = {0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0,
@@ -112,6 +117,9 @@ static void advertise(void) {
     gap_advertisements_enable(1);
 }
 
+// Opens the pairing window for `seconds` (0 closes it): classic inquiry
+// scan and the LE discoverable flag follow it. s_pair_until never holds 0
+// for an open window, even when the deadline wraps to it.
 static void set_window(uint32_t seconds) {
     if (seconds) {
         uint32_t t = now_ms() + seconds * 1000u;
@@ -124,8 +132,11 @@ static void set_window(uint32_t seconds) {
     advertise();
 }
 
+// See bt.h.
 void bt_pairing_window(uint16_t seconds) { set_window(seconds); }
 
+// Whether any phone is bonded, LE or classic. At power-up this decides
+// whether the pairing window opens by itself.
 static bool have_bonds(void) {
     if (le_device_db_count() > 0) return true;
     btstack_link_key_iterator_t it;
@@ -140,6 +151,8 @@ static bool have_bonds(void) {
     return any;
 }
 
+// See bt.h. Deletes classic link keys and LE bonds from flash, then opens
+// the pairing window, as at power-up with nothing bonded.
 void bt_forget_all(void) {
     if (!s_working) return;
     gap_delete_all_link_keys();
@@ -150,6 +163,9 @@ void bt_forget_all(void) {
 // ---------------------------------------------------------------------------
 // HCI, security manager
 // ---------------------------------------------------------------------------
+// The BLE link counts as up (a host link that can own the port) only once
+// the connection is encrypted, so an unpaired phone can't take the port.
+// Called on encryption changes and on disconnect.
 static void le_link(bool up) {
     if (up == s_le_secure) return;
     s_le_secure = up;
@@ -157,6 +173,9 @@ static void le_link(bool up) {
     link_up(&g_links, &g_core, LINK_BLE, up);
 }
 
+// BTstack HCI events: the stack coming up (name from our address, pairing
+// window if nothing is bonded), classic pairing requests (accepted only in
+// the window; legacy PIN pairing never), and LE encryption and disconnects.
 static void hci_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_t size) {
     (void)channel; (void)size;
     if (type != HCI_EVENT_PACKET) return;
@@ -197,6 +216,8 @@ static void hci_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_
     }
 }
 
+// Security manager events (LE pairing): Just Works and numeric comparison
+// are confirmed inside the pairing window and declined outside it.
 static void sm_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_t size) {
     (void)channel; (void)size;
     if (type != HCI_EVENT_PACKET) return;
@@ -220,6 +241,10 @@ static void sm_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_t
 // ---------------------------------------------------------------------------
 // SPP (RFCOMM)
 // ---------------------------------------------------------------------------
+// RFCOMM events for the SPP server: data from the phone (into the links
+// layer; each frame used one credit, granted only with room for it), one
+// connection at a time, "can send now" (sends what the RS-232 side has),
+// and channel open/close (the SPP link going up or down).
 static void spp_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_t size) {
     if (type == RFCOMM_DATA_PACKET) {
         if (channel != s_spp) return;
@@ -261,6 +286,9 @@ static void spp_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_
     }
 }
 
+// From bt_service(): grants the phone RFCOMM credits while the RS-232
+// buffer has room for a whole frame per credit (that's the flow control),
+// and asks to send when SPP owns the port and there's data for the phone.
 static void spp_service(void) {
     if (!s_spp) return;
     // give the phone credits while there's room for a whole frame per credit
@@ -278,10 +306,16 @@ static void spp_service(void) {
 // ---------------------------------------------------------------------------
 // GATT
 // ---------------------------------------------------------------------------
+// Answers an ATT read from a value of n bytes: BTstack's helper for long
+// (offset) reads; with buf NULL it returns the length only.
 static uint16_t blob(const void *p, uint16_t n, uint16_t offset, uint8_t *buf, uint16_t size) {
     return att_read_callback_handle_blob(p, n, offset, buf, size);
 }
 
+// ATT read callback (att_server_init): the value of a dynamic characteristic
+// (name, line coding, outputs, inputs, mode, flow, credits, info, and the
+// notification switches), little-endian as in pico_serial_w.gatt. Returns
+// the bytes copied, or the length when buf is NULL; 0 for anything else.
 static uint16_t att_read(hci_con_handle_t con, uint16_t h, uint16_t offset, uint8_t *buf, uint16_t size) {
     (void)con;
     core_t *c = &g_core;
@@ -325,6 +359,10 @@ static uint16_t att_read(hci_con_handle_t con, uint16_t h, uint16_t offset, uint
     }
 }
 
+// ATT write callback: NUS data to the RS-232 port, notification switches,
+// and the control service's settings. Writes that would change the port
+// are refused (Write Not Permitted) unless BLE owns it; line coding is kept
+// either way, for when it does. Returns 0 or an ATT error code.
 static int att_write(hci_con_handle_t con, uint16_t h, uint16_t mode, uint16_t offset, uint8_t *buf, uint16_t size) {
     (void)mode;
     if (con != s_le) return 0;
@@ -371,7 +409,10 @@ static int att_write(hci_con_handle_t con, uint16_t h, uint16_t mode, uint16_t o
     }
 }
 
-// what the phone should hear about next, if anything
+// What the phone should hear about next, if anything, in priority order:
+// changed inputs, a credits update (free space moved by CREDITS_NOTIFY_STEP,
+// or the RS-232 buffer just drained), then RS-232 data (only *len, at most max; the caller reads it).
+// Fills data/len and returns the characteristic's handle, or 0 for nothing.
 static int le_next(uint8_t *data, uint16_t *len, uint16_t max) {
     core_t *c = &g_core;
     if (s_inputs_notify) {
@@ -400,6 +441,8 @@ static int le_next(uint8_t *data, uint16_t *len, uint16_t max) {
     return 0;
 }
 
+// ATT server events: a new LE connection (asks for pairing/encryption at
+// once) and "can send now" (sends one notification chosen by le_next()).
 static void att_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_t size) {
     (void)channel; (void)size;
     if (type != HCI_EVENT_PACKET) return;
@@ -431,6 +474,8 @@ static void att_handler(uint8_t type, uint16_t channel, uint8_t *packet, uint16_
     }
 }
 
+// From bt_service(): on an encrypted LE link with nothing in flight, asks
+// BTstack for a "can send now" event when le_next() has something to send.
 static void le_service(void) {
     if (s_le == HCI_CON_HANDLE_INVALID || !s_le_secure || s_le_pending) return;
     uint8_t tmp[sizeof(ps_inputs_t)];
@@ -444,6 +489,9 @@ static void le_service(void) {
 // ---------------------------------------------------------------------------
 // Button, LEDs
 // ---------------------------------------------------------------------------
+// Polls the PAIR button (active low) from bt_service(): a press of 50 ms
+// opens the pairing window; held 10 s, it forgets every bonded phone.
+// Each fires once per press.
 static void button(uint32_t now) {
     bool down = !gpio_get(PIN_PAIR_BTN);
     if (!down) {
@@ -474,6 +522,8 @@ static void bt_led(uint32_t now) {
     gpio_put(PIN_LED_BT, on);
 }
 
+// See bt.h. Writes to the radio only on a change: each write is a bus
+// transaction to the CYW43.
 void bt_leds(uint8_t core_leds) {
     if (!s_ok) return;
     uint8_t m = core_leds & (CORE_LED_RD | CORE_LED_SD);
@@ -485,6 +535,9 @@ void bt_leds(uint8_t core_leds) {
 }
 
 // ---------------------------------------------------------------------------
+// See bt.h. Sets up the button and BT LED, starts the radio (loads its
+// firmware: blocking), then BTstack: security manager, SPP server and its
+// SDP record, GATT server, and powers HCI on; the rest follows in hci_handler.
 bool bt_init(void) {
     gpio_init(PIN_LED_BT);
     gpio_set_dir(PIN_LED_BT, GPIO_OUT);
@@ -531,6 +584,9 @@ bool bt_init(void) {
     return true;
 }
 
+// See bt.h. Polls the radio and BTstack (its callbacks run from here),
+// closes an expired pairing window, then the button, SPP and LE senders and
+// the BT LED. The LED runs even without a radio (steady on: power).
 void bt_service(void) {
     uint32_t now = now_ms();
     if (s_ok) {

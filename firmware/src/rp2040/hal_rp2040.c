@@ -37,12 +37,14 @@ static uint8_t s_route = PS_ROLE_NONE;
 
 static const uint8_t LED_PINS[6] = {LED_PIN_PWR, LED_PIN_TR, LED_PIN_CD, LED_PIN_SD, LED_PIN_RD, LED_PIN_RI};
 
+// Makes pin a GPIO output at `level`, set before the driver turns on so it never glitches.
 static void out_pin(uint pin, bool level) {
     gpio_init(pin);
     gpio_put(pin, level);
     gpio_set_dir(pin, GPIO_OUT);
 }
 
+// Makes pin a GPIO input, with the pull-up or with no pull at all.
 static void in_pin(uint pin, bool pull_up) {
     gpio_init(pin);
     gpio_set_dir(pin, GPIO_IN);
@@ -59,6 +61,10 @@ static void park(const uart_pins_t *p) {
     out_pin(p->rts, true);   // deasserted
 }
 
+// UART0 interrupt (RX, RX timeout, TX): hands every received byte, with its
+// framing/parity/break/overrun flags, to the core, then refills the TX FIFO
+// from the core; the TX interrupt is masked once the core has nothing left
+// (hal_uart_kick_tx() unmasks it).
 static void uart_irq(void) {
     uart_hw_t *hw = uart_get_hw(UART);
     while (!(hw->fr & UART_UARTFR_RXFE_BITS)) {
@@ -85,6 +91,9 @@ static void uart_irq(void) {
 static uint s_ab_sm, s_ab_offset;
 static pio_sm_config s_ab_cfg;
 
+// PIO0 interrupt, RX FIFO not empty: each word from autobaud.pio is one run
+// of the RX line: its level in bit 31, and 0x7FFFFFFF minus its length in
+// bits 30..0. Passed to the core as (level, length in ticks).
 static void ab_irq(void) {
     while (!pio_sm_is_rx_fifo_empty(AB_PIO, s_ab_sm)) {
         uint32_t raw = pio_sm_get(AB_PIO, s_ab_sm);
@@ -92,6 +101,8 @@ static void ab_irq(void) {
     }
 }
 
+// From hal_init(): claims a state machine on PIO0, loads autobaud.pio and
+// hooks its interrupt. The machine stays off until hal_autobaud() picks a pin.
 static void ab_init(void) {
     s_ab_sm = (uint)pio_claim_unused_sm(AB_PIO, true);
     s_ab_offset = pio_add_program(AB_PIO, &autobaud_program);
@@ -116,6 +127,7 @@ void hal_autobaud(uint8_t role) {
     pio_sm_set_enabled(AB_PIO, s_ab_sm, true);
 }
 
+// The PIO counts once per two system clocks (one loop of two instructions).
 uint32_t hal_autobaud_hz(void) { return clock_get_hz(clk_sys) / 2u; }
 
 void hal_init(void) {
@@ -153,6 +165,7 @@ void hal_init(void) {
     ab_init();
 }
 
+// Milliseconds since boot, from the RP2040's 64-bit timer.
 uint32_t hal_millis(void) { return to_ms_since_boot(get_absolute_time()); }
 
 void hal_xcvr_power(uint8_t role) {
@@ -190,6 +203,7 @@ void hal_uart_route(uint8_t role) {
     restore_interrupts(irq);
 }
 
+// Baud rate (the nearest the UART's divider can make), data bits, stop bits, parity.
 void hal_uart_format(const uart_format_t *f) {
     uart_set_baudrate(UART, f->baud);
     uart_parity_t par = f->parity == 1 ? UART_PARITY_ODD : f->parity == 2 ? UART_PARITY_EVEN : UART_PARITY_NONE;
@@ -201,9 +215,12 @@ void hal_uart_rx_flush(void) {
     while (!(hw->fr & UART_UARTFR_RXFE_BITS)) (void)hw->dr;
 }
 
+// The UART's own CTS gating: it stops sending while the far end's line is off.
 void hal_uart_hw_cts(bool on) { uart_set_hw_flow(UART, on, false); }
 void hal_uart_break(bool on) { uart_set_break(UART, on); }
 
+// Starts transmitting what the core queued: fills the FIFO, and leaves the
+// TX interrupt on if there's more than fits.
 void hal_uart_kick_tx(void) {
     uint32_t irq = save_and_disable_interrupts();
     uart_hw_t *hw = uart_get_hw(UART);
@@ -244,6 +261,8 @@ uint8_t hal_lines_in(uint8_t role) {
     return r;
 }
 
+// One GPIO per LED where the board has it (LED_NONE: not fitted); on the W
+// board RD and SD hang off the radio module instead.
 void hal_leds(uint8_t mask) {
     for (unsigned i = 0; i < 6; i++)
         if (LED_PINS[i] != LED_NONE) gpio_put(LED_PINS[i], (mask >> i) & 1);
@@ -260,6 +279,9 @@ bool hal_settings_load(void *buf, uint32_t len) {
     return true;   // the core checks the magic and checksum
 }
 
+// Erases the settings sector and writes the blob (at most one 256-byte
+// page) with interrupts off: code runs from this flash, so nothing may
+// fetch from it meanwhile. Takes some tens of milliseconds.
 void hal_settings_save(const void *buf, uint32_t len) {
     static uint8_t page[FLASH_PAGE_SIZE];
     memset(page, 0xFF, sizeof page);
@@ -270,5 +292,7 @@ void hal_settings_save(const void *buf, uint32_t len) {
     restore_interrupts(irq);
 }
 
+// Masks interrupts on this core; returns the previous state for hal_irq_restore().
 uint32_t hal_irq_save(void) { return save_and_disable_interrupts(); }
+// Puts back the interrupt state hal_irq_save() returned.
 void hal_irq_restore(uint32_t s) { restore_interrupts(s); }

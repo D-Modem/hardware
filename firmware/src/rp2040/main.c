@@ -14,6 +14,10 @@
 #include "bt.h"
 #endif
 
+// Brings up the hardware, the core and the host links (Bluetooth first on
+// the W board), then runs everything from one loop: USB, Bluetooth and the
+// core are polled in turn, so their callbacks never interrupt each other.
+// The watchdog resets the board if the loop stalls for a second.
 int main(void) {
     hal_init();
     core_init(&g_core);
