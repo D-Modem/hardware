@@ -18,10 +18,13 @@ static int failures, checks;
 static core_t c;
 static links_t s;
 
+// Advances the fake clock by ms, polling the core every 5 ms as the main loop would.
 static void run_ms(uint32_t ms) {
     for (uint32_t t = 0; t < ms; t += 5) { hw.now += 5; core_poll(&c); }
 }
 
+// Before each test: a fresh core and link table, the baud rate taken from
+// the host, and a computer on the line, so the board is in DCE mode.
 static void setup(void) {
     core_init(&c);
     links_init(&s, &c);
@@ -31,8 +34,11 @@ static void setup(void) {
     CHECK(c.role == PS_ROLE_DCE);
 }
 
+// Writes the string t from link id; returns the bytes accepted.
 static uint32_t wr(uint8_t id, const char *t) { return link_write(&s, &c, id, (const uint8_t *)t, (uint32_t)strlen(t)); }
 
+// With only USB, the wired boards behave as before: USB owns the port once
+// mounted, its lines and data reach the core, and unplugging frees the port.
 TEST(usb_alone_is_like_before) {
     CHECK(s.owner == LINK_NONE);
     link_up(&s, &c, LINK_USB, true);
@@ -47,6 +53,9 @@ TEST(usb_alone_is_like_before) {
     CHECK(s.owner == LINK_NONE && c.host_lines == 0);
 }
 
+// With USB plugged in only for power, the first phone to connect owns the
+// port; a second link stays connected but read-only (its writes dropped, it
+// reads nothing), and ownership passes on as links drop.
 TEST(first_wireless_link_owns) {
     link_up(&s, &c, LINK_USB, true);     // plugged in for power only, port closed
     link_up(&s, &c, LINK_BLE, true);
@@ -70,6 +79,9 @@ TEST(first_wireless_link_owns) {
     CHECK(s.owner == LINK_USB);
 }
 
+// Opening the USB port takes the RS-232 port from a phone and applies USB's
+// line coding; a non-owner can't send a break, and closing the port hands
+// everything back to the phone, ending USB's break.
 TEST(usb_port_open_takes_over) {
     link_up(&s, &c, LINK_USB, true);
     link_up(&s, &c, LINK_BLE, true);
@@ -88,6 +100,9 @@ TEST(usb_port_open_takes_over) {
     CHECK(c.format.baud == 9600);
 }
 
+// Over SPP, DCD follows the phone's CONNECT and NO CARRIER result codes,
+// even split across writes, but not text that merely contains them; with the
+// setting off, DCD just means "connected".
 TEST(spp_dcd_from_result_codes) {
     link_up(&s, &c, LINK_SPP, true);
     run_ms(10);
@@ -109,6 +124,8 @@ TEST(spp_dcd_from_result_codes) {
     CHECK(c.outputs & PS_LINE_DCD);
 }
 
+// A result code only counts as a whole line: CONNECT at the end of a long
+// line of other data doesn't raise DCD, one on its own line does.
 TEST(long_lines_are_not_result_codes) {
     link_up(&s, &c, LINK_SPP, true);
     char big[64];
@@ -123,6 +140,7 @@ TEST(long_lines_are_not_result_codes) {
     CHECK(c.outputs & PS_LINE_DCD);
 }
 
+// Runs every test from a fresh fake board; exits 1 if any check failed.
 int main(void) {
     RUN(usb_alone_is_like_before);
     RUN(first_wireless_link_owns);

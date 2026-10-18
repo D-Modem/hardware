@@ -24,6 +24,7 @@ const INFO = { LEN: 14, BAUD_LOCKED: 0x08, BAUD_LEARNING: 0x10 };
 const A_RX = 1;
 
 let failures = 0, checks = 0;
+// Counts a check and prints it as ok or FAIL.
 function check(cond: boolean, what: string) {
   checks++;
   if (!cond) { failures++; console.log(`  FAIL: ${what}`); } else console.log(`  ok: ${what}`);
@@ -35,7 +36,9 @@ const mcu = sim.rp2040;
 mcu.logger = new ConsoleLogger(LogLevel.Error);
 mcu.loadBootrom(bootromB1);
 mcu.flash.set(readFileSync(image), 0);
+// The emulated RP2040's GPIO n.
 const pin = (n: number) => mcu.gpio[n];
+// The level the firmware drives on GPIO n.
 const out = (n: number) => pin(n).outputValue;
 
 // the far end: nothing attached yet, every receiver output idle (high = deasserted)
@@ -113,7 +116,10 @@ function sendWave(gpio: number, baud: number, text: string, errPct = 0): Promise
 sim.rp2040.core.PC = 0x10000000;
 sim.execute();
 
+// Simulated time, in ms.
 const simMs = () => Number(sim.clock.nanos / 1e6);
+// Waits (checking every 5 ms of real time) until cond holds or simLimitMs of
+// simulated time pass; true if cond held.
 async function until(cond: () => boolean, simLimitMs: number): Promise<boolean> {
   const end = simMs() + simLimitMs;
   while (!cond()) {
@@ -122,8 +128,11 @@ async function until(cond: () => boolean, simLimitMs: number): Promise<boolean> 
   }
   return true;
 }
+// Lets ms of simulated time pass.
 const runFor = (ms: number) => until(() => false, ms);
 
+// Sends a vendor IN request to the control interface and resolves with the
+// reply's data stage (up to len bytes), or null after 20 s of real time.
 function vendorIn(req: number, len: number): Promise<Uint8Array | null> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => { ep0Waiter = null; resolve(null); }, 20000);
@@ -134,6 +143,7 @@ function vendorIn(req: number, len: number): Promise<Uint8Array | null> {
     }));
   });
 }
+// Sends a vendor OUT request (no data stage) to the control interface.
 function vendorOut(req: number, value: number) {
   ep0Waiter = () => {};   // swallow the status stage
   mcu.usbCtrl.sendSetupPacket(createSetupPacket({
@@ -141,11 +151,15 @@ function vendorOut(req: number, value: number) {
     bRequest: req, wValue: value, wIndex: ITF_CONTROL, wLength: 0,
   }));
 }
+// The line-state bits of the last SERIAL_STATE notification, or -1 if none came.
 const lastState = () => {
   const n = notifications[notifications.length - 1];
   return n ? n[8] | (n[9] << 8) : -1;
 };
 
+// The end-to-end scenario: enumerate over USB, detect a computer, learn its
+// baud rate, pass data both ways, answer vendor requests, learn a new rate,
+// and force DTE mode; exits 1 if any check failed.
 async function main() {
   console.log('boot and enumerate');
   check(await until(() => connected, 3000), 'USB enumerates as a CDC device and takes DTR+RTS');

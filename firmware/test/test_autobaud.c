@@ -21,6 +21,8 @@ static ab_t a;
 static wave_t wv;
 #define rnd wave_rnd
 
+// Makes a waveform (see wave_make) and feeds every run of it to a fresh
+// detector, as the capture interrupt would.
 static void synth(uint32_t hz, uint32_t baud, double err, const uart_format_t *f,
                   const uint8_t *msg, size_t len, double gap_bits, double jitter) {
     wave_make(&wv, hz, baud, err, f, msg, len, gap_bits, jitter);
@@ -29,12 +31,16 @@ static void synth(uint32_t hz, uint32_t baud, double err, const uart_format_t *f
 }
 
 typedef struct { uint8_t buf[512]; uint32_t n; uint32_t errs; } sink_t;
+// ab_decode's output callback: collects the decoded bytes (up to 512) and
+// counts those that came with a framing or parity error.
 static void sink(void *ctx, uint8_t b, uint8_t e) {
     sink_t *s = ctx;
     if (s->n < sizeof s->buf) s->buf[s->n++] = b;
     if (e) s->errs++;
 }
 
+// Decodes the captured waveform at baud and format f; true if it gives back
+// exactly msg (to f's data bits), with no errors and nothing extra.
 static bool decodes_to(uint32_t hz, uint32_t baud, const uart_format_t *f, const uint8_t *msg, size_t len) {
     sink_t s = {{0}, 0, 0};
     uint8_t mask = (uint8_t)((1u << f->data_bits) - 1);
@@ -48,6 +54,9 @@ static bool decodes_to(uint32_t hz, uint32_t baud, const uart_format_t *f, const
 static const uart_format_t F8N1 = {0, 8, 1, 0}, F7E1 = {0, 7, 1, 2}, F8N2 = {0, 8, 2, 0},
                            F7O1 = {0, 7, 1, 1}, F8E1 = {0, 8, 1, 2};
 
+// Sends msg at every standard rate (with the given rate error, edge jitter
+// and idle gap) and checks the detector picks that rate and decodes msg.
+// Prints one ok/FAIL line per scenario, and each rate that went wrong.
 static void every_rate(const char *name, const uart_format_t *f, const uint8_t *msg, size_t len,
                        double err, double jitter, double gap, uint32_t hz) {
     int bad = 0;
@@ -61,6 +70,7 @@ static void every_rate(const char *name, const uart_format_t *f, const uint8_t *
     printf("%-44s %s\n", name, bad ? "FAIL" : "ok");
 }
 
+// Runs every scenario; exits 1 if any check failed.
 int main(void) {
     const uint32_t HZ = 62500000;   // 125 MHz / 2
     const uint8_t at[] = "AT\r", at_lc[] = "at", dial[] = "ATDT5551212\r", ok[] = "\r\nOK\r\n";

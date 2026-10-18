@@ -23,6 +23,7 @@ static void run_ms(uint32_t ms) {   // advance time, polling every 5 ms
     for (uint32_t t = 0; t < ms; t += 5) { hw.now += 5; core_poll(&c); }
 }
 
+// A fresh core in auto mode with nothing attached: no role, both chips off.
 static void start_auto(void) {
     core_init(&c);
     CHECK(c.role == PS_ROLE_NONE);
@@ -37,6 +38,8 @@ static void start_dce_host_baud(void) {
     CHECK(c.role == PS_ROLE_DCE && c.ab_state == AB_OFF);
 }
 
+// A computer on the line makes the board a DCE, but only after the settle
+// time and several agreeing samples, so one reading can't switch it.
 TEST(detects_computer_as_dce) {
     start_auto();
     hw.peer_dce = true;
@@ -49,6 +52,7 @@ TEST(detects_computer_as_dce) {
     CHECK(hw.format_calls >= 1);
 }
 
+// A modem on the line makes the board a DTE and powers chip B.
 TEST(detects_modem_as_dte) {
     start_auto();
     hw.peer_dte = true;
@@ -57,6 +61,8 @@ TEST(detects_modem_as_dte) {
     CHECK(hw.xcvr == PS_ROLE_DTE);
 }
 
+// If both chips see a peer (e.g. a loopback or odd cable), the computer
+// side wins: acting as a modem is the board's main job.
 TEST(computer_wins_when_both_look_present) {
     start_auto();
     hw.peer_dce = hw.peer_dte = true;
@@ -64,6 +70,7 @@ TEST(computer_wins_when_both_look_present) {
     CHECK(c.role == PS_ROLE_DCE);
 }
 
+// A single sample of a peer, then nothing, leaves the board undecided.
 TEST(glitch_does_not_switch_on) {
     start_auto();
     run_ms(200);
@@ -72,6 +79,8 @@ TEST(glitch_does_not_switch_on) {
     CHECK(c.role == PS_ROLE_NONE);
 }
 
+// Unplugging is tolerated for just under CORE_LOST_MS, then the board drops
+// back to detecting with both chips off, and can come back as the other role.
 TEST(unplug_returns_to_detect) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -87,6 +96,8 @@ TEST(unplug_returns_to_detect) {
     CHECK(c.role == PS_ROLE_DTE);
 }
 
+// One good sample during a dropout restarts the loss timer, so a flaky
+// cable doesn't keep the board switching roles.
 TEST(short_loss_recovers) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -96,6 +107,8 @@ TEST(short_loss_recovers) {
     CHECK(c.role == PS_ROLE_DCE);
 }
 
+// A mode saved in flash (forced DTE) applies at start-up and detection
+// can't override it, even with a computer on the line.
 TEST(forced_mode_ignores_detection) {
     core_settings_t s = {PS_MODE_DTE, PS_FLOW_AUTO, PS_BAUD_AUTO};
     uint8_t blob[CORE_SETTINGS_BLOB];
@@ -107,6 +120,8 @@ TEST(forced_mode_ignores_detection) {
     CHECK(c.role == PS_ROLE_DTE);
 }
 
+// As a DCE, the host's DTR shows the computer DCD and DSR (like a modem
+// that's on) and the host's RTS becomes CTS.
 TEST(dce_line_mapping) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -120,6 +135,7 @@ TEST(dce_line_mapping) {
     CHECK(hw.out == PS_LINE_CTS);
 }
 
+// As a DTE, the host's DTR and RTS go straight out on DTR and RTS.
 TEST(dte_line_mapping) {
     start_auto();
     hw.peer_dte = true; run_ms(500);
@@ -128,6 +144,8 @@ TEST(dte_line_mapping) {
     CHECK(hw.out_role == PS_ROLE_DTE);
 }
 
+// SET_OUTPUTS forces chosen lines on or off over the normal mapping (here
+// RI on, DSR off); clearing it restores the mapping.
 TEST(overrides) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -139,6 +157,8 @@ TEST(overrides) {
     CHECK(hw.out == (PS_LINE_DCD | PS_LINE_DSR | PS_LINE_CTS));
 }
 
+// When the buffer to the host fills to 3/4, CTS to the computer drops; it
+// comes back only once the buffer drains below half (hysteresis).
 TEST(full_buffer_holds_the_far_end) {
     start_dce_host_baud();
     core_host_lines(&c, false, true); run_ms(5);
@@ -154,6 +174,8 @@ TEST(full_buffer_holds_the_far_end) {
     CHECK(hw.out & PS_LINE_CTS);
 }
 
+// Auto flow control: CTS is obeyed only once the far end has been seen
+// using its RTS, so a 3-wire cable still works; it stays on until unplugged.
 TEST(flow_auto_latches) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -166,6 +188,8 @@ TEST(flow_auto_latches) {
     CHECK(!hw.hw_cts);                 // forgotten when the peer goes
 }
 
+// The flow setting ON obeys CTS at once, OFF ignores it, and a bad value
+// is refused.
 TEST(flow_settings) {
     start_auto();
     hw.peer_dte = true; run_ms(500);
@@ -177,6 +201,8 @@ TEST(flow_settings) {
     CHECK(!core_vendor_out(&c, PS_REQ_SET_FLOW, 7));
 }
 
+// SERIAL_STATE to the host as a DCE: sent only on change; carrier is on
+// while a computer is attached, and the computer's DTR shows as DSR.
 TEST(serial_state_dce) {
     start_auto();
     uint16_t s;
@@ -188,6 +214,8 @@ TEST(serial_state_dce) {
     CHECK(core_serial_state(&c, &s) && s == (SS_DCD | SS_DSR));   // computer's DTR shows as DSR
 }
 
+// As a DTE, the modem's DCD, DSR and RI reach the host; framing, overrun
+// and break are reported once each and counted in the stats.
 TEST(serial_state_dte_and_events) {
     start_auto();
     hw.peer_dte = true; run_ms(500);
@@ -202,6 +230,9 @@ TEST(serial_state_dte_and_events) {
     CHECK(c.stats.breaks == 1 && c.stats.framing == 1 && c.stats.overrun == 1);
 }
 
+// The host's line coding reaches the UART; what the UART can't do (1.5 stop
+// bits, mark parity) is adjusted and flagged, and rates above the chips'
+// rating are flagged too.
 TEST(line_coding) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -216,6 +247,8 @@ TEST(line_coding) {
     CHECK(!(c.info_flags & PS_INFO_CODING_ADJUSTED));
 }
 
+// A timed break ends after its duration; 0xFFFF holds it until the host
+// sends 0.
 TEST(break_timing) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -229,6 +262,8 @@ TEST(break_timing) {
     CHECK(!hw.brk);
 }
 
+// Bytes from the host go out of the UART in order and received bytes reach
+// the host, with both directions counted in the stats.
 TEST(data_both_ways) {
     start_dce_host_baud();
     const uint8_t msg[] = "ATDT5551234\r";
@@ -242,6 +277,8 @@ TEST(data_both_ways) {
     CHECK(c.stats.to_rs232 == sizeof msg - 1 && c.stats.from_rs232 == 2);
 }
 
+// GET_INFO reports protocol, mode and role; unknown requests and bad modes
+// are refused; SET_MODE switches at once and is saved once, after a delay.
 TEST(vendor_info_and_mode) {
     start_auto();
     uint8_t buf[64];
@@ -265,6 +302,8 @@ TEST(vendor_info_and_mode) {
     CHECK(n == (int)sizeof(ps_inputs_t));
 }
 
+// Settings survive a pack/unpack round trip; a flipped bit or erased flash
+// is rejected, and the core then starts with the defaults.
 TEST(settings_blob) {
     core_settings_t a = {PS_MODE_DTE, PS_FLOW_OFF, PS_BAUD_LEARN}, b = {0, 0, 0};
     uint8_t blob[CORE_SETTINGS_BLOB];
@@ -279,6 +318,8 @@ TEST(settings_blob) {
     CHECK(c.settings.mode == PS_MODE_AUTO && c.settings.flow == PS_FLOW_AUTO);   // defaults
 }
 
+// The ring buffer holds exactly RING_SIZE bytes, refuses more, and gives
+// them back in order across several wrap-arounds.
 TEST(ring_wraps) {
     static ring_t r;
     ring_init(&r);
@@ -291,6 +332,8 @@ TEST(ring_wraps) {
     }
 }
 
+// LEDs: power on from the start; TR, CD and RD light for the host's DTR,
+// the carrier and received data; RD goes out after its pulse.
 TEST(leds) {
     start_auto();
     core_vendor_out(&c, PS_REQ_SET_BAUD_MODE, PS_BAUD_HOST);
@@ -309,15 +352,19 @@ TEST(leds) {
 static wave_t wv;
 static const uart_format_t F8N1 = {0, 8, 1, 0};
 
+// Sends msg at baud (1% fast, edges jittered by 3% of a bit, one idle bit
+// between characters) as level runs, the way the capture interrupt reports them.
 static void send_runs(uint32_t baud, const char *msg, const uart_format_t *f) {
     wave_make(&wv, FAKE_AB_HZ, baud, 0.01, f, (const uint8_t *)msg, strlen(msg), 1, 0.03);
     for (uint32_t i = 0; i < wv.n; i++) core_isr_run(&c, wv.high[i], wv.ticks[i]);
 }
+// Reads what has reached the host (up to 128 bytes); true if it is exactly want.
 static bool host_got(const char *want) {
     uint8_t buf[128];
     uint32_t n = core_host_read(&c, buf, sizeof buf);
     return n == strlen(want) && memcmp(buf, want, n) == 0;
 }
+// The board's GET_INFO reply.
 static ps_info_t info(void) {
     ps_info_t i;
     uint8_t buf[sizeof i];
@@ -326,6 +373,9 @@ static ps_info_t info(void) {
     return i;
 }
 
+// As a DCE in auto mode the board learns the computer's rate from "AT\r":
+// the UART's garbage is dropped meanwhile, the characters it learned from
+// still reach the host, and the host changing the format keeps that rate.
 TEST(autobaud_learns_as_dce) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -351,6 +401,8 @@ TEST(autobaud_learns_as_dce) {
     CHECK(info().baud == 9600);
 }
 
+// After locking, a few scattered framing errors are ignored but a burst
+// restarts learning, and the board locks onto the computer's new rate.
 TEST(autobaud_relearns_on_framing_errors) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -372,6 +424,8 @@ TEST(autobaud_relearns_on_framing_errors) {
     CHECK(host_got("AT&F\r"));
 }
 
+// AUTOBAUD_RESTART learns again; HOST mode goes back to the host's rate,
+// stops learning and is saved; AUTO learns again.
 TEST(autobaud_vendor_restart_and_modes) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -395,6 +449,8 @@ TEST(autobaud_vendor_restart_and_modes) {
     CHECK(c.ab_state == AB_LEARNING);
 }
 
+// As a DTE, auto mode follows the host (a modem does); LEARN mode learns a
+// device that just talks (here a GPS), and starts afresh after unplugging.
 TEST(autobaud_dte) {
     start_auto();
     hw.peer_dte = true; run_ms(500);
@@ -412,6 +468,9 @@ TEST(autobaud_dte) {
     CHECK(c.ab_state == AB_LEARNING && hw.format.baud == 115200);
 }
 
+// Learning copes with a glitch before typing, with lost timings (queue
+// overflow), with pauses longer than the timer can count (wrapped or 0), and
+// GET_INFO shows the host's rate again after unplugging.
 TEST(autobaud_rough_starts) {
     start_auto();
     hw.peer_dce = true; run_ms(500);
@@ -453,6 +512,7 @@ TEST(autobaud_rough_starts) {
     CHECK(info().baud == 115200 && !(info().flags & (PS_INFO_BAUD_LOCKED | PS_INFO_BAUD_LEARNING)));
 }
 
+// Runs every test from a fresh fake board; exits 1 if any check failed.
 int main(void) {
     RUN(detects_computer_as_dce);
     RUN(detects_modem_as_dte);

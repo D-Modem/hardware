@@ -26,4 +26,5 @@ typedef struct {
 #define FAKE_AB_HZ 62500000u
 
 extern fake_hw_t hw;
+// Back to a fresh board: nothing recorded, clock at 1000 ms.
 void fake_reset(void);
