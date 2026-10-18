@@ -32,7 +32,7 @@ symbol and footprint libraries. KiCad 10 opens it too.
 | `kicad/render-top.png`, `render-bottom.png` | KiCad 3D renders, without part models (generated) |
 | `netlist/pico-serial-w.net`, `NETLIST-w.md`, `bom-jlc-w.csv` | The same for pico-serial W (generated) |
 | `kicad/pico-serial-w.*`, `preview-w.svg`, `render-w-*.png` | pico-serial W's schematic, PCB, rules and renders |
-| `kicad/lib/make_rm2_fp.py` | Writes the RM2 footprint, `lib/pico-serial.pretty/`, from the datasheet's drawing |
+| `kicad/lib/make_footprints.py` | Writes `lib/pico-serial.pretty/`: the RM2 (from its datasheet's drawing) and the M2 screw hole |
 | `kicad/fp-lib-table` | Points KiCad at `lib/pico-serial.pretty` |
 
 ## Regenerate

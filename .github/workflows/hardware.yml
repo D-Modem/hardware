@@ -31,7 +31,7 @@ jobs:
             python3 hardware/netlist/build_netlist.py --variant $v
             python3 hardware/kicad/build_schematic.py --variant $v
           done
-          python3 hardware/kicad/lib/make_rm2_fp.py
+          python3 hardware/kicad/lib/make_footprints.py
           git diff --exit-code -- hardware/netlist hardware/kicad firmware/src/generated
 
       - name: ERC

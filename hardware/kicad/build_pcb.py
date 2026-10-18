@@ -493,25 +493,17 @@ def rf_keepout(board):
 def screw_holes(board):
     """The hood's M2 screws pass through the board: a plain hole each (a board-only
     footprint, so it isn't expected in the schematic), and a keep-out around it for
-    the screw head and the hood's bosses."""
+    the screw head and the hood's bosses (lib/pico-serial.pretty/MountingHole_M2)."""
     import math
     for k, (x, y) in enumerate(SCREWS, 1):
-        fp = pcbnew.FOOTPRINT(board)
-        fp.SetReference(f"H{k}"); fp.SetValue("M2 screw")
-        fp.SetBoardOnly(True); fp.SetExcludedFromBOM(True); fp.SetExcludedFromPosFiles(True)
-        fp.Reference().SetVisible(False); fp.Value().SetVisible(False)
-        pad = pcbnew.PAD(fp)
-        pad.SetAttribute(pcbnew.PAD_ATTRIB_NPTH)
-        pad.SetShape(pcbnew.PAD_SHAPE_CIRCLE)
-        pad.SetSize(pcbnew.VECTOR2I(mm(SCREW_HOLE), mm(SCREW_HOLE)))
-        pad.SetDrillSize(pcbnew.VECTOR2I(mm(SCREW_HOLE), mm(SCREW_HOLE)))
-        pad.SetLayerSet(pad.UnplatedHoleMask())
-        fp.Add(pad)
+        fp = pcbnew.FootprintLoad(os.path.join(LOCAL_FP, "pico-serial.pretty"), "MountingHole_M2")
+        fp.SetFPID(pcbnew.LIB_ID("pico-serial", "MountingHole_M2"))
+        fp.SetReference(f"H{k}")
         fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
         board.Add(fp)
         r = SCREW_CLEAR / 2
         rule_area(board, [(x + r * math.cos(2 * math.pi * i / 24), y + r * math.sin(2 * math.pi * i / 24))
-                          for i in range(24)], CU, footprints=True)
+                          for i in range(24)], CU)   # its courtyard keeps other parts out
 
 
 def crystal_keepout(board, fps):

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 # Copyright (C) 2026 Neo-Desktop
-"""Writes pico-serial.pretty/RaspberryPi_RM2.kicad_mod from the RM2 datasheet
-(Raspberry Pi Radio Module 2 datasheet, Figure 6 "PCB footprint").
+"""Writes the footprints KiCad doesn't ship into pico-serial.pretty/:
+
+RaspberryPi_RM2: from the RM2 datasheet (Raspberry Pi Radio Module 2,
+Figure 6 "PCB footprint").
 
 Origin: module centre. Antenna end toward -y (pins 1 and 21 nearest it).
   - 7 pads down each side, 1.5 mm pitch; lowest pad centres 1.8 mm above the
@@ -62,3 +64,21 @@ for num, x, y, w, h in pads:
 out.append(')')
 here = os.path.dirname(os.path.abspath(__file__))
 open(os.path.join(here, "pico-serial.pretty", "RaspberryPi_RM2.kicad_mod"), "w").write("\n".join(out) + "\n")
+
+# MountingHole_M2: a plain 2.3 mm hole for the W hood's M2 self-tapping
+# screws. Board-only (no schematic symbol). The courtyard is the 5.4 mm
+# circle kept free of copper and parts for the screw head and the hood's bosses.
+HOLE, CLEAR = 2.3, 5.4
+mh = ['(footprint "MountingHole_M2"', '\t(version 20241229)', '\t(generator "pico-serial")',
+      '\t(generator_version "1")', '\t(layer "F.Cu")',
+      '\t(descr "M2 screw hole, unplated, 2.3 mm; 5.4 mm kept clear (pico-serial W hood)")',
+      '\t(tags "mounting hole M2")',
+      '\t(attr board_only exclude_from_pos_files exclude_from_bom)',
+      '\t(property "Reference" "H**" (at 0 -3.4 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))',
+      '\t(property "Value" "M2 screw" (at 0 3.4 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))',
+      f'\t(fp_circle (center 0 0) (end {CLEAR / 2:g} 0) (stroke (width 0.05) (type solid)) (fill no) (layer "F.CrtYd"))',
+      f'\t(fp_circle (center 0 0) (end {CLEAR / 2:g} 0) (stroke (width 0.05) (type solid)) (fill no) (layer "B.CrtYd"))',
+      f'\t(fp_circle (center 0 0) (end {HOLE / 2:g} 0) (stroke (width 0.1) (type solid)) (fill no) (layer "F.Fab"))',
+      f'\t(pad "" np_thru_hole circle (at 0 0) (size {HOLE:g} {HOLE:g}) (drill {HOLE:g}) (layers "*.Cu" "*.Mask"))',
+      ')']
+open(os.path.join(here, "pico-serial.pretty", "MountingHole_M2.kicad_mod"), "w").write("\n".join(mh) + "\n")
