@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 # Copyright (C) 2026 Neo-Desktop
 #
-# The generated hardware files are up to date with the netlist script, the
-# schematic passes ERC, and the PCB passes DRC and matches the schematic.
-# (The PCB isn't re-routed here: that needs Freerouting and takes minutes.)
+# For both boards (the hood board and pico-serial W): the generated hardware
+# files are up to date with the netlist script, the schematic passes ERC, and
+# the PCB passes DRC and matches the schematic. (The PCBs aren't re-routed
+# here: that needs Freerouting and takes minutes.)
 name: hardware
 
 on:
@@ -24,14 +25,23 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends kicad
 
-      - name: Netlist and schematic match the netlist script
+      - name: Netlists and schematics match the netlist script
         run: |
-          python3 hardware/netlist/build_netlist.py
-          python3 hardware/kicad/build_schematic.py
-          git diff --exit-code -- hardware/netlist hardware/kicad
+          for v in hood w; do
+            python3 hardware/netlist/build_netlist.py --variant $v
+            python3 hardware/kicad/build_schematic.py --variant $v
+          done
+          python3 hardware/kicad/lib/make_rm2_fp.py
+          git diff --exit-code -- hardware/netlist hardware/kicad firmware/src/generated
 
       - name: ERC
-        run: kicad-cli sch erc --severity-error --exit-code-violations -o erc.rpt hardware/kicad/pico-serial.kicad_sch || (cat erc.rpt; exit 1)
+        run: |
+          for b in pico-serial pico-serial-w; do
+            kicad-cli sch erc --severity-error --exit-code-violations -o erc.rpt hardware/kicad/$b.kicad_sch || { cat erc.rpt; exit 1; }
+          done
 
-      - name: DRC, and the PCB matches the schematic
-        run: kicad-cli pcb drc --schematic-parity --severity-error --exit-code-violations -o drc.rpt hardware/kicad/pico-serial.kicad_pcb || (cat drc.rpt; exit 1)
+      - name: DRC, and the PCBs match their schematics
+        run: |
+          for b in pico-serial pico-serial-w; do
+            kicad-cli pcb drc --schematic-parity --severity-error --exit-code-violations -o drc.rpt hardware/kicad/$b.kicad_pcb || { cat drc.rpt; exit 1; }
+          done

@@ -7,6 +7,11 @@ board. The netlist, the readable net list, the JLC parts list, the
 schematic and the PCB are all generated from it, so change the script,
 not the outputs.
 
+It makes two boards. The **hood board** (the default) fits a standard DB25
+hood. **pico-serial W** (`--variant w`, [SPEC-W.md](../SPEC-W.md)) adds an
+RM2 Bluetooth module and lives in a 3D-printed hood (`enclosure/`). Its
+files carry a `-w` suffix; see [pico-serial W](#pico-serial-w-bluetooth).
+
 Everything targets **KiCad 9**: KiCad 9 file formats and the KiCad 9.0
 symbol and footprint libraries. KiCad 10 opens it too.
 
@@ -25,6 +30,10 @@ symbol and footprint libraries. KiCad 10 opens it too.
 | `kicad/pico-serial.kicad_dru` | Two board-specific DRC rules (the DB25 cups and USB-C shell at the edges) |
 | `kicad/fab/` | Gerbers + drill (zip) and the JLC placement file (generated) |
 | `kicad/render-top.png`, `render-bottom.png` | KiCad 3D renders, without part models (generated) |
+| `netlist/pico-serial-w.net`, `NETLIST-w.md`, `bom-jlc-w.csv` | The same for pico-serial W (generated) |
+| `kicad/pico-serial-w.*`, `preview-w.svg`, `render-w-*.png` | pico-serial W's schematic, PCB, rules and renders |
+| `kicad/lib/make_rm2_fp.py` | Writes the RM2 footprint, `lib/pico-serial.pretty/`, from the datasheet's drawing |
+| `kicad/fp-lib-table` | Points KiCad at `lib/pico-serial.pretty` |
 
 ## Regenerate
 
@@ -33,6 +42,8 @@ python3 hardware/netlist/build_netlist.py       # checks + netlist, NETLIST.md, 
 python3 hardware/kicad/build_schematic.py   # checks + schematic and preview
 python3 hardware/kicad/build_pcb.py --kicad-fp kicad-footprints --route --fab   # PCB (see below)
 ```
+
+Add `--variant w` to each for pico-serial W.
 
 Neither needs KiCad or a network connection. The schematic script uses
 symbols cached in `kicad/lib/symbol-cache.sexp`.

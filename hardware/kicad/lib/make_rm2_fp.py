@@ -49,12 +49,12 @@ out.append(line(X0, Y0 + 5.0, -X0, Y0 + 5.0, "F.Fab", 0.1))         # antenna re
 out.append(f'\t(fp_text user "ANTENNA" (at 0 {Y0 + 2.5:g} 0) (layer "F.Fab") (effects (font (size 1 1) (thickness 0.15))))')
 c = 0.25
 out.append(rect(X0 - 0.5 - c, Y0 - c, -X0 + 0.5 + c, -Y0 + 0.5 + c, "F.CrtYd", 0.05))
-# silkscreen: module outline outside the pads, plus a pin-1 mark
+# silkscreen: the module's sides above the pads (the antenna end is usually
+# flush with the board edge, so no line across it), plus a pin-1 mark
 s = 0.12 / 2 + 0.2
 top_pad = pads[0][2] - 0.5
-out.append(line(X0 - s, Y0 - s, -X0 + s, Y0 - s, "F.SilkS", 0.12))
-out.append(line(X0 - s, Y0 - s, X0 - s, top_pad - 0.3, "F.SilkS", 0.12))
-out.append(line(-X0 + s, Y0 - s, -X0 + s, top_pad - 0.3, "F.SilkS", 0.12))
+out.append(line(X0 - s, Y0 + 0.5, X0 - s, top_pad - 0.3, "F.SilkS", 0.12))
+out.append(line(-X0 + s, Y0 + 0.5, -X0 + s, top_pad - 0.3, "F.SilkS", 0.12))
 out.append(f'\t(fp_circle (center {X0 - 1.2:g} {pads[0][2]:g}) (end {X0 - 0.95:g} {pads[0][2]:g}) '
            '(stroke (width 0.12) (type solid)) (fill solid) (layer "F.SilkS"))')
 for num, x, y, w, h in pads:

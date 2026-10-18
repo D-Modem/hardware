@@ -3,7 +3,11 @@
 # Copyright (C) 2026 Neo-Desktop
 """Lay out the pico-serial PCB from the netlist script.
 
-  hardware/kicad/build_pcb.py --kicad-fp <kicad-footprints 9.0 checkout> [--route]
+  hardware/kicad/build_pcb.py --kicad-fp <kicad-footprints 9.0 checkout> [--route] [--variant w]
+
+--variant w lays out pico-serial W (pico-serial-w.kicad_pcb): the same
+circuit plus the RM2 radio, on the outline the printed hood sets
+(../enclosure/w_hood.py), with its antenna keep-out and screw holes.
 
 Writes pico-serial.kicad_pcb (and the board's rules and net classes into
 pico-serial.kicad_pro) next to the schematic, so the two are one KiCad
@@ -20,10 +24,15 @@ import argparse, json, os, subprocess, sys, uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "netlist"))
+if "--variant" in sys.argv[1:-1]:
+    os.environ["PS_VARIANT"] = sys.argv[sys.argv.index("--variant") + 1]
+_argv, sys.argv = sys.argv, sys.argv[:1]
 import build_netlist as N  # noqa: E402  (builds the circuit on import)
+sys.argv = _argv
 import pcbnew  # noqa: E402
 
-PROJECT = "pico-serial"
+PROJECT = "pico-serial" + N.SUFFIX
+LOCAL_FP = os.path.join(HERE, "lib")      # pico-serial.pretty: footprints KiCad doesn't ship
 PCB = os.path.join(HERE, f"{PROJECT}.kicad_pcb")
 NS = uuid.UUID("0b4c1d1e-5e7a-4c2b-8c51-9f0a7d3e6b21")   # same as build_schematic.py
 mm = pcbnew.FromMM
@@ -155,6 +164,63 @@ for i, n in enumerate(range(2, 8)):
     PLACE[f"R{n + 13}"] = (x + 2.7, y, 0, "B")
 
 
+# ---------------------------------------------------------------------------
+# pico-serial W: the front half (DB25, both chips, RP2040, flash, clock,
+# buttons, test pads) is placed exactly as on the hood board; the outline,
+# RM2, USB-C, LEDs, pairing button and screws are where the printed hood
+# puts them (../enclosure/out/placement.md). The hood's x runs back from the
+# DB25 flange and its y across; here y runs back from the board's front edge.
+# ---------------------------------------------------------------------------
+SCREWS, RF_KEEPOUT = [], None
+if N.W:
+    sys.path.insert(0, os.path.join(HERE, "..", "enclosure"))
+    import w_hood as H  # noqa: E402
+
+    def hood(x, y):
+        return (round(y, 3), round(x - H.BOARD_X0, 3))
+
+    OUTLINE = [hood(*p) for p in H.board_outline()]
+    MOUTH = H.USB_X1 - H.BOARD_X0                 # USB-C mouth, 0.7 past the tongue's edge
+    SCREWS = [hood(*p) for p in H.SCREWS]         # M2 self-tappers through the board
+    SCREW_HOLE, SCREW_CLEAR = 2.3, 5.4            # hole; no copper or parts within this diameter
+    (kx0, ky0), (kx1, ky1) = hood(H.KEEP_X0, H.KEEP_Y0), hood(H.KEEP_X1, H.KEEP_Y1)
+    RF_KEEPOUT = (min(kx0, kx1), min(ky0, ky1), max(kx0, kx1), max(ky0, ky1))
+    RM2_C = hood(H.BOARD_X1 - H.RM2_L / 2, H.RM2_YC)
+    for r in [r for r in PLACE if r.startswith(("D", "TP")) or r in ("R15", "R16", "R17", "R18", "R19", "R20")]:
+        del PLACE[r]
+    PLACE.update({
+        "J1": (H.USB_YC, MOUTH - 3.65, 0, "F"),
+        # RM2: antenna end flush with the board's back edge (footprint antenna is -y)
+        "U7": (*RM2_C, 180, "F"),
+        # its supply: VIN (pin 16) and VDDIO (pin 14) face the left edge and the RP2040
+        "C32": (-18.4, 26.6, 90, "F"), "C31": (-18.4, 29.0, 90, "F"), "C33": (-18.4, 32.4, 90, "F"),
+        # gSPI: data-out and host-wake share GP24 through these
+        "R20": (0.4, 27.2, 90, "F"), "R21": (-6.6, 23.6, 90, "F"),
+        # USB-C: ESD and CC resistors in the tongue, as on the hood board relative to J1
+        "U4": (H.USB_YC - 0.4, MOUTH - 3.65 - 7.45, 270, "F"),
+        "R1": (H.USB_YC - 3.6, MOUTH - 3.65 - 6.45, 90, "F"),
+        "R2": (H.USB_YC + 3.0, MOUTH - 3.65 - 6.75, 90, "F"),
+        "R3": (H.USB_YC - 2.2, MOUTH - 3.65 + 1.55, 0, "B"), "C1": (H.USB_YC + 2.2, MOUTH - 3.65 + 1.55, 0, "B"),
+        # fuse, TVS, LDO: a column between the antenna keep-out and the rear screw
+        "F1": (13.2, 41.2, 0, "F"), "D1": (13.2, 38.9, 0, "F"), "C2": (13.2, 36.8, 0, "F"),
+        "U3": (13.2, 34.0, 0, "F"), "C3": (13.2, 31.2, 0, "F"),
+        "R4": (9.6, 34.6, 0, "F"), "R5": (9.6, 35.7, 0, "F"),   # VBUS sense, to the RM2's GPIO0
+        # the front strip is 0.5 mm narrower than the hood board's (thumbscrew pockets):
+        # chip A and its charge-pump column move in
+        "U5": (CHIP_A_X + 0.6, CHIP_Y, 270, "B"),
+        "C20": (-16.4, 6.2, 180, "B"), "C22": (-16.4, 7.95, 180, "B"),
+        "C19": (-16.4, 9.7, 180, "B"), "C21": (-16.4, 11.45, 180, "B"),
+    })
+    # status LEDs under the hood's light tubes, each with its resistor beside it
+    for i, (name, hx) in enumerate(H.LEDS):
+        x, y = hood(hx, H.LED_Y)
+        PLACE[f"D{2 + i}"] = (x, y, 90, "F")
+        PLACE[f"R{15 + i}"] = (x - 1.7, y, 90, "F")
+    PLACE["SW3"] = (*hood(*H.PAIR), 90, "F")       # pairing button, under the hood's pinhole
+    for i, ref in enumerate(f"TP{n}" for n in range(1, 12)):
+        PLACE[ref] = (6.5 + 2.6 * (i % 4), 21.0 + 2.6 * (i // 4), 0, "B")
+
+
 def uid(*parts):
     return str(uuid.uuid5(NS, "/".join(map(str, parts))))
 
@@ -235,7 +301,7 @@ def add_parts(board, fpdir):
     fps = {}
     for ref, p in N.parts.items():
         lib, name = p["footprint"].split(":")
-        fp = pcbnew.FootprintLoad(os.path.join(fpdir, f"{lib}.pretty"), name)
+        fp = pcbnew.FootprintLoad(os.path.join(LOCAL_FP if lib == "pico-serial" else fpdir, f"{lib}.pretty"), name)
         if fp is None:
             sys.exit(f"{ref}: footprint {p['footprint']} not found")
         fp.SetFPID(pcbnew.LIB_ID(lib, name))
@@ -282,13 +348,19 @@ def place(fps):
 REVISION = "A"
 # silkscreen: (text, x, y, height, side, justify); SPEC.md 7.3 and the licence notice (LICENSING.md)
 SILK = [
-    (f"pico-serial rev {REVISION}", -9.8, 9.4, 1.0, "F", "c"),
+    (f"pico-serial{' W' if N.W else ''} rev {REVISION}", -9.8, 9.4, 1.0, "F", "c"),
     ("DCE / DTE auto", -9.8, 10.9, 0.8, "F", "c"),
     ("DTE: male-male changer", -9.8, 12.2, 0.8, "F", "c"),
     # the licence and its Source Location, CERN-OHL-S-2.0 section 4 (LICENSING.md)
     ("github.com/Neo-Desktop/pico-serial", 0.0, 4.45, 0.8, "B", "c"),  # between the cups and the chips
     ("CERN-OHL-S-2.0", -9.8, 7.9, 0.8, "F", "c"),
 ]
+if N.W:
+    SILK += [(name, PLACE[f"D{2 + i}"][0] - 3.6, PLACE[f"D{2 + i}"][1] + 0.3, 0.8, "F", "c")
+             for i, (name, _) in enumerate(H.LEDS)]
+    SILK += [("PAIR", PLACE["SW3"][0], PLACE["SW3"][1] - 3.6, 0.8, "F", "c"),
+             ("ANTENNA", 3.9, RF_KEEPOUT[1] + 2.0, 0.8, "F", "c"),
+             ("no copper", 3.9, RF_KEEPOUT[1] + 3.3, 0.8, "F", "c")]
 
 
 def silk(board):
@@ -387,6 +459,59 @@ def edge_keepout(board):
         for x, y in ((x1, y1), (x2, y2), (x2 + nx, y2 + ny), (x1 + nx, y1 + ny)):
             ol.Append(mm(x), mm(y))
         board.Add(z)
+
+
+def rule_area(board, pts, layers, tracks=True, vias=True, pour=True, pads=False, footprints=False):
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True)
+    z.SetDoNotAllowTracks(tracks); z.SetDoNotAllowVias(vias); z.SetDoNotAllowCopperPour(pour)
+    z.SetDoNotAllowPads(pads); z.SetDoNotAllowFootprints(footprints)
+    ls = pcbnew.LSET()
+    for name in layers:
+        ls.AddLayer(board.GetLayerID(name))
+    z.SetLayerSet(ls)
+    ol = z.Outline()
+    ol.NewOutline()
+    for x, y in pts:
+        ol.Append(mm(x), mm(y))
+    board.Add(z)
+    return z
+
+
+CU = ("F.Cu", "In1.Cu", "In2.Cu", "B.Cu")
+
+
+def rf_keepout(board):
+    """SPEC-W 2: no metal in the RM2's antenna keep-out, on any layer (the
+    module's own top 5 mm included, which holds no pads)."""
+    if RF_KEEPOUT:
+        x0, y0, x1, y1 = RF_KEEPOUT
+        z = rule_area(board, ((x0, y0), (x1, y0), (x1, y1), (x0, y1)), CU, pads=True)
+        z.SetZoneName("RM2 antenna keep-out")
+
+
+def screw_holes(board):
+    """The hood's M2 screws pass through the board: a plain hole each (a board-only
+    footprint, so it isn't expected in the schematic), and a keep-out around it for
+    the screw head and the hood's bosses."""
+    import math
+    for k, (x, y) in enumerate(SCREWS, 1):
+        fp = pcbnew.FOOTPRINT(board)
+        fp.SetReference(f"H{k}"); fp.SetValue("M2 screw")
+        fp.SetBoardOnly(True); fp.SetExcludedFromBOM(True); fp.SetExcludedFromPosFiles(True)
+        fp.Reference().SetVisible(False); fp.Value().SetVisible(False)
+        pad = pcbnew.PAD(fp)
+        pad.SetAttribute(pcbnew.PAD_ATTRIB_NPTH)
+        pad.SetShape(pcbnew.PAD_SHAPE_CIRCLE)
+        pad.SetSize(pcbnew.VECTOR2I(mm(SCREW_HOLE), mm(SCREW_HOLE)))
+        pad.SetDrillSize(pcbnew.VECTOR2I(mm(SCREW_HOLE), mm(SCREW_HOLE)))
+        pad.SetLayerSet(pad.UnplatedHoleMask())
+        fp.Add(pad)
+        fp.SetPosition(pcbnew.VECTOR2I(mm(x), mm(y)))
+        board.Add(fp)
+        r = SCREW_CLEAR / 2
+        rule_area(board, [(x + r * math.cos(2 * math.pi * i / 24), y + r * math.sin(2 * math.pi * i / 24))
+                          for i in range(24)], CU, footprints=True)
 
 
 def crystal_keepout(board, fps):
@@ -513,7 +638,7 @@ def fanout(board):
             for k in range(20):
                 dist = ext + FAN_CLEAR + vr + 0.1 * k
                 vx, vy = pcbnew.ToMM(pc.x) + ux * dist, pcbnew.ToMM(pc.y) + uy * dist
-                if not _inside(OUTLINE, vx, vy, vr + RULES["edge_clearance"]):
+                if not _inside(OUTLINE, vx, vy, vr + RULES["edge_clearance"] + 0.06):   # past edge_keepout()'s strip
                     break
                 v = pcbnew.VECTOR2I(mm(vx), mm(vy))
                 seg = pcbnew.SHAPE_SEGMENT(pc, v, mm(w))
@@ -950,7 +1075,9 @@ def build(fpdir):
     fps = add_parts(board, fpdir)
     place(fps)
     planes(board)
+    screw_holes(board)
     hole_keepouts(board)
+    rf_keepout(board)
     edge_keepout(board)
     crystal_keepout(board, fps)
     ep_vias(board, fps)
@@ -989,8 +1116,9 @@ def main():
     ap.add_argument("--passes", type=int, nargs="+", default=list(PASS_COUNTS),
                     help="Freerouting pass counts to try, in turn, until one routes everything")
     ap.add_argument("--rounds", type=int, default=4, help="routing rounds, each starting from the last")
-    ap.add_argument("--workdir", default=os.path.join(HERE, "route"))
+    ap.add_argument("--workdir", default=os.path.join(HERE, "route" + N.SUFFIX))
     ap.add_argument("--fab", action="store_true", help="also write Gerbers, drill and the JLC CPL file to fab/")
+    ap.add_argument("--variant", choices=N.VARIANTS, default=N.VARIANT, help="which board (default: hood)")
     args = ap.parse_args()
     fpdir = footprint_dir(args)
 

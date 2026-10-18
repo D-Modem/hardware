@@ -25,7 +25,10 @@ Stops with an error (exit 1) if:
 See SPEC-W.md section 2.2.
 """
 import os, sys
-import cadquery as cq
+try:
+    import cadquery as cq
+except ImportError:   # the dimensions below are still usable (hardware/kicad/build_pcb.py imports them)
+    cq = None
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 
@@ -289,6 +292,8 @@ def export_2d(path, wires):
 
 
 def main():
+    if cq is None:
+        sys.exit("needs CadQuery: pip install cadquery")
     os.makedirs(OUT, exist_ok=True)
     h = hood()
     top, bot = split(h)
