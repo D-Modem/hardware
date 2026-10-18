@@ -15,7 +15,7 @@ The firmware is available under either of two licences:
 This is the same arrangement as the rest of D-Modem. Each source file names
 its licence on an `SPDX-License-Identifier` line. This also covers:
 - the generated `firmware/src/generated/board_pins.h`;
-- the CI workflow (`.github/workflows/firmware.yml`).
+- the firmware CI workflow (`.github/workflows/firmware.yml`).
 
 ### Not ours, used by the firmware
 
@@ -46,10 +46,12 @@ The hardware design is available under either of two licences:
 
 ### What it covers
 
-- the netlist, schematic and enclosure scripts;
+- the netlist, schematic, PCB and enclosure scripts, and the hardware CI
+  workflow (`.github/workflows/hardware.yml`);
 - everything they generate:
   - the netlist and parts lists;
-  - the KiCad schematic and symbols;
+  - the KiCad schematic, symbols and PCB, its renders, Gerbers and
+    placement file;
   - the hood's STEP/STL files, board outline and placement rules;
 - the specifications (`SPEC.md`, `SPEC-W.md`).
 
@@ -76,8 +78,9 @@ carry a modification notice (section 3.3).
 
 ### Not ours
 
-`hardware/kicad/lib/symbol-cache.sexp` and the symbols embedded in
-the schematic come from KiCad's official library. They are under
+`hardware/kicad/lib/symbol-cache.sexp`, the symbols embedded in the
+schematic and the footprints embedded in the PCB come from KiCad's
+official libraries. They are under
 CC-BY-SA-4.0 with the KiCad libraries' exception, which lets designs use
 them under any licence. The parts (RP2040, transceivers, connectors and
 so on) are Available Components in CERN-OHL-S's terms, under their

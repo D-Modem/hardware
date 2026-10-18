@@ -491,6 +491,20 @@ The hood is the MH Connectors **MHDPPK25-K** (LCSC C22372846):
 
 ### 7.3 PCB
 
+> Laid out in [`hardware/kicad/`](hardware/README.md#the-pcb) (rev A, made
+> by `build_pcb.py`): about 37 × 38 mm with the USB-C tongue, 4 layers,
+> routed, DRC clean and matching the schematic. Differences from the notes
+> below:
+> - **Decoupling** sits on the bottom about 2 mm from the RP2040's pins,
+>   joined through the planes, not within 1 mm; close placement left the
+>   chip's pins no room to escape. Each power pin has its own via under the
+>   package.
+> - **Layers:** In1 is a solid GND plane; In2 carries signals as well as
+>   the +3V3 pour.
+> - **Test pads** are on the bottom, on a 2.6 mm grid.
+> - **No traces under the crystal** on the top layer (keep-outs between its
+>   pads); below that, the In1 GND plane shields it.
+
 - **4 layers, 1.6 mm** (GND / power on the inner layers). The board is about
   36 × 29 mm with two 28-pin transceivers, a QFN-56 and around 50
   passives on both sides. Two layers might fit, but four makes the RP2040
@@ -547,8 +561,9 @@ DB25 hood has, so it is a separate, slightly larger board.
    SSOP-28 adapter boards, wired as §4.5. Prove the role detection, the
    driver swing with both chips on the bus, and both line mappings with
    dmodem-android (DCE) and a real modem (DTE).
-3. Netlist: done, `hardware/netlist/` (generated and checked). Next: the
-   4-layer layout in KiCad, and a schematic if wanted.
+3. Netlist, schematic and PCB: done, `hardware/` (generated and
+   checked). Next: a person reviews the layout, and the outline is
+   confirmed against the sample hood (step 1).
 4. Firmware v1 (§5).
 5. App: read CDC `SERIAL_STATE`; add the pico-serial options.
 6. Order 5 boards. Bring-up: 3V3, 1V1, crystal, enumeration, UF2, loopback

@@ -80,9 +80,9 @@ FANOUT_EXTRA = {("U4", "5")}
 # Placement: ref -> (x, y, rotation degrees, side). Bottom-side parts are
 # flipped left-right, then rotated.
 # ---------------------------------------------------------------------------
-MCU = (-1.0, 17.0)    # RP2040 centre
+MCU = (-1.0, 18.0)    # RP2040 centre: far enough back for its front-edge vias to clear the chips' logic pins
 CHIP_Y = 9.6          # transceivers' centre line (bottom)
-CHIP_B_X, CHIP_A_X = -10.0, 8.5
+CHIP_A_X, CHIP_B_X = -10.0, 8.5
 PLACE = {
     # --- connectors
     "J2": (0.0, 1.99, 180, "F"),           # DB25: pin 1 at x = -16.62; 1-13 on top, 14-25 underneath
@@ -91,10 +91,10 @@ PLACE = {
     "U1": (*MCU, 180, "F"),
     "U2": (10.2, 21.8, 0, "F"),            # back and right: room for U1's GPIO vias
     "C18": (15.7, 20.3, 90, "F"),          # flash VCC
-    "Y1": (2.8, 10.4, 0, "F"),
-    "R8": (-0.5, 10.6, 90, "F"),           # XOUT series
-    "C16": (-1.7, 10.6, 90, "F"),          # XIN load
-    "C17": (5.5, 9.55, 90, "F"),           # XTAL_OUT load
+    "Y1": (2.8, 11.4, 0, "F"),
+    "R8": (-0.5, 11.6, 90, "F"),           # XOUT series
+    "C16": (-1.7, 11.6, 90, "F"),          # XIN load
+    "C17": (5.5, 10.55, 90, "F"),          # XTAL_OUT load
     "SW1": (12.5, 7.2, 0, "F"),            # BOOTSEL
     "R9": (8.4, 7.2, 90, "F"),
     "SW2": (12.5, 11.2, 0, "F"),           # RESET
@@ -114,26 +114,30 @@ PLACE = {
     "R4": (-11.0, 19.0, 0, "F"),           # VBUS divider, out of U1's left-side escape
     "R5": (-11.0, 20.1, 0, "F"),
     # --- bottom: transceivers, RS-232 pins toward the DB25, charge pumps at the pin-1 end
-    "U6": (CHIP_B_X, CHIP_Y, 270, "B"),    # chip B, DTE
-    "C26": (-16.9, 6.2, 0, "B"), "C28": (-16.9, 7.7, 0, "B"),       # C2 flying, V- (0603)
-    "C25": (-16.9, 9.2, 0, "B"), "C27": (-16.9, 10.7, 0, "B"),      # C1 flying, V+ (0603, nearest pin 27)
-    "C29": (-13.2, 15.4, 0, "B"), "C30": (-11.0, 15.4, 0, "B"),     # VCC
-    "R13": (-9.0, 15.4, 0, "B"),           # B_FORCEOFF_N pull-down
+    # chip A (DCE) on the left, chip B (DTE) on the right: of the arrangements
+    # tried, the one whose RP2040-to-chip connections cross each other least
     "U5": (CHIP_A_X, CHIP_Y, 270, "B"),    # chip A, DCE
-    "C20": (1.6, 6.2, 0, "B"), "C22": (1.6, 7.7, 0, "B"),
-    "C19": (1.6, 9.2, 0, "B"), "C21": (1.6, 10.7, 0, "B"),
-    "C23": (5.4, 15.4, 0, "B"), "C24": (7.6, 15.4, 0, "B"),
-    "R12": (15.0, 6.6, 90, "B"),           # A_SHDN_N pull-down
+    # charge pumps at the pin-1 end, 1.75 mm apart (room for the GND vias), each
+    # with pad 1 (the chip-pin side; pad 2 is GND or the far flying-cap pin) toward the chip
+    "C20": (-16.9, 6.2, 180, "B"), "C22": (-16.9, 7.95, 180, "B"),  # C2 flying, V- (0603)
+    "C19": (-16.9, 9.7, 180, "B"), "C21": (-16.9, 11.45, 180, "B"), # C1 flying, V+ (0603, nearest pin 27)
+    "C23": (-13.2, 15.4, 0, "B"), "C24": (-11.0, 15.4, 0, "B"),     # VCC
+    "R12": (-9.0, 15.4, 0, "B"),           # A_SHDN_N pull-down
+    "U6": (CHIP_B_X, CHIP_Y, 270, "B"),    # chip B, DTE
+    "C26": (1.6, 6.2, 180, "B"), "C28": (1.6, 7.95, 180, "B"),
+    "C25": (1.6, 9.7, 180, "B"), "C27": (1.6, 11.45, 180, "B"),
+    "C29": (5.4, 15.4, 0, "B"), "C30": (7.6, 15.4, 0, "B"),
+    "R13": (15.0, 6.6, 90, "B"),           # B_FORCEOFF_N pull-down
     "R14": (15.0, 8.8, 90, "B"),           # RS_FORCEON pull-down
     # --- bottom: RP2040 decoupling, ~1.8 mm beyond its pad ends: close, but
     # leaving a ring free for the pins' own escape vias
-    "C4": (4.6, 20.0, 90, "B"), "C5": (4.6, 17.0, 90, "B"),            # IOVDD 1, 10
-    "C6": (-0.8, 11.0, 0, "B"), "C14": (-2.9, 11.0, 0, "B"),           # IOVDD 22, DVDD 23
+    "C4": (4.6, 21.0, 90, "B"), "C5": (4.6, 18.0, 90, "B"),            # IOVDD 1, 10
+    "C6": (-1.0, 12.0, 0, "B"), "C14": (-3.0, 12.0, 0, "B"),           # IOVDD 22, DVDD 23
     # at U1's left corners, clear of the left side's escape (LEDs, GP28, GP29)
-    "C7": (-6.0, 15.0, 0, "B"), "C8": (-5.9, 21.0, 0, "B"),            # IOVDD 33, 42
+    "C7": (-6.0, 16.0, 0, "B"), "C8": (-5.9, 21.9, 0, "B"),            # IOVDD 33, 42
     # back edge: two short columns either side of the USB D+/D- corridor
     # (x -3.0..-1.2), so no via lands between U1 and the series resistors
-    "C11": (-4.9, 22.2, 0, "B"), "C12": (-4.9, 23.4, 0, "B"), "C13": (-4.9, 24.6, 0, "B"),   # AVDD 43, VREG_VIN 44, VREG_VOUT 45
+    "C11": (-4.9, 23.2, 0, "B"), "C12": (-4.9, 24.4, 0, "B"), "C13": (-4.9, 25.6, 0, "B"),   # AVDD 43, VREG_VIN 44, VREG_VOUT 45
     "C10": (0.4, 21.6, 0, "B"), "C9": (0.4, 22.65, 0, "B"), "C15": (0.4, 23.7, 0, "B"),       # USB_VDD 48, IOVDD 49, DVDD 50
     # --- bottom, back of the tongue: USB shield
     "R3": (-2.2, 36.6, 0, "B"), "C1": (2.2, 36.6, 0, "B"),
@@ -385,6 +389,32 @@ def edge_keepout(board):
         board.Add(z)
 
 
+def crystal_keepout(board, fps):
+    """Nothing passes under the crystal: keep-outs in the gaps between its four
+    pads (tracks on F.Cu; vias on every layer). Its own pads are still reached
+    from outside. Below F.Cu, the In1 GND plane shields it."""
+    y1 = fps["Y1"]
+    c = y1.GetPosition()
+    def area(x0, y0, x1, y1_, layers, tracks):
+        z = pcbnew.ZONE(board)
+        z.SetIsRuleArea(True)
+        z.SetDoNotAllowTracks(tracks); z.SetDoNotAllowVias(True)
+        z.SetDoNotAllowCopperPour(False); z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+        ls = pcbnew.LSET()
+        for name in layers:
+            ls.AddLayer(board.GetLayerID(name))
+        z.SetLayerSet(ls)
+        ol = z.Outline()
+        ol.NewOutline()
+        for x, y in ((x0, y0), (x1, y0), (x1, y1_), (x0, y1_)):
+            ol.Append(c.x + mm(x), c.y + mm(y))
+        board.Add(z)
+    # pads 1.4 x 1.15 at (+-1.1, +-0.85): the cross between them, with 0.05 to spare
+    for x0, y0, x1, y1_ in ((-0.35, -1.3, 0.35, 1.3), (-1.85, -0.22, 1.85, 0.22)):
+        area(x0, y0, x1, y1_, ["F.Cu"], True)
+        area(x0, y0, x1, y1_, ["In1.Cu", "In2.Cu", "B.Cu"], False)
+
+
 def ep_vias(board, fps):
     """GND vias in the RP2040's exposed pad (heat, and its ground)."""
     u1 = fps["U1"]
@@ -400,6 +430,7 @@ def ep_vias(board, fps):
 
 
 FAN_VIA = (0.5, 0.25)    # fanout via: diameter, drill
+FANOUT_IDS = set()       # their stubs and vias: never ripped up
 FAN_CLEAR = 0.15
 
 
@@ -494,6 +525,7 @@ def fanout(board):
                     via.SetPosition(v); via.SetWidth(mm(FAN_VIA[0])); via.SetDrill(mm(FAN_VIA[1]))
                     via.SetNet(pad.GetNet())
                     board.Add(via)
+                    FANOUT_IDS.update((t.m_Uuid.AsString(), via.m_Uuid.AsString()))
                     vias.append(via)
                     tracks.append((seg, layer, net))
                     done = True
@@ -604,10 +636,17 @@ def _dist(g, X, Y):
     return np.hypot(ex, ey)
 
 
-def _route_link(board, net, src, dst, layers, narrow=False):
-    """A* from island src to island dst over a grid; True if it added the link.
+RIP_COST = 4.0   # mm-equivalent for crossing another net's track in a rip-up search
+
+
+def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
+    """A* from island src to island dst over a grid. Returns the items it added
+    (empty if it found no way).
     narrow: use the default class's width and via (a short stub, e.g. VBUS to
-    the ESD chip's reference pin, between pins a wide track can't pass)."""
+    the ESD chip's reference pin, between pins a wide track can't pass).
+    rip: a dry run that may cross other signal nets' tracks and vias (at a
+    cost); returns the set of nets its path crosses, or None. Nets in keep
+    are never crossed."""
     import heapq
     import numpy as np
     T = pcbnew.ToMM
@@ -634,6 +673,9 @@ def _route_link(board, net, src, dst, layers, narrow=False):
     inside_v = np.vectorize(lambda x, y: _inside(OUTLINE, x, y, vd / 2 + RULES["edge_clearance"]))(X, Y)
     free = {L: inside_t.copy() for L in lid}
     vfree = inside_v.copy()
+    soft = {L: np.full(inside_t.shape, -1, dtype=np.int32) for L in lid}   # rip: whose track is there
+    vsoft = np.full(inside_t.shape, -1, dtype=np.int32)
+    soft_nets = []
     xa, ya = x0 - 1, y0 - 1
     xb, yb = x0 + nx * GRID + 1, y0 + ny * GRID + 1
     for o in list(board.GetPads()) + list(board.GetTracks()):
@@ -644,6 +686,17 @@ def _route_link(board, net, src, dst, layers, narrow=False):
             continue
         g, ls = _geom(o)
         d = _dist(g, X, Y)
+        on = o.GetNetname()
+        if rip and o.Type() != pcbnew.PCB_PAD_T and on and on not in FANOUT_NETS and on not in keep:
+            if on not in soft_nets:
+                soft_nets.append(on)
+            k = soft_nets.index(on)
+            for L in lid:
+                if L in ls:
+                    m = (d < w / 2 + clr) & (soft[L] < 0)
+                    soft[L][m] = k
+            vsoft[(d < vd / 2 + clr) & (vsoft < 0)] = k
+            continue
         for L in lid:
             if L in ls:
                 free[L] &= d >= w / 2 + clr
@@ -671,7 +724,7 @@ def _route_link(board, net, src, dst, layers, narrow=False):
         for li, L in enumerate(lid):
             print("   layer", layers[li], "free", round(float(free[L].mean()), 3), "start here", sum(1 for c in start if c[2] == li))
     if not start or not goal:
-        return False
+        return None if rip else []
     gpts = np.array([(a, b) for a, b, _ in goal])
     gmin, gmax = gpts.min(axis=0), gpts.max(axis=0)
     def h(i, j):   # distance to the goal's bounding box: never more than the real cost
@@ -707,10 +760,12 @@ def _route_link(board, net, src, dst, layers, narrow=False):
         if vfree[i, j]:
             for lj in range(len(lid)):
                 if lj != li:
-                    nbrs.append(((i, j, lj), VIA_COST * GRID))
+                    nbrs.append(((i, j, lj), VIA_COST * GRID + (RIP_COST if vsoft[i, j] >= 0 else 0)))
         for nb, c in nbrs:
             if nb not in goal and nb not in start and not ok(*nb):
                 continue
+            if rip and soft[lid[nb[2]]][nb[0], nb[1]] >= 0:
+                c += RIP_COST * GRID
             nc2 = cost[cur] + c
             if nc2 < cost.get(nb, 1e18):
                 cost[nb] = nc2
@@ -719,11 +774,17 @@ def _route_link(board, net, src, dst, layers, narrow=False):
     if DEBUG:
         print(f"  {net}: start {len(start)} goal {len(goal)} expanded {n_exp} grid {nx}x{ny} found {end is not None}")
     if end is None:
-        return False
+        return None if rip else []
     path = [end]
     while path[-1] in came:
         path.append(came[path[-1]])
     path.reverse()
+    if rip:
+        crossed = {soft_nets[soft[lid[c[2]]][c[0], c[1]]] for c in path if soft[lid[c[2]]][c[0], c[1]] >= 0}
+        crossed |= {soft_nets[vsoft[a[0], a[1]]] for a, b2 in zip(path, path[1:])
+                    if a[2] != b2[2] and vsoft[a[0], a[1]] >= 0}
+        return crossed
+    added = []
     netinfo = board.FindNet(net)
     # straight runs -> segments; layer changes -> vias
     pts = lambda c: pcbnew.VECTOR2I(mm(x0 + c[0] * GRID), mm(y0 + c[1] * GRID))
@@ -732,48 +793,107 @@ def _route_link(board, net, src, dst, layers, narrow=False):
         a, b2 = path[k - 1], path[k]
         if a[2] != b2[2]:
             if (seg_start[0], seg_start[1]) != (a[0], a[1]):
-                _track(board, netinfo, pts(seg_start), pts(a), lid[a[2]], w)
+                added.append(_track(board, netinfo, pts(seg_start), pts(a), lid[a[2]], w))
             v = pcbnew.PCB_VIA(board)
             v.SetPosition(pts(a)); v.SetWidth(mm(vd)); v.SetDrill(mm(vdr)); v.SetNet(netinfo)
             board.Add(v)
+            added.append(v)
             seg_start = b2
             continue
         nxt = path[k + 1] if k + 1 < len(path) else None
         if nxt is None or nxt[2] != b2[2] or (nxt[0] - b2[0], nxt[1] - b2[1]) != (b2[0] - a[0], b2[1] - a[1]):
-            _track(board, netinfo, pts(seg_start), pts(b2), lid[b2[2]], w)
+            added.append(_track(board, netinfo, pts(seg_start), pts(b2), lid[b2[2]], w))
             seg_start = b2
-    return True
+    return [a for a in added if a is not None]
 
 
 def _track(board, net, a, b, layer, w):
     if a == b:
-        return
+        return None
     t = pcbnew.PCB_TRACK(board)
     t.SetStart(a); t.SetEnd(b); t.SetLayer(layer); t.SetWidth(mm(w)); t.SetNet(net)
     board.Add(t)
+    return t
+
+
+def _connect(board, net, layers):
+    """Join the net's islands; the items added, or None if it couldn't."""
+    added = []
+    for _ in range(30):
+        board.BuildConnectivity()
+        groups = _islands(board, net)
+        if len(groups) < 2:
+            return added
+        groups.sort(key=len)
+        rest = [it for g in groups[1:] for it in g]
+        got = _route_link(board, net, groups[0], rest, layers) or \
+            _route_link(board, net, groups[0], rest, layers, narrow=True)
+        if not got:
+            for it in added:
+                board.Remove(it)
+            return None
+        added += got
+    return added
+
+
+def _rip_and_route(board, net, layers, depth=3, keep=()):
+    """Rip up the signal nets in the way, route net, then route them again
+    (ripping up in turn if they need it, depth levels deep, never touching
+    keep). Everything is undone if any of it fails. True if it worked."""
+    board.BuildConnectivity()
+    groups = sorted(_islands(board, net), key=len)
+    if len(groups) < 2:
+        return True
+    keep = set(keep) | {net}
+    crossed = _route_link(board, net, groups[0], [it for g in groups[1:] for it in g], layers, rip=True, keep=keep)
+    if DEBUG:
+        print(f"   rip {net} (depth {depth}, keep {sorted(keep)}): crosses {crossed}", flush=True)
+    if not crossed:
+        return False
+    removed = [t for t in board.GetTracks() if t.GetNetname() in crossed]
+    for t in removed:
+        board.Remove(t)
+    before = {n: {t.m_Uuid.AsString() for t in board.GetTracks() if t.GetNetname() == n}
+              for n in [net] + sorted(crossed)}
+
+    def undo():   # take out what this attempt added, put back what it ripped up
+        for m, had in before.items():
+            for t in [t for t in board.GetTracks() if t.GetNetname() == m and t.m_Uuid.AsString() not in had]:
+                board.Remove(t)
+        for t in removed:
+            board.Add(t)
+        board.BuildConnectivity()
+
+    if _connect(board, net, layers) is None:
+        if DEBUG:
+            print(f"   rip {net}: still no route after ripping", flush=True)
+        undo()
+        return False
+    for n in sorted(crossed):
+        if _connect(board, n, layers) is None and not (
+                depth > 1 and _rip_and_route(board, n, layers, depth - 1, keep | crossed)):
+            undo()
+            return False
+    print(f"  rip-up: routed {net}, re-routed {' '.join(sorted(crossed))}")
+    return True
 
 
 def finish(board):
-    """Route what's left, net by net, joining islands two at a time."""
+    """Route what's left, net by net, joining islands two at a time; if a link
+    won't go, rip up the nets in its way and route them again."""
     layers = ["F.Cu", "In2.Cu", "B.Cu"]
-    board.BuildConnectivity()
     left = []
     for net in sorted({p.GetNetname() for p in board.GetPads() if p.GetNetname()}):
         if net in PLANES.values():
             continue
-        for _ in range(20):
-            groups = _islands(board, net)
-            if len(groups) < 2:
-                break
-            if DEBUG:
-                print(f"  {net}: {len(groups)} islands", flush=True)
-            groups.sort(key=len)
-            rest = [it for g in groups[1:] for it in g]
-            if not (_route_link(board, net, groups[0], rest, layers) or
-                    _route_link(board, net, groups[0], rest, layers, narrow=True)):
+        if _connect(board, net, layers) is None:
+            ok = False
+            for _ in range(3):
+                if _rip_and_route(board, net, layers):
+                    ok = True
+                    break
+            if not ok:
                 left.append(net)
-                break
-            board.BuildConnectivity()
     return left
 
 
@@ -832,6 +952,7 @@ def build(fpdir):
     planes(board)
     hole_keepouts(board)
     edge_keepout(board)
+    crystal_keepout(board, fps)
     ep_vias(board, fps)
     fanout(board)
     silk(board)
