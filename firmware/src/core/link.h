@@ -42,18 +42,23 @@ typedef struct {
 
 extern links_t g_links;
 
+// All links down, no owner; SPP has DCD-from-result-codes on (SPEC-W 4.4).
 void links_init(links_t *s, core_t *c);
 // Connection events. Wireless links come up with DTR and RTS asserted, so a
 // plain terminal app gets DCD and DSR while connected (SPEC-W 4.3).
 void link_up(links_t *s, core_t *c, uint8_t id, bool up);
+// A link's DTR and RTS changed (USB: SET_CONTROL_LINE_STATE; BLE: Outputs).
+// USB's DTR also decides whether it takes the port.
 void link_lines(links_t *s, core_t *c, uint8_t id, bool dtr, bool rts);
 // CDC-style line coding (stop: 0 = 1, 1 = 1.5, 2 = 2; parity 0 none 1 odd 2 even ...)
 void link_format(links_t *s, core_t *c, uint8_t id, uint32_t baud, uint8_t stop_cdc, uint8_t parity_cdc,
                  uint8_t data_bits);
-bool link_break(links_t *s, core_t *c, uint8_t id, uint16_t ms);   // false: not the owner
+// Send a break (as core_host_break) if this link owns the port; false if not.
+bool link_break(links_t *s, core_t *c, uint8_t id, uint16_t ms);
 // DCD from CONNECT / NO CARRIER in this link's data (SPEC-W 4.4). Default: on for SPP.
 void link_rc_dcd(links_t *s, core_t *c, uint8_t id, bool on);
 
+// Whether this link owns the RS-232 port right now.
 static inline bool link_owns(const links_t *s, uint8_t id) { return s->owner == id; }
 // Data from the link toward the RS-232 port: returns bytes accepted. A link
 // that doesn't own the port has its data dropped (returns len).

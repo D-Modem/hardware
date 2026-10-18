@@ -8,6 +8,8 @@
 
 links_t g_links;
 
+// Who should own the RS-232 port now (link.h's three rules): USB with DTR
+// set, else the earliest-connected wireless link, else USB if plugged in.
 static uint8_t pick_owner(const links_t *s) {
     const link_t *usb = &s->l[LINK_USB];
     if (usb->up && usb->dtr) return LINK_USB;
@@ -31,6 +33,8 @@ static void apply(links_t *s, core_t *c, bool coding) {
     if (coding && l->has_format) core_host_format(c, l->baud, l->stop_cdc, l->parity_cdc, l->data_bits);
 }
 
+// After any link event: re-pick the owner, count a change (ending the old
+// owner's break), and pass the owner's state to the core.
 static void update(links_t *s, core_t *c) {
     uint8_t o = pick_owner(s);
     bool changed = o != s->owner;
@@ -112,6 +116,8 @@ static void rc_line(links_t *s, core_t *c, uint8_t id, link_t *l) {
     }
 }
 
+// Split the link's outgoing data into lines for rc_line(); lines too long
+// to be a result code are skipped. Keeps a partial line between calls.
 static void rc_scan(links_t *s, core_t *c, uint8_t id, const uint8_t *p, uint32_t n) {
     link_t *l = &s->l[id];
     for (uint32_t i = 0; i < n; i++) {

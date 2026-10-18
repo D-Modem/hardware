@@ -153,7 +153,13 @@ src/generated/  board_pins.h and board_pins_w.h, written by
                 hardware/netlist/build_netlist.py
 boards/         SDK board headers for the hood and W boards
 test/           host tests for the core (fake HAL) and the emulator test
+tools/          check_docs.py: every function has a comment (CI runs it)
 ```
+
+Every function has a comment saying what it does: public ones on their
+prototype in the header, static ones above the definition.
+`python3 firmware/tools/check_docs.py` lists any that don't, and CI fails
+on them.
 
 The GPIO numbers come from the hardware netlist script. Change the board
 there, and the pin header follows.

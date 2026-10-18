@@ -112,16 +112,26 @@ typedef struct {
 
 extern core_t g_core;
 
+// Reset the core, load the saved settings (or defaults: auto mode, auto flow,
+// auto baud) and apply the mode. Call once at startup.
 void core_init(core_t *c);
 // Call often from the main loop.
 void core_poll(core_t *c);
 
 // Host link events
+// The host's DTR and RTS (mapped to the RS-232 lines in core_poll).
 void core_host_lines(core_t *c, bool dtr, bool rts);
-void core_host_dcd(core_t *c, int8_t dcd);   // -1: follow DTR (the default)
+// DCD driven by a link in DCE mode instead of following DTR; -1: follow DTR (the default).
+void core_host_dcd(core_t *c, int8_t dcd);
+// The host's line coding (CDC values). Unsupported parts (1.5 stop bits,
+// mark/space parity, odd data bits) are adjusted and flagged in GET_INFO; a
+// learned baud rate stays in force.
 void core_host_format(core_t *c, uint32_t baud, uint8_t stop_bits_cdc, uint8_t parity_cdc, uint8_t data_bits);
+// Send a break for duration_ms; 0 ends it, 0xFFFF holds it until 0 is sent.
 void core_host_break(core_t *c, uint16_t duration_ms);
-uint32_t core_host_write(core_t *c, const uint8_t *data, uint32_t len);   // returns bytes accepted
+// Queue data for the RS-232 port and start the UART; returns bytes accepted.
+uint32_t core_host_write(core_t *c, const uint8_t *data, uint32_t len);
+// Take up to max bytes received from the RS-232 port; returns how many.
 uint32_t core_host_read(core_t *c, uint8_t *data, uint32_t max);
 // SERIAL_STATE to send to the host; true if it changed (or events are pending).
 bool core_serial_state(core_t *c, uint16_t *state);
@@ -131,7 +141,9 @@ int core_vendor_in(core_t *c, uint8_t req, uint16_t value, uint8_t *buf, uint16_
 // OUT: false to stall.
 bool core_vendor_out(core_t *c, uint8_t req, uint16_t value);
 
-// From the UART interrupt
+// From the UART interrupt: a received byte and its RX_ERR_* flags. Dropped
+// while learning the baud rate (the UART is at the wrong speed); breaks are
+// recorded but not passed on as data.
 static inline void core_isr_rx(core_t *c, uint8_t byte, uint8_t errors) {
     if (c->ab_state == AB_LEARNING) return;   // received at a rate that's about to change
     if (errors & RX_ERR_FRAMING && c->ab_state == AB_LOCKED) c->ab_fe++;
@@ -141,6 +153,7 @@ static inline void core_isr_rx(core_t *c, uint8_t byte, uint8_t errors) {
         else c->stats.from_rs232++;
     }
 }
+// The UART can send: hand it the next queued byte, false if there's none.
 static inline bool core_isr_tx(core_t *c, uint8_t *byte) {
     if (!ring_get(&c->to_rs232, byte)) return false;
     c->stats.to_rs232++;
@@ -157,5 +170,8 @@ static inline void core_isr_run(core_t *c, bool high, uint32_t ticks) {
 
 // Settings blob (for flash), with a checksum.
 #define CORE_SETTINGS_BLOB 16u
+// Settings -> blob: "PSER", version 1, mode, flow, baud mode, CRC-32.
 void core_settings_pack(const core_settings_t *s, uint8_t out[CORE_SETTINGS_BLOB]);
+// Blob -> settings; false (settings untouched) if it isn't a valid version-1
+// blob or a value is out of range.
 bool core_settings_unpack(core_settings_t *s, const uint8_t in[CORE_SETTINGS_BLOB]);

@@ -31,7 +31,9 @@ const uint32_t AB_NBAUDS = sizeof AB_BAUDS / sizeof AB_BAUDS[0];
 #define ALIGN_TOL16 5u       // edge within 5/16 of a bit boundary
 #define AB_SCORE_MARGIN 16u  // 1/16 bit, in 1/256 bit
 
+// A run's length in HAL ticks (bits 30..0).
 static uint32_t run_len(uint32_t r) { return r & AB_IDLE; }
+// A run's level: true for high (bit 31).
 static bool run_high(uint32_t r) { return (r >> 31) != 0; }
 
 void ab_reset(ab_t *a) { a->n = 0; }

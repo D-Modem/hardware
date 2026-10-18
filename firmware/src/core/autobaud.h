@@ -40,6 +40,7 @@ typedef struct {
 extern const uint32_t AB_BAUDS[];
 extern const uint32_t AB_NBAUDS;
 
+// Forget every run, ready to time a new burst of characters.
 void ab_reset(ab_t *a);
 // Add a run; merges it into the last if the level didn't change. False if full.
 bool ab_add(ab_t *a, bool high, uint32_t ticks);
@@ -50,7 +51,8 @@ void ab_drop(ab_t *a, uint32_t pairs);
 // hz = HAL ticks per second.
 uint32_t ab_detect(const ab_t *a, uint32_t hz, const uart_format_t *f);
 
-// Decode the runs at a baud rate as a UART would, calling fn for each
-// character (errors = RX_ERR_* bits). Returns the statistics.
+// Called by ab_decode() for each character: the byte and its RX_ERR_* bits.
 typedef void (*ab_byte_fn)(void *ctx, uint8_t byte, uint8_t errors);
+// Decode the runs at a baud rate as a UART would, calling fn for each
+// character. Returns the statistics (ab_detect scores rates with them).
 ab_stats_t ab_decode(const ab_t *a, uint32_t hz, uint32_t baud, const uart_format_t *f, ab_byte_fn fn, void *ctx);

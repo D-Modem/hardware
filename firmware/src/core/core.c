@@ -23,13 +23,18 @@ static const uart_format_t DEFAULT_FORMAT = {115200, 8, 1, 0};
 #define ROOM_OFF (RING_SIZE * 3u / 4u)
 #define ROOM_ON (RING_SIZE / 2u)
 
+// At least ms milliseconds from since to now (wraps safely: unsigned difference).
 static bool elapsed(uint32_t now, uint32_t since, uint32_t ms) { return (uint32_t)(now - since) >= ms; }
 
+// Enter a detection/active state and note when, for the settle and timeout clocks.
 static void set_state(core_t *c, core_state_t s) {
     c->state = s;
     c->t_state = hal_millis();
 }
 
+// Turn the UART's hardware CTS on or off to match the flow setting: on always,
+// off always, or (auto) once the far end has shown it uses its flow line.
+// Only touches the HAL when the answer changes.
 static void apply_flow(core_t *c) {
     bool on = false;
     if (c->role != PS_ROLE_NONE) {
@@ -51,6 +56,8 @@ static void apply_format(core_t *c) {
     if (c->role != PS_ROLE_NONE) hal_uart_format(&c->uart);
 }
 
+// Whether to learn the far end's baud rate now: LEARN always does while a far
+// end is attached; AUTO only in DCE mode, where a computer sets the speed.
 static bool ab_wanted(const core_t *c) {
     if (c->role == PS_ROLE_NONE) return false;
     if (c->settings.baud == PS_BAUD_LEARN) return true;
@@ -72,6 +79,8 @@ static void ab_learn(core_t *c) {
     hal_autobaud(c->role);
 }
 
+// Stop learning the baud rate and forget a learned one; the caller re-applies
+// the host's format.
 static void ab_stop(core_t *c) {
     if (c->ab_state != AB_OFF) hal_autobaud(PS_ROLE_NONE);
     c->ab_state = AB_OFF;
@@ -88,6 +97,9 @@ static void ab_update(core_t *c) {
     }
 }
 
+// A far end was found (or the mode forces a role): power that role's chip,
+// route the UART to it, and start with flow control off and the baud rate
+// unlearned.
 static void activate(core_t *c, uint8_t role) {
     c->role = role;
     c->cts_latched = false;
@@ -103,6 +115,8 @@ static void activate(core_t *c, uint8_t role) {
     set_state(c, ST_ACTIVE);
 }
 
+// The far end went away: drop our output lines, shut both chips down and go
+// back to settling before detection starts again.
 static void deactivate(core_t *c) {
     ab_stop(c);
     apply_format(c);   // GET_INFO: back to the host's speed
@@ -173,6 +187,10 @@ static void detect(core_t *c, uint32_t now) {
     }
 }
 
+// The RS-232 lines we should drive now, as PS_LINE_* bits: the host's DTR and
+// RTS mapped for the role (or DCD from the link, SPEC-W 4.4), then the
+// SET_OUTPUTS override, then our flow line dropped while the buffer to the
+// host is filling.
 static uint8_t outputs_for(core_t *c) {
     uint8_t dtr = (c->host_lines & PS_LINE_DTR) ? 1 : 0, rts = (c->host_lines & PS_LINE_RTS) ? 1 : 0;
     uint8_t out = 0, flow_line;
@@ -197,6 +215,9 @@ static uint8_t outputs_for(core_t *c) {
     return out;
 }
 
+// Once per poll: update the to-host buffer's room (with hysteresis), drive
+// the output lines, read the inputs, latch auto flow control, and end a timed
+// break.
 static void lines(core_t *c, uint32_t now) {
     uint32_t used = ring_count(&c->to_host);
     if (c->rx_room && used >= ROOM_OFF) c->rx_room = false;
@@ -222,6 +243,8 @@ static void lines(core_t *c, uint32_t now) {
     }
 }
 
+// Work out the status LEDs from the role and the lines (TR, CD, RI), plus
+// short pulses for data each way (SD, RD), and hand them to the HAL.
 static void leds(core_t *c, uint32_t now) {
     uint8_t m = CORE_LED_PWR;
     if (c->role == PS_ROLE_DCE) {
@@ -238,13 +261,18 @@ static void leds(core_t *c, uint32_t now) {
     hal_leds(m);
 }
 
+// The characters ab_decode() recovers from the learning timings.
 typedef struct { uint8_t data[AB_MAX_RUNS / 2 + 1]; uint32_t n; uint8_t errors; } ab_out_t;
+// ab_decode() callback: keep each decoded character and OR in its errors.
 static void ab_collect(void *ctx, uint8_t byte, uint8_t errors) {
     ab_out_t *o = ctx;
     if (o->n < sizeof o->data) o->data[o->n++] = byte;
     o->errors |= errors;
 }
 
+// The baud rate is known: decode the characters it was learned from, switch
+// the UART to the rate, and pass those characters on ahead of anything the
+// UART receives next (its FIFO is flushed so nothing arrives twice).
 static void ab_lock(core_t *c, uint32_t hz, uint32_t baud) {
     static ab_out_t out;
     out.n = 0;
@@ -266,6 +294,10 @@ static void ab_lock(core_t *c, uint32_t hz, uint32_t baud) {
     hal_irq_restore(irq);
 }
 
+// Once per poll. Locked: start learning again if framing errors pile up (the
+// far end changed speed). Learning: take the new line timings from the
+// interrupt, try to fit a rate every CORE_AB_TRY_MS, and lock once the line
+// is idle between characters.
 static void autobaud(core_t *c, uint32_t now) {
     if (c->ab_state == AB_LOCKED) {
         // framing errors coming in: the far end changed speed
@@ -440,6 +472,8 @@ int core_vendor_in(core_t *c, uint8_t req, uint16_t value, uint8_t *buf, uint16_
     }
 }
 
+// A setting changed: save it to flash after CORE_SAVE_DELAY_MS of no further
+// changes (core_poll does the write), to spare the flash.
 static void mark_dirty(core_t *c) {
     c->settings_dirty = true;
     c->t_dirty = hal_millis();

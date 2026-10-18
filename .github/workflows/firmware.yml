@@ -24,6 +24,9 @@ jobs:
           python3 hardware/netlist/build_netlist.py
           git diff --exit-code -- firmware/src/generated hardware/netlist
 
+      - name: Every function is documented
+        run: python3 firmware/tools/check_docs.py
+
       - name: Core tests (host)
         run: make -C firmware/test run
 
