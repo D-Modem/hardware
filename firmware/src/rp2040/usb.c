@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * Copyright (C) 2026 Neo-Desktop
+ */
 // USB: descriptors, the CDC serial port, the "pico-serial control" vendor
 // interface and Raspberry Pi's reset interface (picotool reboot -u).
 #include <string.h>

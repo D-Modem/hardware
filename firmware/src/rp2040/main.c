@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * Copyright (C) 2026 Neo-Desktop
+ */
 // pico-serial firmware: USB CDC serial port <-> RS-232 DB25, DCE/DTE auto-detect.
 #include "pico/stdlib.h"
 #include "hardware/watchdog.h"

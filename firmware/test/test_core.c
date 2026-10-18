@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * Copyright (C) 2026 Neo-Desktop
+ */
 // Host tests for the serial core: role detection, line mapping, flow control,
 // SERIAL_STATE, line coding, break, vendor requests, settings, ring buffer.
 // Build and run: make -C firmware/test

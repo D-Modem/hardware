@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * Copyright (C) 2026 Neo-Desktop
+ */
 // A pretend board for the host tests: records what the core asks of the
 // hardware and lets a test set what the hardware reports.
 #include "fake_hal.h"

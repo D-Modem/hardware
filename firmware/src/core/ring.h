@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * Copyright (C) 2026 Neo-Desktop
+ */
 // Single-producer single-consumer byte ring. One side may run in an interrupt
 // handler and the other in the main loop (single core): indices are only
 // written by their owner, and each is read once per call.

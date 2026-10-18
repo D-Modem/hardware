@@ -1,5 +1,5 @@
 (export (version "E")
-  (design (source "build_netlist.py") (date "2026-10-17") (tool "pico-serial build_netlist.py"))
+  (design (source "build_netlist.py") (date "2026-10-18") (tool "pico-serial build_netlist.py"))
   (components
     (comp (ref "C1") (value "4.7nF") (footprint "Capacitor_SMD:C_0402_1005Metric") (fields (field (name "LCSC") "C1538")) (libsource (lib "Device") (part "C") (description "")) (sheetpath (names "/") (tstamps "/")) (tstamps "33544a75-52f4-5f00-8447-28629146762e"))
     (comp (ref "C2") (value "10uF") (footprint "Capacitor_SMD:C_0603_1608Metric") (fields (field (name "LCSC") "C19702")) (libsource (lib "Device") (part "C") (description "")) (sheetpath (names "/") (tstamps "/")) (tstamps "dab5c2cc-0c63-5ac3-a0e1-93c3ced54313"))

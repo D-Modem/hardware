@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * Copyright (C) 2026 Neo-Desktop
+ */
 // pico-serial DB25 hood board (SPEC.md): bare RP2040, W25Q128JV, 12 MHz ABM8-272-T3.
 #ifndef _BOARDS_PICO_SERIAL_HOOD_H
 #define _BOARDS_PICO_SERIAL_HOOD_H

@@ -1,0 +1,53 @@
+# Licensing
+
+pico-serial is copyright Neo-Desktop.
+
+## Firmware (`firmware/`)
+
+The firmware is available under either of two licences:
+
+- the **GNU Affero General Public License, version 3 only**
+  (AGPL-3.0-only), in [firmware/COPYING](firmware/COPYING); or
+- a **commercial licence** from Neo-Desktop, for uses that cannot meet
+  the AGPL's terms. Ask Neo-Desktop (<https://github.com/Neo-Desktop>)
+  for its terms.
+
+This is the same arrangement as the rest of D-Modem. Each source file names
+its licence on an `SPDX-License-Identifier` line. This also covers:
+- the generated `firmware/src/generated/board_pins.h`;
+- the CI workflow (`.github/workflows/firmware.yml`).
+
+### Not ours, used by the firmware
+
+- `firmware/pico_sdk_import.cmake` is Raspberry Pi's, copied unchanged
+  from the Pico SDK. It is under the BSD-3-Clause licence in its header.
+- **Fetched at build time**, not in the repository:
+  - the **Raspberry Pi Pico SDK** (BSD-3-Clause), and **picotool**
+    (BSD-3-Clause), which builds the UF2;
+  - **TinyUSB** (MIT).
+
+  A firmware binary links the SDK and TinyUSB. Their copyright notices
+  and licences go with a binary that is shipped. Both combine with the
+  firmware under the AGPL and under the commercial licence alike.
+- **Fetched by the emulator test only:**
+  - **rp2040js** (MIT);
+  - the RP2040 boot ROM image from its repository (Raspberry Pi,
+    BSD-3-Clause).
+
+## Hardware (`hardware/`, `SPEC*.md`)
+
+Not yet decided. Until a licence is chosen and stated here, the hardware
+design files are not offered under an open licence. This covers:
+- the netlist and schematic scripts and their outputs;
+- the enclosure model and its print files;
+- the specifications.
+
+`hardware/schematic/lib/symbol-cache.sexp` and the symbols embedded in
+the schematic come from KiCad's official library. They are under
+CC-BY-SA-4.0 with the KiCad libraries' exception, which lets designs use
+them under any licence.
+
+## Contributions
+
+Contributions can be accepted only under terms that let Neo-Desktop offer
+them under all the licences above. Ask before sending one.

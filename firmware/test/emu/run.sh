@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (C) 2026 Neo-Desktop
 # End-to-end test of a firmware image in the rp2040js emulator.
 #   firmware/test/emu/run.sh build/pico-serial-hood.bin
 # Needs Node.js 20+ and network on first run (npm, and the RP2040 boot ROM

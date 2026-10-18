@@ -5,3 +5,7 @@ A USB-C to DB25 RS-232 adapter built on a bare RP2040. One female DB25 works as 
 Status: spec only. See [SPEC.md](SPEC.md).
 
 Wireless variant (Bluetooth LE for iPhone, classic Bluetooth serial for Android): see [SPEC-W.md](SPEC-W.md).
+
+## Licence
+
+Firmware: AGPL-3.0-only, or a commercial licence from Neo-Desktop. Hardware: not yet decided. See [LICENSING.md](LICENSING.md).
