@@ -24,6 +24,9 @@ enum ps_request {
     PS_REQ_CLEAR_STATS = 0x07,       // OUT
     PS_REQ_SET_BAUD_MODE = 0x08,     // OUT wValue = ps_baud (saved)
     PS_REQ_AUTOBAUD_RESTART = 0x09,  // OUT: learn the baud rate again now
+    // W board only (stall elsewhere):
+    PS_REQ_BT_PAIRING = 0x0A,        // OUT wValue = seconds to allow pairing (0 = close the window)
+    PS_REQ_BT_FORGET = 0x0B,         // OUT: forget every bonded phone
 };
 
 enum ps_mode { PS_MODE_AUTO = 0, PS_MODE_DCE = 1, PS_MODE_DTE = 2 };

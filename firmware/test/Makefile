@@ -5,7 +5,7 @@ CFLAGS ?= -std=c11 -O1 -g -Wall -Wextra -Werror -Wconversion -Wno-sign-conversio
 CORE = ../src/core/core.c ../src/core/autobaud.c
 DEPS = $(CORE) $(wildcard ../src/core/*.h) fake_hal.h wave.h wave.c
 
-all: test_core test_autobaud
+all: test_core test_autobaud test_link
 
 test_core: test_core.c fake_hal.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ test_core.c fake_hal.c wave.c $(CORE) -lm
@@ -13,10 +13,14 @@ test_core: test_core.c fake_hal.c $(DEPS)
 test_autobaud: test_autobaud.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ test_autobaud.c wave.c ../src/core/autobaud.c -lm
 
+test_link: test_link.c fake_hal.c ../src/core/link.c $(DEPS)
+	$(CC) $(CFLAGS) -o $@ test_link.c fake_hal.c ../src/core/link.c $(CORE) -lm
+
 .PHONY: all run clean
 run: all
 	./test_core
 	./test_autobaud
+	./test_link
 
 clean:
-	rm -f test_core test_autobaud
+	rm -f test_core test_autobaud test_link

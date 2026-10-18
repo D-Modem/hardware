@@ -5,12 +5,16 @@ bridged to the DB25. It works out by itself whether a computer (DCE role) or
 a modem (DTE role) is attached, and switches on the matching RS-232 chip.
 As DCE it also learns the computer's baud rate from its typing.
 
+The same firmware runs pico-serial W (SPEC-W.md), which adds Bluetooth: BLE
+for iPhone and classic Bluetooth serial (SPP) for Android. See
+[Bluetooth (W board)](#bluetooth-w-board).
+
 ## Build
 
 Needs CMake 3.13+, Ninja or Make, and the Arm GNU toolchain (`arm-none-eabi-gcc`).
 
 ```sh
-cmake -S firmware -B firmware/build -G Ninja      # -DPS_BOARD=hood (default) or pico
+cmake -S firmware -B firmware/build -G Ninja      # -DPS_BOARD=hood (default), w or pico
 ninja -C firmware/build
 # -> firmware/build/pico-serial-hood.uf2
 ```
@@ -23,6 +27,9 @@ ninja -C firmware/build
 - **Boards:**
   - `hood`: the real board, with 16 MB flash and the slow-crystal start-up
     margin.
+  - `w`: pico-serial W, the hood board's circuit plus the RM2 radio wired as
+    on Pico W. Adds BTstack and the radio's firmware (the `.uf2` is about
+    900 KB).
   - `pico`: a bench rig built on a Raspberry Pi Pico wired to the two
     transceivers as SPEC.md §4.5. Same GPIOs. The LEDs move off GP23/24,
     which belong to the Pico.
@@ -52,6 +59,32 @@ ninja -C firmware/build
 | LEDs | PWR, TR, CD, SD, RD, RI, as on a modem's front panel (optional on the board) |
 | Safety | Both transceivers start off (as do the board's pull-downs) and are never on together. Watchdog 1 s |
 | USB IDs | `1209:0001`, pid.codes' shared **test** PID. Get a real PID before giving boards to others (`src/rp2040/board_config.h`) |
+
+## Bluetooth (W board)
+
+`src/rp2040/bt.c`, BTstack on the RM2 (CYW43439), polled from the main loop
+like the USB code, so nothing runs in an interrupt.
+
+| | |
+|---|---|
+| Name | `pico-serial-XXXX`, XXXX = the end of the Bluetooth address |
+| Android, desktops | Classic **SPP** server on RFCOMM channel 1, "pico-serial". dmodem-android's "paired device" mode works unchanged |
+| iPhone, anything BLE | **Nordic UART Service**: write to RX (`6E400002…`), notifications from TX (`6E400003…`). Generic BLE UART apps work |
+| Control | The pico-serial control service over BLE: line coding, outputs, inputs (notify), mode, break, flow, credits (notify), info. See [PROTOCOL.md](PROTOCOL.md#bluetooth-w-board) |
+| Who owns the port | USB while its port is open (DTR set); otherwise the wireless link that connected first; the others stay connected but read-only (BLE writes are refused, SPP data is dropped). `src/core/link.c` |
+| Modem lines | A wireless link counts as DTR and RTS on, so as DCE the computer sees DCD and DSR while a phone is connected. Over SPP, DCD instead follows the phone's `CONNECT` / `NO CARRIER` result codes (Android can't send modem lines) |
+| Pairing | Only inside a **pairing window**: 2 minutes after power-up while nothing is bonded, 2 minutes after a press of the PAIR button, or on request over USB (`BT_PAIRING`). Outside it, only bonded phones connect. Up to 4 bonds, kept in flash. Holding PAIR for 10 s forgets them all (also `BT_FORGET` over USB) |
+| Security | LE Secure Connections and classic Secure Simple Pairing, "Just Works". Data and control need an encrypted link; a phone that isn't bonded and connects outside the window can't use either |
+| Flow control | SPP: RFCOMM credits, given only while the buffer to the DB25 has room for a whole frame. BLE: GATT writes can't be held back, so apps should pace them with the Credits characteristic |
+| LEDs | BT: slow blink while advertising, fast blink while the pairing window is open, on while a phone is connected. TR, CD on GPIOs; RD, SD on the RM2's own GPIOs |
+| Flash | Settings in the last sector as before; Bluetooth bonds in the two sectors below it |
+
+**Not done yet** (SPEC-W.md §4):
+- the BLE L2CAP channel for a dedicated iOS app (§4.2);
+- the optional static passkey (§4.5), and the name change over USB (§4.1);
+- DTR drop → `ATH` hang-up over SPP (§4.4, off by default anyway);
+- asking iOS for the 2M PHY (data length extension is on);
+- Wi-Fi.
 
 ## Automatic baud rate
 
@@ -112,11 +145,13 @@ one and holds back what it receives.
 
 ```
 src/core/       portable: role detection, line mapping, flow control, baud-rate
-                learning, settings (no SDK)
+                learning, settings, which host link owns the port (no SDK)
 src/rp2040/     HAL (GPIO, UART + IRQ, PIO line timing, flash), USB descriptors
-                and callbacks, main
-src/generated/  board_pins.h, written by hardware/netlist/build_netlist.py
-boards/         SDK board header for the hood board
+                and callbacks, Bluetooth (W board: bt.c, the GATT database,
+                BTstack config), main
+src/generated/  board_pins.h and board_pins_w.h, written by
+                hardware/netlist/build_netlist.py
+boards/         SDK board headers for the hood and W boards
 test/           host tests for the core (fake HAL) and the emulator test
 ```
 
@@ -126,10 +161,14 @@ there, and the pin header follows.
 ## Tests
 
 ```sh
-make -C firmware/test run                                   # core and baud detector, sanitizers on
+make -C firmware/test run                                   # core, baud detector, host links; sanitizers on
 firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware in an emulator
 ```
 
+- **Host link tests** (`test_link.c`): who owns the port as USB, BLE and
+  SPP come and go; line coding kept for a link until it owns the port;
+  DCD from `CONNECT` / `NO CARRIER`, split across writes, and not from
+  text inside longer lines.
 - **Host tests:** the core's logic against a fake board (27 tests). The
   tests were checked by breaking the core on purpose: removing DCE
   detection, the buffer hysteresis, the DSR mapping, the one-shot error
@@ -179,7 +218,12 @@ firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware 
   the bench.
 - **Real host drivers:** Windows' usbser, macOS and Linux cdc_acm, and
   Android's usb-serial-for-android haven't been tried.
+- **Bluetooth:** the W firmware builds, but nothing about the radio has
+  run: the emulator has no CYW43, and there's no W board or Pico W rig
+  yet. A Pico W wired to the transceivers (SPEC-W.md §9) is the first test:
+  pairing from an iPhone and from Android, dmodem-android over SPP, the
+  ownership rules, and throughput.
 - **Not built yet:**
-  - the Bluetooth (W) board's BLE/SPP links, SPEC-W.md §4–5;
+  - the rest of SPEC-W.md §4 listed under [Bluetooth](#bluetooth-w-board);
   - Microsoft OS descriptors, so Windows binds WinUSB to the control
     interface without Zadig.

@@ -10,7 +10,11 @@
 #include "pico/usb_reset.h"
 #include "board_config.h"
 #include "core.h"
+#include "link.h"
 #include "usb.h"
+#if defined(PS_BOARD_W)
+#include "bt.h"
+#endif
 
 enum { ITF_CDC_COMM, ITF_CDC_DATA, ITF_CONTROL, ITF_RESET, ITF_COUNT };
 enum { STR_LANG, STR_MANUFACTURER, STR_PRODUCT, STR_SERIAL, STR_CDC, STR_CONTROL, STR_RESET };
@@ -111,7 +115,12 @@ static bool psd_control_xfer_cb(uint8_t rhport, uint8_t stage, const tusb_contro
         if (n < 0) return false;
         return tud_control_xfer(rhport, r, s_control_buf, (uint16_t)n);
     }
-    if (r->wLength != 0 || !core_vendor_out(&g_core, r->bRequest, r->wValue)) return false;
+    if (r->wLength != 0) return false;
+#if defined(PS_BOARD_W)
+    if (r->bRequest == PS_REQ_BT_PAIRING) { bt_pairing_window(r->wValue); return tud_control_status(rhport, r); }
+    if (r->bRequest == PS_REQ_BT_FORGET) { bt_forget_all(); return tud_control_status(rhport, r); }
+#endif
+    if (!core_vendor_out(&g_core, r->bRequest, r->wValue)) return false;
     return tud_control_status(rhport, r);
 }
 
@@ -149,18 +158,26 @@ const usbd_class_driver_t *usbd_app_driver_get_cb(uint8_t *count) {
 // ---------------------------------------------------------------------------
 // CDC serial port
 // ---------------------------------------------------------------------------
-void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts) { (void)itf; core_host_lines(&g_core, dtr, rts); }
+// Everything goes through the links layer, which decides whether USB owns
+// the RS-232 port (link.h): on the wired boards it always does.
+void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts) { (void)itf; link_lines(&g_links, &g_core, LINK_USB, dtr, rts); }
 
 void tud_cdc_line_coding_cb(uint8_t itf, const cdc_line_coding_t *lc) {
     (void)itf;
-    core_host_format(&g_core, lc->bit_rate, lc->stop_bits, lc->parity, lc->data_bits);
+    link_format(&g_links, &g_core, LINK_USB, lc->bit_rate, lc->stop_bits, lc->parity, lc->data_bits);
 }
 
-void tud_cdc_send_break_cb(uint8_t itf, uint16_t ms) { (void)itf; core_host_break(&g_core, ms); }
+void tud_cdc_send_break_cb(uint8_t itf, uint16_t ms) { (void)itf; link_break(&g_links, &g_core, LINK_USB, ms); }
 
-void tud_mount_cb(void) { g_core.serial_state_valid = false; }   // re-announce the lines
-void tud_umount_cb(void) { core_host_lines(&g_core, false, false); }
-void tud_suspend_cb(bool remote_wakeup_en) { (void)remote_wakeup_en; core_host_lines(&g_core, false, false); }
+void tud_mount_cb(void) {
+    g_core.serial_state_valid = false;   // re-announce the lines
+    link_up(&g_links, &g_core, LINK_USB, true);
+}
+void tud_umount_cb(void) { link_up(&g_links, &g_core, LINK_USB, false); }
+void tud_suspend_cb(bool remote_wakeup_en) {
+    (void)remote_wakeup_en;
+    link_lines(&g_links, &g_core, LINK_USB, false, false);
+}
 
 static uint16_t s_pending_state;
 static bool s_pending;
@@ -174,20 +191,33 @@ void usb_service(void) {
     tud_task();
     if (!tud_mounted()) return;
 
-    // host -> RS-232: take only what fits, so the host is held back (NAK) when we're full
+    // Not the owner (a wireless link has the port and ours isn't open): drop
+    // what the host sends, send it nothing.
+    static bool was_owner;
+    bool owner = link_owns(&g_links, LINK_USB);
+    if (owner != was_owner) {
+        was_owner = owner;
+        g_core.serial_state_valid = false;
+    }
     uint8_t buf[64];
+    if (!owner) {
+        while (tud_cdc_available()) tud_cdc_read(buf, sizeof buf);
+        return;
+    }
+
+    // host -> RS-232: take only what fits, so the host is held back (NAK) when we're full
     uint32_t room = ring_free(&g_core.to_rs232);
     while (room && tud_cdc_available()) {
         uint32_t n = tud_cdc_read(buf, room < sizeof buf ? room : sizeof buf);
         if (!n) break;
-        core_host_write(&g_core, buf, n);
+        link_write(&g_links, &g_core, LINK_USB, buf, n);
         room -= n;
     }
 
     // RS-232 -> host
     uint32_t space = tud_cdc_write_available();
     if (space && ring_count(&g_core.to_host)) {
-        uint32_t n = core_host_read(&g_core, buf, space < sizeof buf ? space : sizeof buf);
+        uint32_t n = link_read(&g_links, &g_core, LINK_USB, buf, space < sizeof buf ? space : sizeof buf);
         tud_cdc_write(buf, n);
         tud_cdc_write_flush();
     }

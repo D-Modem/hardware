@@ -32,6 +32,13 @@ jobs:
           cmake -S firmware -B firmware/build-hood -G Ninja -DPS_BOARD=hood
           ninja -C firmware/build-hood
 
+      - name: Build (W board, Bluetooth)
+        run: |
+          cmake -S firmware -B firmware/build-w -G Ninja -DPS_BOARD=w \
+                -DPICO_SDK_PATH=$PWD/firmware/build-hood/_deps/pico_sdk-src \
+                -DPICO_TINYUSB_PATH=$PWD/firmware/build-hood/_deps/tinyusb-src
+          ninja -C firmware/build-w
+
       - name: Build (Pico bench rig)
         run: |
           cmake -S firmware -B firmware/build-pico -G Ninja -DPS_BOARD=pico \
@@ -51,4 +58,5 @@ jobs:
           name: pico-serial-firmware
           path: |
             firmware/build-hood/pico-serial-hood.uf2
+            firmware/build-w/pico-serial-w.uf2
             firmware/build-pico/pico-serial-pico.uf2

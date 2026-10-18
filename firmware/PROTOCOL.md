@@ -34,6 +34,8 @@ An unknown request or an out-of-range value stalls.
 | 7 | CLEAR_STATS | OUT | 0 | — |
 | 8 | SET_BAUD_MODE | OUT | 0 auto, 1 host, 2 learn | — (saved) |
 | 9 | AUTOBAUD_RESTART | OUT | 0 | — (no effect unless learning is in use) |
+| 10 | BT_PAIRING | OUT | seconds (0 closes) | — W board only: open the Bluetooth pairing window |
+| 11 | BT_FORGET | OUT | 0 | — W board only: forget every bonded phone, then open the window |
 
 All multi-byte fields are little-endian.
 
@@ -126,3 +128,30 @@ this protocol for the common lines:
 - **as DCE:** DSR = the computer's DTR; DCD = a computer is attached;
 - **as DTE:** the modem's DCD, DSR and RI;
 - **both roles:** break, framing, parity and overrun events.
+
+## Bluetooth (W board)
+
+The W board offers the same controls over BLE, in the **pico-serial
+control** service, `50530001-5C6F-4E2B-9A6B-1D2C0E5F7A10`. Its
+characteristics share that UUID with the second field changed (`5053000N`).
+Every one needs an encrypted (bonded) link. Writes other than line coding
+are refused (`Write Not Permitted`) unless this BLE link owns the RS-232
+port.
+
+| UUID | Name | Access | Content |
+|---|---|---|---|
+| `50530002` | Line coding | read, write | baud (u32), data bits, parity (0 none, 1 odd, 2 even), stop bits (1, 2): 7 bytes. Kept for this link and used whenever it owns the port |
+| `50530003` | Outputs | read, write | write: mask, value (as SET_OUTPUTS); read: override mask, lines driven now |
+| `50530004` | Inputs | read, notify | `ps_inputs_t`; notified when it changes |
+| `50530005` | Mode | read, write | write: the setting (as SET_MODE); read: setting, role now |
+| `50530006` | Break | write | u16 ms; 0 ends it, `0xFFFF` until 0 |
+| `50530007` | Flow | read, write | as SET_FLOW |
+| `50530008` | Credits | read, notify | u16: free bytes in the buffer to the DB25. Notified when it moves by 256 or more, and when it empties |
+| `50530009` | Info | read | `ps_info_t` |
+
+Data goes through the Nordic UART Service (`6E400001-B5A3-F393-E0A9-E50E24DCCA9E`):
+write to RX `6E400002…`, subscribe to TX `6E400003…`. A BLE write can't be
+held back, so an app sending more than the buffer holds (4 KB) should
+watch Credits.
+
+Classic Bluetooth (SPP) carries data only; there are no controls on it.
