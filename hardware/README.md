@@ -242,3 +242,54 @@ python3 hardware/kicad/build_pcb.py --kicad-fp kicad-footprints \
 - Bench test the SP3238E's leakage while shut down (SPEC §8). If it fails,
   the DCE chip changes to the TI TRS3238E (TSSOP-28) and its footprint
   changes too.
+
+## pico-serial W (Bluetooth)
+
+![W top](kicad/render-w-top.png)
+![W bottom](kicad/render-w-bottom.png)
+
+The same circuit plus a Raspberry Pi RM2 radio module, on a larger board
+for the 3D-printed hood ([SPEC-W.md](../SPEC-W.md), `enclosure/`).
+Every script takes `--variant w`; its files are `pico-serial-w.*`.
+
+```sh
+python3 hardware/netlist/build_netlist.py --variant w
+python3 hardware/kicad/build_schematic.py --variant w
+python3 hardware/kicad/build_pcb.py --variant w --kicad-fp kicad-footprints \
+    --route --freerouting freerouting-1.9.0.jar --fab
+```
+
+**Status:** fully routed. DRC finds no errors and nothing unconnected,
+and the PCB matches its schematic; ERC is clean. CI checks both boards.
+Not reviewed by a person, nothing built.
+
+- **Circuit changes** (SPEC-W §3): the RM2 on GP23-25 and GP29, wired as on
+  Pico W (470 Ω and 10 kΩ into the shared GP24); 10 µF + 100 nF + 22 µF
+  at its supply; five LEDs, fitted (BT, TR, CD on RP2040 pins; RD and SD
+  on the RM2's own GPIOs); VBUS sense on the RM2's GPIO0; a pairing button
+  on GP28 (so no GP28 test pad).
+- **Outline and fixed positions** come from `enclosure/w_hood.py`, not
+  from this script: the outline, three M2 screw holes, the RM2 (antenna
+  end flush with the board's back edge), the USB-C in its tongue, the
+  LEDs under the hood's light tubes and the button under its pinhole.
+  Change them there and both stay in step.
+- **Front half:** the DB25, both RS-232 chips, the RP2040, flash, crystal
+  and buttons are placed as on the hood board. The front strip is 0.5 mm
+  narrower (thumbscrew pockets), so chip A and its charge pumps sit
+  0.6 mm further in.
+- **Antenna keep-out:** a rule area with no copper on any layer (tracks,
+  vias, pads, pours, planes) over the strip of board inside the RM2's
+  35.5 × 18.5 mm keep-out. The rest of it is air inside the hood.
+- **Screw holes:** 2.3 mm, unplated, with 5.4 mm kept free of copper and
+  parts (screw head and the hood's bosses). They're board-only footprints
+  (`lib/pico-serial.pretty/MountingHole_M2`), not in the schematic.
+- **RM2 footprint:** `lib/make_footprints.py`, from the datasheet's
+  Figure 6: 21 pads, 1.5 mm pitch, reaching 0.5 mm past the module. Check
+  it against a real module before ordering.
+- **Assembly:** the RM2 isn't stocked at LCSC, so it's marked
+  hand-fitted and is in neither the BOM nor the CPL. Solder it by hand or
+  send it to JLC as a consigned part. The DB25 is hand-soldered as on the
+  hood board.
+- **Before ordering:** everything under "Before ordering" above, plus a
+  test print of the hood, to confirm the screw holes, LED and button
+  positions.

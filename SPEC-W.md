@@ -364,8 +364,12 @@ pairing window open, steady = connected.
    throughput at 115,200 and 230,400. **Also test the radio inside a
    DB25 hood against a computer's back panel**: this decides the
    enclosure (§2.1). None of this needs a new board.
-3. Add the W variant to `hardware/netlist/build_netlist.py`: the RM2, the
-   moved GPIOs, the button and fitted LEDs.
-4. W board layout inside `hardware/enclosure/out/board-outline.dxf`,
-   following `placement.md` (RM2, keep-out, USB-C, LEDs, button, screw
-   holes).
+3. ~~Add the W variant to `hardware/netlist/build_netlist.py`~~: done
+   (`--variant w`): the RM2, the moved GPIOs, the button and fitted LEDs;
+   schematic `hardware/kicad/pico-serial-w.kicad_sch`.
+4. ~~W board layout~~: done, `hardware/kicad/pico-serial-w.kicad_pcb`
+   (see hardware/README.md, "pico-serial W"). Autorouted; needs a
+   person's review before ordering.
+5. Firmware: `-DPS_BOARD=w` builds BLE NUS + control service, SPP and
+   pairing (firmware/README.md). Built, not yet run on a radio: prove it
+   on the Pico W bench rig (step 2) first.
