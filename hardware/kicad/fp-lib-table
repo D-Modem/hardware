@@ -1,4 +1,4 @@
 (fp_lib_table
 	(version 7)
-	(lib (name "pico-serial") (type "KiCad") (uri "${KIPRJMOD}/lib/pico-serial.pretty") (options "") (descr "RM2"))
+	(lib (name "pico-serial") (type "KiCad") (uri "${KIPRJMOD}/lib/pico-serial.pretty") (options "") (descr "RM2, screw hole, RJ11, telecom fuse"))
 )

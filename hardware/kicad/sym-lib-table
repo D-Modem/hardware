@@ -1,4 +1,4 @@
 (sym_lib_table
 	(version 7)
-	(lib (name "pico-serial") (type "KiCad") (uri "${KIPRJMOD}/pico-serial.kicad_sym") (options "") (descr "SP3238E, MAX3243E, RM2"))
+	(lib (name "pico-serial") (type "KiCad") (uri "${KIPRJMOD}/pico-serial.kicad_sym") (options "") (descr "SP3238E, MAX3243E, RM2, Si3056, Si3018"))
 )

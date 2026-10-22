@@ -60,6 +60,8 @@ BLOCKS = [  # key, title, max width (mm)
     ("db25", "DB25 female (hand-fitted)", 45),
     ("led", "Status LEDs" + ("" if N.W else " (optional, not fitted)"), 118),
     ("radio", "Bluetooth: Raspberry Pi RM2 (CYW43439), wired as on Pico W", 150),
+    ("daa", "Telephone line, system side: Si3056 DAA (USB ground)", 150),
+    ("line", "Line side: Si3018, hook switch, bridge, protection (isolated: no ground plane)", 260),
     ("tp", "Test pads", 100),
     ("flags", "Power flags for ERC", 60),
 ]
@@ -68,6 +70,8 @@ SHEET_ROWS = [[["usb"], ["clock"], ["db25"], ["led"]], [["mcu"], ["rsa"], ["rsb"
 if N.W:
     SHEET_ROWS = [[["usb"], ["clock"], ["db25"], ["led"]], [["mcu"], ["rsa"], ["rsb"], ["tp", "flags"]],
                   [["radio"]]]
+if N.LINE:
+    SHEET_ROWS = [[["usb"], ["clock"], ["led", "tp", "flags"]], [["mcu"], ["daa"], ["line"]]]
 FLAGS_SIZE = (35.56, 15.24)
 
 
@@ -98,8 +102,21 @@ def lib_id(ref):
         return "pico-serial:MAX3243E"
     if pins is N.RM2:
         return "pico-serial:RM2"
+    if pins is N.SI3056:
+        return "pico-serial:Si3056"
+    if pins is N.SI3018:
+        return "pico-serial:Si3018"
+    if pins is N.BJT:
+        return f"Transistor_BJT:{p['value']}"          # MMBTA42 / MMBTA92 / MMBTA06: 1 B, 2 E, 3 C
+    if pins is N.DUALDIODE:
+        return "Device:D_Dual_Series_AKC"               # 1 anode, 2 cathode, 3 the middle
+    if pins is N.RJ:
+        return "Connector:6P6C"
     if pins is N.TWO:
-        return {"R": "Device:R", "C": "Device:C", "F": "Device:Polyfuse"}[ref.rstrip("0123456789")]
+        if "Fuse_Littelfuse" in p["footprint"]:
+            return "Device:Fuse"                        # the telecom fuse (not a PTC)
+        return {"R": "Device:R", "C": "Device:C", "F": "Device:Polyfuse", "FB": "Device:FerriteBead",
+                "RV": "Device:D_TVS"}[ref.rstrip("0123456789")]
     if pins is N.DIODE:
         return "Device:LED" if p["value"].startswith("LED") else "Device:D_Zener"
     lib, name = N.SYMBOLS[id(pins)]
@@ -108,7 +125,8 @@ def lib_id(ref):
 
 def custom_symbol(name, left, right, top, bottom, desc, fp, ds):
     """A plain box: logic pins left, RS-232 and charge pump right, VCC top, GND bottom."""
-    pins_tab = {"SP3238E": N.SP3238E, "MAX3243E": N.MAX3243E, "RM2": N.RM2}[name]
+    pins_tab = {"SP3238E": N.SP3238E, "MAX3243E": N.MAX3243E, "RM2": N.RM2, "Si3056": N.SI3056,
+                "Si3018": N.SI3018}[name]
     by_name = {}
     for num, (pname, ty) in pins_tab.items():
         by_name.setdefault(pname, []).append((num, ty))
@@ -177,6 +195,23 @@ CUSTOM = {
         top=["VDDIO", "VIN"], bottom=["GND"] * 6,
         desc="Raspberry Pi Radio Module 2: CYW43439 Wi-Fi 4 + Bluetooth 5.2, gSPI host interface",
         fp="pico-serial:RaspberryPi_RM2", ds="https://datasheets.raspberrypi.com/rm2/rm2-datasheet.pdf"),
+    "Si3056": custom_symbol(
+        "Si3056",
+        left=["MCLK", "SCLK", "~{FSYNC}", "SDO", "SDI", "FC/~{RGDT}", None, "~{RESET}", "M0", "~{RGDT}/FSD/M1",
+              "~{OFHK}", "AOUT/~{INT}"],
+        right=["C1A", "C2A", None, "VA"],
+        top=["VD"], bottom=["GND"],
+        desc="Skyworks Si3056 Global Serial Interface DAA, system side: codec, 7.2-16 kHz serial port for a modem DSP",
+        fp="Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
+        ds="https://www.skyworksinc.com/-/media/Skyworks/SL/documents/public/data-sheets/Si3056.pdf"),
+    "Si3018": custom_symbol(
+        "Si3018",
+        left=["C1B", "C2B", None, "DCT", "RX", "IB", "VREG", "VREG2"],
+        right=["QE", "QE2", "QB", "DCT2", "DCT3", "SC", None, "RNG1", "RNG2"],
+        top=[], bottom=["IGND"],
+        desc="Skyworks Si3018 DAA, line side: hook switch control, DC/AC termination, ring detect, caller ID",
+        fp="Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
+        ds="https://www.skyworksinc.com/-/media/Skyworks/SL/documents/public/data-sheets/Si3056.pdf"),
 }
 
 CACHE = os.path.join(HERE, "lib", "symbol-cache.sexp")
@@ -188,7 +223,8 @@ def needed_lib_ids():
 
 
 def load_from_kicad(libdir):
-    out = {}
+    # keep what the cache has for the other boards; refresh this board's symbols
+    out = {n[1]: n for n in find(sexpr.parse(open(CACHE).read()), "symbol")} if os.path.exists(CACHE) else {}
     files = {}
     for lid in needed_lib_ids():
         lib, name = lid.split(":")
@@ -660,11 +696,12 @@ def build(syms):
     sch = [Sym("kicad_sch"), [Sym("version"), Sym("20250114")], [Sym("generator"), "eeschema"],
            [Sym("generator_version"), "9.0"], [Sym("uuid"), root], [Sym("paper"), paper],
            [Sym("title_block"), [Sym("title"), "pico-serial W: Bluetooth and USB-C to DB25 RS-232 (DCE/DTE)" if N.W
+                             else "pico-serial Line: USB-C telephone line interface for D-Modem" if N.LINE
                              else "pico-serial: USB-C to DB25 RS-232 (DCE/DTE)"],
             [Sym("date"), N.DATE], [Sym("rev"), "0.3"],
-            [Sym("comment"), 1, "RP2040, SP3238E (DCE) + MAX3243E (DTE) on one female DB25"
-             + (", RM2 Bluetooth" if N.W else "")],
-            [Sym("comment"), 2, ("See SPEC-W.md" if N.W else "See SPEC.md")
+            [Sym("comment"), 1, "RP2040, Si3056 + Si3018 DAA, RJ11" if N.LINE else
+             "RP2040, SP3238E (DCE) + MAX3243E (DTE) on one female DB25" + (", RM2 Bluetooth" if N.W else "")],
+            [Sym("comment"), 2, ("See SPEC-W.md" if N.W else "See SPEC-L.md" if N.LINE else "See SPEC.md")
              + "; parts and nets come from hardware/netlist/build_netlist.py"],
             [Sym("comment"), 3, "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)"],
             [Sym("comment"), 4, "Source: https://github.com/Neo-Desktop/pico-serial"]],
@@ -917,10 +954,10 @@ def main():
     write_lib(os.path.join(HERE, f"{PROJECT}.kicad_sym"))
     open(os.path.join(HERE, "sym-lib-table"), "w").write(
         '(sym_lib_table\n\t(version 7)\n\t(lib (name "pico-serial") (type "KiCad") '
-        '(uri "${KIPRJMOD}/pico-serial.kicad_sym") (options "") (descr "SP3238E, MAX3243E, RM2"))\n)\n')
+        '(uri "${KIPRJMOD}/pico-serial.kicad_sym") (options "") (descr "SP3238E, MAX3243E, RM2, Si3056, Si3018"))\n)\n')
     open(os.path.join(HERE, "fp-lib-table"), "w").write(
         '(fp_lib_table\n\t(version 7)\n\t(lib (name "pico-serial") (type "KiCad") '
-        '(uri "${KIPRJMOD}/lib/pico-serial.pretty") (options "") (descr "RM2"))\n)\n')
+        '(uri "${KIPRJMOD}/lib/pico-serial.pretty") (options "") (descr "RM2, screw hole, RJ11, telecom fuse"))\n)\n')
     pro = os.path.join(HERE, f"{PROJECT}.kicad_pro")
     if not os.path.exists(pro):
         open(pro, "w").write('{\n  "meta": {\n    "filename": "' + PROJECT + '.kicad_pro",\n    "version": 3\n  }\n}\n')

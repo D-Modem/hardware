@@ -27,7 +27,7 @@ jobs:
 
       - name: Netlists and schematics match the netlist script
         run: |
-          for v in hood w; do
+          for v in hood w line; do
             python3 hardware/netlist/build_netlist.py --variant $v
             python3 hardware/kicad/build_schematic.py --variant $v
           done
@@ -36,7 +36,7 @@ jobs:
 
       - name: ERC
         run: |
-          for b in pico-serial pico-serial-w; do
+          for b in pico-serial pico-serial-w pico-serial-line; do
             kicad-cli sch erc --severity-error --exit-code-violations -o erc.rpt hardware/kicad/$b.kicad_sch || { cat erc.rpt; exit 1; }
           done
 
