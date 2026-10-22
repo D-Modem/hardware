@@ -981,6 +981,9 @@ def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
                     free[L] &= ~m
         if no_v:
             vfree &= ~_poly_mask(pts, X, Y, vd / 2 + 0.01)
+    if POUR_OUTLINE and board.GetLayerID("In1.Cu") in lid:   # In1: only where its plane isn't (the line side)
+        L1 = board.GetLayerID("In1.Cu")
+        free[L1] &= ~_poly_mask(POUR_OUTLINE, X, Y, w / 2 + clr + 0.2)
     for o in src + dst:   # no via inside a pad of the link's own ends
         if o.Type() == pcbnew.PCB_PAD_T:
             vfree &= _dist(_geom(o)[0], X, Y) > vd / 2
@@ -1190,6 +1193,8 @@ def finish(board):
     """Route what's left, net by net, joining islands two at a time; if a link
     won't go, rip up the nets in its way and route them again."""
     layers = ["F.Cu", "In2.Cu", "B.Cu"]
+    if POUR_OUTLINE:   # the Line board's plane covers the USB side only: In1 is free on the line side
+        layers.insert(1, "In1.Cu")
     left = []
     for net in sorted({p.GetNetname() for p in board.GetPads() if p.GetNetname()}):
         if net in PLANES.values():
