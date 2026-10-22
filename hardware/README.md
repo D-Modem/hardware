@@ -7,10 +7,14 @@ board. The netlist, the readable net list, the JLC parts list, the
 schematic and the PCB are all generated from it, so change the script,
 not the outputs.
 
-It makes two boards. The **hood board** (the default) fits a standard DB25
+It makes three boards. The **hood board** (the default) fits a standard DB25
 hood. **pico-serial W** (`--variant w`, [SPEC-W.md](../SPEC-W.md)) adds an
 RM2 Bluetooth module and lives in a 3D-printed hood (`enclosure/`). Its
 files carry a `-w` suffix; see [pico-serial W](#pico-serial-w-bluetooth).
+**pico-serial Line** (`--variant line`, [SPEC-L.md](../SPEC-L.md)) is a
+different device on the same RP2040 core: a USB-C stick that connects to a
+telephone line, for D-Modem; files `-line`, see
+[pico-serial Line](#pico-serial-line-phone-line-stick).
 
 Everything targets **KiCad 9**: KiCad 9 file formats and the KiCad 9.0
 symbol and footprint libraries. KiCad 10 opens it too.
@@ -32,7 +36,9 @@ symbol and footprint libraries. KiCad 10 opens it too.
 | `kicad/render-top.png`, `render-bottom.png` | KiCad 3D renders, without part models (generated) |
 | `netlist/pico-serial-w.net`, `NETLIST-w.md`, `bom-jlc-w.csv` | The same for pico-serial W (generated) |
 | `kicad/pico-serial-w.*`, `preview-w.svg`, `render-w-*.png` | pico-serial W's schematic, PCB, rules and renders |
-| `kicad/lib/make_footprints.py` | Writes `lib/pico-serial.pretty/`: the RM2 (from its datasheet's drawing) and the M2 screw hole |
+| `kicad/lib/make_footprints.py` | Writes `lib/pico-serial.pretty/`: the RM2 (from its datasheet's drawing), the M2 screw hole, the RJ11 and the telecom fuse |
+| `netlist/*-line.*`, `kicad/pico-serial-line.*`, `kicad/render-line-*.png` | pico-serial Line's netlist, BOM, schematic, PCB, rules and renders |
+| `enclosure/stick.py`, `enclosure/out-line/` | The Line stick's printed shell, its board outline and placement |
 | `kicad/fp-lib-table` | Points KiCad at `lib/pico-serial.pretty` |
 
 ## Regenerate

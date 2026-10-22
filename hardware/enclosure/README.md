@@ -33,3 +33,30 @@ parameter and re-run; the checks run again.
 - the flange fit;
 - that the thumbscrews reach a real computer's jack posts;
 - that your USB-C cable's plug seats fully.
+
+# pico-serial Line stick
+
+The phone-line stick's shell (`../../SPEC-L.md` §7): about the length of a
+disposable lighter, like Apple's USB Modem, with the RJ11 at one end and
+the USB-C at the other.
+
+```sh
+python3 hardware/enclosure/stick.py
+```
+
+It writes `out-line/` (the two halves as STL and STEP, an assembly, the
+board outline, `placement.md`) and refuses to if anything collides.
+
+- **Size:** 82 × 24 × 19.9 mm. The 13 mm-tall RJ11 sets the thickness;
+  a lighter is about 15.
+- **RJ11:** its opening is flush with the end face; the socket's front
+  fills the end wall's cut-out.
+- **USB-C:** the receptacle sits 1.1 mm inside a 13.2 × 7.6 mm opening,
+  so a plug's overmould seats fully (as the W hood).
+- **Fixing:** one M2 × 8 self-tapping screw from below, through the
+  board, on the USB side of the isolation gap. The end walls hold the
+  board's ends.
+- **LEDs:** OH (off hook) and RI (ringing), under light tubes, labelled.
+- **Bottom face:** the Source Location and `CERN-OHL-S-2.0`.
+
+Print in MJF PA12 as the hood. **Not yet printed.**
