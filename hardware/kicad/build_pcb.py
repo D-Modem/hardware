@@ -8,6 +8,9 @@
 --variant w lays out pico-serial W (pico-serial-w.kicad_pcb): the same
 circuit plus the RM2 radio, on the outline the printed hood sets
 (../enclosure/w_hood.py), with its antenna keep-out and screw holes.
+--variant line lays out the phone-line stick (pico-serial-line.kicad_pcb,
+SPEC-L.md) on the outline its shell sets (../enclosure/stick.py): the
+line side with no planes, an isolation gap only the Y2 capacitors cross.
 
 Writes pico-serial.kicad_pcb (and the board's rules and net classes into
 pico-serial.kicad_pro) next to the schematic, so the two are one KiCad
@@ -221,6 +224,92 @@ if N.W:
         PLACE[ref] = (6.5 + 2.6 * (i % 4), 21.0 + 2.6 * (i // 4), 0, "B")
 
 
+POUR_OUTLINE = None          # where planes and pours go (None: the whole board)
+BARRIER = None               # (y0, y1): the isolation gap across the board, no copper but the Y2 caps' pads
+if N.LINE:
+    sys.path.insert(0, os.path.join(HERE, "..", "enclosure"))
+    import stick as ST  # noqa: E402
+
+    def stick(x, y):
+        return (round(y, 3), round(x - ST.BOARD_X0, 3))
+
+    OUTLINE = [stick(*p) for p in ST.board_outline()]
+    SCREWS = [stick(*p) for p in ST.SCREWS]
+    SCREW_HOLE, SCREW_CLEAR = ST.SCREW_HOLE, ST.SCREW_CLEAR
+    BY = 31.7                                    # the gap's centre line
+    BARRIER = (BY - 1.25, BY + 1.25)             # 2.5 mm: the 1808 caps' pads are 2.6 apart
+    # planes and pours on the USB side only: the line side has no ground plane (AN67)
+    ymax = max(y for _, y in OUTLINE)
+    POUR_OUTLINE = [(-ST.BOARD_Y, BARRIER[1] + 0.2), (ST.BOARD_Y, BARRIER[1] + 0.2),
+                    (ST.BOARD_Y, ymax), (-ST.BOARD_Y, ymax)]
+    NETCLASSES["Line"] = ((0.3, 0.4, 0.6, 0.3), ["/LS_*", "/LINE_*"])   # the line: up to ~200 V peak ringing
+    USB_Y = ST.USB_X1 - ST.BOARD_X0              # the receptacle's mouth
+    RJ_Y = ST.RJ_PINS_X - ST.BOARD_X0            # the RJ11's rear contact row
+    UY = 56.0                                    # the RP2040, behind the screw
+    PLACE = {
+        # --- connectors: RJ11 opening to the front edge, USB-C to the back
+        "J2": (0.0, RJ_Y, 90, "F"),
+        "J1": (0.0, USB_Y - 3.65, 0, "F"),
+        "R3": (-2.2, USB_Y - 2.1, 0, "B"), "C1": (2.2, USB_Y - 2.1, 0, "B"),       # USB shield
+        "U4": (-0.4, USB_Y - 11.1, 270, "F"),                                       # ESD, behind the pad row
+        "R1": (-3.4, USB_Y - 11.0, 90, "F"), "R2": (2.8, USB_Y - 11.0, 90, "F"),   # CC
+        # --- power along the sides, beside the receptacle
+        "F1": (7.8, 69.6, 90, "F"), "D1": (7.8, 64.4, 90, "F"),
+        "C2": (-7.6, 70.0, 90, "F"), "U3": (-7.0, 65.6, 90, "F"), "C3": (-7.6, 61.8, 90, "F"),
+        "R4": (5.2, 67.6, 90, "F"), "R5": (4.2, 67.6, 90, "F"),                    # VBUS sense (GP29)
+        # --- RP2040, its flash, crystal and buttons (crystal and caps as on the hood board)
+        "U1": (0.0, UY, 180, "F"),
+        "R6": (-0.65, UY + 5.2, 90, "F"), "R7": (-1.75, UY + 5.2, 90, "F"),        # USB 27R, as on the hood board
+        "U2": (0.0, 65.4, 0, "B"), "C18": (5.6, 64.0, 90, "B"),                    # flash, underneath, behind the RP2040
+        "Y1": (3.8, UY - 6.6, 0, "F"), "R8": (0.5, UY - 6.4, 90, "F"),
+        "C16": (-0.7, UY - 6.4, 90, "F"), "C17": (6.5, UY - 7.45, 90, "F"),
+        "SW1": (-8.4, UY, 90, "F"), "R9": (-6.2, UY - 4.0, 90, "F"),               # BOOTSEL
+        "SW2": (8.4, UY, 90, "F"), "R10": (5.6, UY - 3.6, 90, "F"),                # RESET
+        # --- Si3056, the USB side of the line interface
+        "U5": (0.0, 38.6, 90, "F"),
+        "C19": (6.0, 38.6, 90, "F"), "C20": (-6.0, 38.6, 90, "F"),                 # VD, VA
+        "R11": (8.0, 36.0, 90, "B"), "R12": (9.0, 36.0, 90, "B"), "R13": (8.0, 38.4, 90, "B"),  # pull-ups
+        "R14": (-4.2, 34.3, 0, "F"), "R15": (4.2, 34.3, 0, "F"),                   # 56.2R to C1A, C2A
+        # --- the isolation gap: the Y2 caps straddle it, nothing else crosses
+        "C21": (-1.6, BY, 90, "F"), "C22": (1.6, BY, 90, "F"),                     # C1, C2: the data path
+        "C29": (-7.8, BY, 270, "F"), "C30": (7.8, BY, 270, "F"),                   # C8, C9: TIP/RING to ground
+        # --- line side, top: Si3018, the surge suppressor behind the jack
+        "U6": (0.0, 24.7, 270, "F"),
+        "RV1": (-5.6, 18.6, 0, "F"),                                                # between the jack and the Si3018
+        "C28": (5.0, 17.5, 0, "F"), "C23": (5.0, 19.6, 0, "F"),                    # C3 10nF 250V, C4 1uF
+        "C24": (-6.2, 26.2, 90, "F"), "C25": (6.2, 26.2, 90, "F"),                 # VREG, VREG2
+        "C26": (8.4, 21.0, 90, "F"), "C27": (8.4, 24.4, 90, "F"),                  # C7, C10
+        "R17": (-8.4, 23.4, 90, "F"),                                               # IB 1M
+        "FB1": (-8.4, 27.0, 90, "F"), "FB2": (8.4, 27.0, 90, "F"),                 # ferrites by C8, C9
+        # --- line side, bottom: the fuse across the front, then the termination and hook switch
+        "F2": (0.0, 3.0, 0, "B"),
+        "R16": (-5.0, 7.2, 0, "B"), "R19": (5.0, 7.2, 0, "B"),                     # R1 1.07k, R3 3.65k (2010)
+        "R22": (-2.6, 10.6, 0, "B"), "R18": (2.6, 10.6, 0, "B"),                   # R4 2.49k, R10 536R (1206)
+        # beside the jack's contacts, then behind them
+        "Q1": (-8.5, 14.4, 90, "B"), "Q2": (-5.0, 14.4, 90, "B"), "Q3": (5.0, 14.4, 90, "B"), "Q4": (8.5, 14.4, 90, "B"),
+        "R21": (0.0, 18.4, 0, "B"),                                                 # R11 73.2R (1210)
+        "Q5": (8.3, 18.4, 0, "B"), "D2": (-8.6, 18.9, 90, "B"),                    # Z1 43 V
+        "R20": (-2.2, 21.4, 0, "B"), "R23": (2.2, 21.4, 0, "B"), "R24": (2.2, 22.6, 0, "B"),    # R2, R5, R6
+        "R25": (-7.6, 23.6, 90, "B"), "R26": (7.6, 23.6, 90, "B"),                 # caller ID 20M (1206)
+        "D3": (-4.0, 25.8, 0, "B"), "D4": (4.0, 25.8, 0, "B"),                     # the bridge
+        "R27": (-1.4, 28.4, 0, "B"), "R28": (1.4, 28.4, 0, "B"),                   # the 0R links
+    }
+    # RP2040 decoupling on the bottom, as on the hood board relative to the chip
+    for ref, (dx, dy, rot) in {"C4": (5.6, 3.0, 90), "C5": (5.6, 0.0, 90), "C6": (0.0, -6.0, 0),
+                               "C14": (-2.0, -6.0, 0), "C7": (-5.0, -2.0, 0), "C8": (-4.9, 3.9, 0),
+                               "C11": (-6.0, 5.2, 0), "C12": (-6.0, 6.2, 0), "C13": (-6.0, 7.2, 0),
+                               "C10": (1.4, 3.6, 0), "C9": (1.4, 4.65, 0), "C15": (1.4, 5.7, 0)}.items():
+        PLACE[ref] = (dx, UY + dy, rot, "B")
+    # LEDs under the shell's light tubes, resistor beside each
+    for i, (name, sx, sy) in enumerate(ST.LEDS):
+        x, y = stick(sx, sy)
+        PLACE[f"D{5 + i}"] = (x, y, 90, "F")
+        PLACE[f"R{29 + i}"] = (x - 1.5 if x > 0 else x + 1.5, y, 90, "F")
+    # test pads: bottom, under the Si3056
+    for i, ref in enumerate(f"TP{n}" for n in range(1, 13)):
+        PLACE[ref] = (-4.8 + 2.6 * (i % 4), 34.6 + 2.6 * (i // 4), 0, "B")
+
+
 def uid(*parts):
     return str(uuid.uuid5(NS, "/".join(map(str, parts))))
 
@@ -355,6 +444,9 @@ SILK = [
     ("github.com/Neo-Desktop/pico-serial", 0.0, 4.45, 0.8, "B", "c"),  # between the cups and the chips
     ("CERN-OHL-S-2.0", -9.8, 7.9, 0.8, "F", "c"),
 ]
+if N.LINE:   # a narrow board: the licence and Source Location are on the shell's bottom too (stick.py)
+    SILK = [(f"pico-serial Line rev {REVISION}", 0.0, 41.4, 0.8, "B", "c"),
+            ("CERN-OHL-S-2.0", 0.0, 31.9, 0.8, "B", "c")]   # on the isolation gap
 if N.W:
     SILK += [(name, PLACE[f"D{2 + i}"][0] - 3.6, PLACE[f"D{2 + i}"][1] + 0.3, 0.8, "F", "c")
              for i, (name, _) in enumerate(H.LEDS)]
@@ -399,14 +491,14 @@ def planes(board):
     for lname, net in PLANES.items():
         layer = board.GetLayerID(lname)
         board.SetLayerType(layer, pcbnew.LT_POWER)
-        poly_zone(board, layer, net, OUTLINE)
+        poly_zone(board, layer, net, POUR_OUTLINE or OUTLINE)
 
 
 def pours(board):
     """Copper pours added after routing, filling around the tracks."""
     for lname, net in POURS:
         thermal = lname in ("F.Cu", "B.Cu")
-        poly_zone(board, board.GetLayerID(lname), net, OUTLINE, priority=1 if not thermal else 0,
+        poly_zone(board, board.GetLayerID(lname), net, POUR_OUTLINE or OUTLINE, priority=1 if not thermal else 0,
                   thermal=thermal)
 
 
@@ -490,6 +582,18 @@ def rf_keepout(board):
         z.SetZoneName("RM2 antenna keep-out")
 
 
+def barrier(board):
+    """SPEC-L §3.3: the isolation gap across the board, on every layer: no
+    tracks, vias or pours. Only the Y2 capacitors' bodies cross it (their pads
+    sit either side)."""
+    if BARRIER:
+        y0, y1 = BARRIER
+        x0 = min(x for x, _ in OUTLINE) - 1
+        x1 = max(x for x, _ in OUTLINE) + 1
+        z = rule_area(board, ((x0, y0), (x1, y0), (x1, y1), (x0, y1)), CU)
+        z.SetZoneName("isolation gap")
+
+
 def screw_holes(board):
     """The hood's M2 screws pass through the board: a plain hole each (a board-only
     footprint, so it isn't expected in the schematic), and a keep-out around it for
@@ -571,11 +675,14 @@ def fanout(board):
     vr = FAN_VIA[0] / 2
     pads = [p for p in board.GetPads()]
     vias = [t for t in board.GetTracks() if t.Type() == pcbnew.PCB_VIA_T]
+    no_vias = [z.Outline() for z in board.Zones() if z.GetIsRuleArea() and z.GetDoNotAllowVias()]
     tracks = []
     fails = []
     lay = lambda p: pcbnew.F_Cu if p.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
 
     def clear(v, seg, layer, own):
+        if any(o.Collide(v, mm(vr + 0.02)) for o in no_vias):   # keep-outs: the isolation gap, screws, the crystal
+            return False
         circ = pcbnew.SHAPE_CIRCLE(v, mm(vr))
         for q in pads:
             if q is own:
@@ -1075,6 +1182,7 @@ def build(fpdir):
     screw_holes(board)
     hole_keepouts(board)
     rf_keepout(board)
+    barrier(board)
     edge_keepout(board)
     crystal_keepout(board, fps)
     ep_vias(board, fps)
