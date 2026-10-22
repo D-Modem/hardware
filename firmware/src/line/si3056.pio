@@ -1,0 +1,46 @@
+; SPDX-License-Identifier: AGPL-3.0-only
+; Copyright (C) 2026 Neo-Desktop
+;
+; The RP2040 as the Si3056's serial-port slave (serial mode 0, DCE = 0; Si3056
+; datasheet rev 1.03, Table 7 and Figure 3). The Si3056 makes SCLK (256 a
+; frame) and FSYNC from MCLK; FSYNC is low for the 16 SCLKs of each word,
+; primary or secondary. It changes SDO and FSYNC just after SCLK rises and
+; samples SDI as SCLK falls. So here: SDI out after a rising edge, SDO in on
+; the falling one, MSB first.
+;
+; SCLK and FSYNC are GPIO 2 and 3 (wait gpio: absolute numbers; daa.c checks
+; them against the netlist's). IN base: SDO; OUT base: SDI. TX words in bits
+; 31:16; each RX word is pushed in bits 15:0. X stays 0, so a TX FIFO that
+; ran dry sends silence (pull noblock copies X).
+
+.program si3056
+.wrap_target
+    wait 1 gpio 3          ; FSYNC high: between words
+    wait 0 gpio 3          ; FSYNC falls with a rising SCLK: a word starts
+    pull noblock           ; its TX word (or 0)
+    set y, 15
+bit:
+    out pins, 1            ; SDI, before the falling edge
+    wait 0 gpio 2          ; SCLK falls: SDO is valid
+    in pins, 1
+    wait 1 gpio 2          ; SCLK rises: the next bit
+    jmp y-- bit
+    push noblock           ; the word received
+.wrap
+
+% c-sdk {
+// The program on sm: SDO in, SDI out, shifting MSB first, at the system
+// clock (the PIO follows SCLK; it only needs to be fast enough to see it).
+static inline void si3056_program_init(PIO pio, uint sm, uint offset, uint pin_sdo, uint pin_sdi) {
+    pio_sm_config c = si3056_program_get_default_config(offset);
+    sm_config_set_in_pins(&c, pin_sdo);
+    sm_config_set_out_pins(&c, pin_sdi, 1);
+    sm_config_set_in_shift(&c, false, false, 32);    // left: MSB first, no autopush
+    sm_config_set_out_shift(&c, false, false, 32);   // left: bits 31:16 first, no autopull
+    pio_gpio_init(pio, pin_sdi);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_sdi, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_sdo, 1, false);
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_exec(pio, sm, pio_encode_set(pio_x, 0));
+}
+%}

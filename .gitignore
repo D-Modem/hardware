@@ -3,6 +3,7 @@ firmware/build*/
 firmware/test/test_core
 firmware/test/test_autobaud
 firmware/test/test_link
+firmware/test/test_line
 firmware/test/emu/node_modules/
 firmware/test/emu/vendor/
 hardware/kicad/*.kicad_prl

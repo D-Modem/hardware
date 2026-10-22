@@ -49,6 +49,13 @@ jobs:
                 -DPICO_TINYUSB_PATH=$PWD/firmware/build-hood/_deps/tinyusb-src
           ninja -C firmware/build-pico
 
+      - name: Build (phone-line stick)
+        run: |
+          cmake -S firmware -B firmware/build-line -G Ninja -DPS_BOARD=line \
+                -DPICO_SDK_PATH=$PWD/firmware/build-hood/_deps/pico_sdk-src \
+                -DPICO_TINYUSB_PATH=$PWD/firmware/build-hood/_deps/tinyusb-src
+          ninja -C firmware/build-line
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -63,3 +70,4 @@ jobs:
             firmware/build-hood/pico-serial-hood.uf2
             firmware/build-w/pico-serial-w.uf2
             firmware/build-pico/pico-serial-pico.uf2
+            firmware/build-line/pico-serial-line.uf2

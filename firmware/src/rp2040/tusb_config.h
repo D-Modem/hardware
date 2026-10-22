@@ -11,7 +11,11 @@
 #define CFG_TUSB_OS OPT_OS_PICO
 #define CFG_TUD_ENDPOINT0_SIZE 64
 
+#if defined(PS_BOARD_LINE)
+#define CFG_TUD_CDC 0                 // the line stick: one vendor interface (src/line/usb_line.c)
+#else
 #define CFG_TUD_CDC 1
+#endif
 #define CFG_TUD_CDC_NOTIFY 1          // SERIAL_STATE: DCD, DSR, RI, errors (TinyUSB >= 0.19)
 #define CFG_TUD_CDC_RX_BUFSIZE 512
 #define CFG_TUD_CDC_TX_BUFSIZE 512
