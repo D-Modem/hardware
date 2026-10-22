@@ -374,7 +374,7 @@
 <line x1="444.5" y1="219.71" x2="444.5" y2="217.17000000000002" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="444.5" y1="227.33" x2="444.5" y2="229.87" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="444.200" y="217.170" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 444.200 217.170)">LS_Q2B</text>
-<text x="444.200" y="229.870" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 444.200 229.870)">LS_VP</text>
+<text x="444.200" y="229.870" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 444.200 229.870)">LINE_VP</text>
 <polyline points="457.708,225.298 461.772,225.298" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="457.708,226.822 461.772,226.822" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="459.74" y1="222.25" x2="459.74" y2="225.044" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -384,19 +384,19 @@
 <line x1="459.74" y1="222.25" x2="459.74" y2="219.71" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="459.74" y1="229.87" x2="459.74" y2="232.41" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="459.440" y="219.710" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 459.440 219.710)">LS_IGND</text>
-<text x="459.440" y="232.410" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 459.440 232.410)">LS_VP</text>
-<polyline points="478.028,225.298 482.092,225.298" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="478.028,226.822 482.092,226.822" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="480.06" y1="222.25" x2="480.06" y2="225.044" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="480.06" y1="229.87" x2="480.06" y2="227.076" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="483.870" y="225.425" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">C29</text>
-<text x="483.870" y="227.965" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">680pF Y2</text>
-<line x1="480.06" y1="222.25" x2="480.06" y2="219.71" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="480.06" y1="229.87" x2="480.06" y2="232.41" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="479.760" y="219.710" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 479.760 219.710)">LS_TIP_M</text>
-<polyline points="480.060,232.410 480.060,233.680 481.330,233.680 480.060,234.950 478.790,233.680 480.060,233.680" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="480.06" y1="232.41" x2="480.06" y2="232.41" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="480.060" y="236.010" font-size="1.46" text-anchor="end" fill="#444" font-weight="normal" dominant-baseline="middle" transform="rotate(-90.0 480.060 236.010)">GND</text>
+<text x="459.440" y="232.410" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 459.440 232.410)">LINE_VP</text>
+<polyline points="478.028,227.838 482.092,227.838" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="478.028,229.362 482.092,229.362" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="480.06" y1="224.79" x2="480.06" y2="227.584" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="480.06" y1="232.41" x2="480.06" y2="229.616" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="483.870" y="227.965" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">C29</text>
+<text x="483.870" y="230.505" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">680pF Y2</text>
+<line x1="480.06" y1="224.79" x2="480.06" y2="222.25" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="480.06" y1="232.41" x2="480.06" y2="234.95" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="479.760" y="222.250" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 479.760 222.250)">LINE_TIP_M</text>
+<polyline points="480.060,234.950 480.060,236.220 481.330,236.220 480.060,237.490 478.790,236.220 480.060,236.220" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="480.06" y1="234.95" x2="480.06" y2="234.95" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="480.060" y="238.550" font-size="1.46" text-anchor="end" fill="#444" font-weight="normal" dominant-baseline="middle" transform="rotate(-90.0 480.060 238.550)">GND</text>
 <polyline points="495.808,227.838 499.872,227.838" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="495.808,229.362 499.872,229.362" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="497.84" y1="224.79" x2="497.84" y2="227.584" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -405,7 +405,7 @@
 <text x="501.650" y="230.505" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">680pF Y2</text>
 <line x1="497.84" y1="224.79" x2="497.84" y2="222.25" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="497.84" y1="232.41" x2="497.84" y2="234.95" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="497.540" y="222.250" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 497.540 222.250)">LS_RING_M</text>
+<text x="497.540" y="222.250" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 497.540 222.250)">LINE_RING_M</text>
 <polyline points="497.840,234.950 497.840,236.220 499.110,236.220 497.840,237.490 496.570,236.220 497.840,236.220" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="497.84" y1="234.95" x2="497.84" y2="234.95" stroke="#8a2f2f" stroke-width="0.2"/>
 <text x="497.840" y="238.550" font-size="1.46" text-anchor="end" fill="#444" font-weight="normal" dominant-baseline="middle" transform="rotate(-90.0 497.840 238.550)">GND</text>
@@ -452,35 +452,35 @@
 <line x1="490.22" y1="167.64" x2="486.41" y2="167.64" stroke="#8a2f2f" stroke-width="0.2"/>
 <text x="488.315" y="167.290" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto">2</text>
 <text x="478.790" y="165.100" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">D3</text>
-<text x="478.790" y="185.420" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">MMBD3004S</text>
+<text x="478.790" y="187.960" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">MMBD3004S</text>
 <line x1="474.98" y1="167.64" x2="472.44" y2="167.64" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="482.6" y1="172.72" x2="482.6" y2="175.26" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="490.22" y1="167.64" x2="492.76000000000005" y2="167.64" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="472.440" y="167.340" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LS_IGND</text>
-<text x="482.300" y="175.260" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 482.300 175.260)">LS_TIP_F</text>
-<text x="492.760" y="167.340" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto">LS_VP</text>
-<polyline points="516.890,166.370 519.430,167.640 516.890,168.910 516.890,166.370 516.890,166.370 516.890,166.370" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="516.890,167.640 524.510,167.640" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="519.430,168.910 519.430,166.370 519.430,166.370" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="520.700,167.640 520.700,170.180" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<circle cx="520.7" cy="167.64" r="0.254" fill="#8a2f2f" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="521.970,166.370 524.510,167.640 521.970,168.910 521.970,166.370 521.970,166.370 521.970,166.370" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="524.510,166.370 524.510,168.910 524.510,168.910" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="527.050,167.640 528.320,167.640" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="513.08" y1="167.64" x2="516.89" y2="167.64" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="514.985" y="167.290" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto">1</text>
-<line x1="520.7" y1="172.72" x2="520.7" y2="170.18" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="520.300" y="171.450" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 520.300 171.450)">3</text>
-<line x1="528.32" y1="167.64" x2="524.51" y2="167.64" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="526.415" y="167.290" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto">2</text>
-<text x="516.890" y="165.100" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">D4</text>
-<text x="516.890" y="186.690" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">MMBD3004S</text>
-<line x1="513.08" y1="167.64" x2="510.54" y2="167.64" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="520.7" y1="172.72" x2="520.7" y2="175.26" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="528.32" y1="167.64" x2="530.86" y2="167.64" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="510.540" y="167.340" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LS_IGND</text>
-<text x="520.400" y="175.260" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 520.400 175.260)">LS_RING_F</text>
-<text x="530.860" y="167.340" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto">LS_VP</text>
+<text x="482.300" y="175.260" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 482.300 175.260)">LINE_TIP_F</text>
+<text x="492.760" y="167.340" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto">LINE_VP</text>
+<polyline points="519.430,166.370 521.970,167.640 519.430,168.910 519.430,166.370 519.430,166.370 519.430,166.370" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="519.430,167.640 527.050,167.640" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="521.970,168.910 521.970,166.370 521.970,166.370" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="523.240,167.640 523.240,170.180" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<circle cx="523.24" cy="167.64" r="0.254" fill="#8a2f2f" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="524.510,166.370 527.050,167.640 524.510,168.910 524.510,166.370 524.510,166.370 524.510,166.370" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="527.050,166.370 527.050,168.910 527.050,168.910" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="529.590,167.640 530.860,167.640" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="515.62" y1="167.64" x2="519.43" y2="167.64" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="517.525" y="167.290" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto">1</text>
+<line x1="523.24" y1="172.72" x2="523.24" y2="170.18" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="522.840" y="171.450" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 522.840 171.450)">3</text>
+<line x1="530.86" y1="167.64" x2="527.05" y2="167.64" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="528.955" y="167.290" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto">2</text>
+<text x="519.430" y="165.100" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">D4</text>
+<text x="519.430" y="187.960" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">MMBD3004S</text>
+<line x1="515.62" y1="167.64" x2="513.08" y2="167.64" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="523.24" y1="172.72" x2="523.24" y2="175.26" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="530.86" y1="167.64" x2="533.4" y2="167.64" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="513.080" y="167.340" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LS_IGND</text>
+<text x="522.940" y="175.260" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 522.940 175.260)">LINE_RING_F</text>
+<text x="533.400" y="167.340" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto">LINE_VP</text>
 <polyline points="357.632,31.242 356.108,32.766 356.870,32.766 356.108,32.766 356.108,32.004" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="358.902,31.242 357.378,32.766 358.140,32.766 357.378,32.766 357.378,32.004" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="359.410,30.480 361.950,30.480" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -526,38 +526,38 @@
 <polyline points="180.340,46.990 180.340,49.530" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="180.34" y1="46.99" x2="180.34" y2="46.99" stroke="#8a2f2f" stroke-width="0.2"/>
 <text x="180.340" y="50.590" font-size="1.46" text-anchor="end" fill="#444" font-weight="normal" dominant-baseline="middle" transform="rotate(-90.0 180.340 50.590)">VBUS</text>
-<rect x="540.258" y="175.26" width="1.524000000000001" height="5.0800000000000125" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="541.020,175.260 541.020,180.340" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="541.02" y1="173.99" x2="541.02" y2="175.26" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="541.02" y1="181.61" x2="541.02" y2="180.34" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="543.560" y="177.165" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">F2</text>
-<text x="543.560" y="179.705" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">1.25A</text>
-<line x1="541.02" y1="173.99" x2="541.02" y2="171.45000000000002" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="541.02" y1="181.61" x2="541.02" y2="184.15" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="540.720" y="171.450" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 540.720 171.450)">LINE_TIP</text>
-<text x="540.720" y="184.150" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 540.720 184.150)">LS_TIP_P</text>
-<polyline points="553.491,177.394 554.558,175.539 559.029,178.105 557.936,179.959 553.491,177.394" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="556.260,176.530 556.260,176.505" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="556.260,179.070 556.260,179.019" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="556.26" y1="173.99" x2="556.26" y2="176.53" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="556.26" y1="181.61" x2="556.26" y2="179.07" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="560.070" y="177.165" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">FB1</text>
-<text x="560.070" y="179.705" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">600R@100MHz</text>
-<line x1="556.26" y1="173.99" x2="556.26" y2="171.45000000000002" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="556.26" y1="181.61" x2="556.26" y2="184.15" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="555.960" y="171.450" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 555.960 171.450)">LS_TIP_F</text>
-<text x="555.960" y="184.150" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 555.960 184.150)">LS_TIP_M</text>
-<polyline points="576.351,179.934 577.418,178.079 581.889,180.645 580.796,182.499 576.351,179.934" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="579.120,179.070 579.120,179.045" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="579.120,181.610 579.120,181.559" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="579.12" y1="176.53" x2="579.12" y2="179.07" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="579.12" y1="184.15" x2="579.12" y2="181.61" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="582.930" y="179.705" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">FB2</text>
-<text x="582.930" y="182.245" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">600R@100MHz</text>
-<line x1="579.12" y1="176.53" x2="579.12" y2="173.99" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="579.12" y1="184.15" x2="579.12" y2="186.69" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="578.820" y="173.990" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 578.820 173.990)">LS_RING_F</text>
-<text x="578.820" y="186.690" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 578.820 186.690)">LS_RING_M</text>
+<rect x="545.338" y="175.26" width="1.524000000000001" height="5.0800000000000125" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="546.100,175.260 546.100,180.340" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="546.1" y1="173.99" x2="546.1" y2="175.26" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="546.1" y1="181.61" x2="546.1" y2="180.34" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="548.640" y="177.165" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">F2</text>
+<text x="548.640" y="179.705" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">1.25A</text>
+<line x1="546.1" y1="173.99" x2="546.1" y2="171.45000000000002" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="546.1" y1="181.61" x2="546.1" y2="184.15" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="545.800" y="171.450" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 545.800 171.450)">LINE_TIP</text>
+<text x="545.800" y="184.150" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 545.800 184.150)">LINE_TIP_P</text>
+<polyline points="558.571,179.934 559.638,178.079 564.109,180.645 563.016,182.499 558.571,179.934" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="561.340,179.070 561.340,179.045" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="561.340,181.610 561.340,181.559" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="561.34" y1="176.53" x2="561.34" y2="179.07" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="561.34" y1="184.15" x2="561.34" y2="181.61" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="565.150" y="179.705" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">FB1</text>
+<text x="565.150" y="182.245" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">600R@100MHz</text>
+<line x1="561.34" y1="176.53" x2="561.34" y2="173.99" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="561.34" y1="184.15" x2="561.34" y2="186.69" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="561.040" y="173.990" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 561.040 173.990)">LINE_TIP_F</text>
+<text x="561.040" y="186.690" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 561.040 186.690)">LINE_TIP_M</text>
+<polyline points="581.431,182.474 582.498,180.619 586.969,183.185 585.876,185.039 581.431,182.474" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="584.200,181.610 584.200,181.585" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="584.200,184.150 584.200,184.099" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="584.2" y1="179.07" x2="584.2" y2="181.61" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="584.2" y1="186.69" x2="584.2" y2="184.15" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="588.010" y="182.245" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">FB2</text>
+<text x="588.010" y="184.785" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">600R@100MHz</text>
+<line x1="584.2" y1="179.07" x2="584.2" y2="176.53" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="584.2" y1="186.69" x2="584.2" y2="189.23" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="583.900" y="176.530" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 583.900 176.530)">LINE_RING_F</text>
+<text x="583.900" y="189.230" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 583.900 189.230)">LINE_RING_M</text>
 <rect x="30.226" y="65.024" width="0.5080000000000027" height="1.0160000000000053" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <rect x="39.624" y="32.766" width="1.0159999999999982" height="0.5080000000000027" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <rect x="39.624" y="37.846" width="1.0159999999999982" height="0.5080000000000027" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -672,26 +672,26 @@
 <path d="M360.08,172.12L361.28000000000003,173.32M360.08,173.32L361.28000000000003,172.12" stroke="#1a3d8f" stroke-width="0.15"/>
 <path d="M360.08,179.74L361.28000000000003,180.94M360.08,180.94L361.28000000000003,179.74" stroke="#1a3d8f" stroke-width="0.15"/>
 <path d="M360.08,182.28000000000003L361.28000000000003,183.48000000000002M360.08,183.48000000000002L361.28000000000003,182.28000000000003" stroke="#1a3d8f" stroke-width="0.15"/>
-<polyline points="525.780,226.060 528.955,226.060" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="528.955,224.155 528.955,227.965" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<circle cx="529.59" cy="226.06" r="2.8194" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="528.955,225.425 530.860,223.520" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="528.955,226.695 530.860,228.600" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="529.590,227.838 530.098,227.330 530.606,228.346 529.590,227.838" fill="#8a2f2f" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="523.24" y1="226.06" x2="525.78" y2="226.06" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="524.510" y="225.710" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto">1</text>
-<line x1="530.86" y1="220.98" x2="530.86" y2="223.52" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="530.460" y="222.250" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.460 222.250)">3</text>
-<line x1="530.86" y1="231.14" x2="530.86" y2="228.6" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="530.460" y="229.870" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.460 229.870)">2</text>
+<polyline points="525.780,228.600 528.955,228.600" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="528.955,226.695 528.955,230.505" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<circle cx="529.59" cy="228.6" r="2.8194" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="528.955,227.965 530.860,226.060" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="528.955,229.235 530.860,231.140" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="529.590,230.378 530.098,229.870 530.606,230.886 529.590,230.378" fill="#8a2f2f" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="523.24" y1="228.6" x2="525.78" y2="228.6" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="524.510" y="228.250" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto">1</text>
+<line x1="530.86" y1="223.52" x2="530.86" y2="226.06" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="530.460" y="224.790" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.460 224.790)">3</text>
+<line x1="530.86" y1="233.68" x2="530.86" y2="231.14" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="530.460" y="232.410" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.460 232.410)">2</text>
 <text x="529.590" y="212.090" font-size="1.46" text-anchor="middle" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">Q1</text>
-<text x="529.590" y="240.030" font-size="1.46" text-anchor="middle" fill="#444" font-weight="normal" dominant-baseline="middle">MMBTA42</text>
-<line x1="523.24" y1="226.06" x2="520.7" y2="226.06" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="530.86" y1="220.98" x2="530.86" y2="218.44" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="530.86" y1="231.14000000000001" x2="530.86" y2="233.68" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="520.700" y="225.760" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LS_HB</text>
-<text x="530.560" y="218.440" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.560 218.440)">LS_VP</text>
-<text x="530.560" y="233.680" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.560 233.680)">LS_E</text>
+<text x="529.590" y="242.570" font-size="1.46" text-anchor="middle" fill="#444" font-weight="normal" dominant-baseline="middle">MMBTA42</text>
+<line x1="523.24" y1="228.6" x2="520.7" y2="228.6" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="530.86" y1="223.51999999999998" x2="530.86" y2="220.98" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="530.86" y1="233.68" x2="530.86" y2="236.22" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="520.700" y="228.300" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LS_HB</text>
+<text x="530.560" y="220.980" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.560 220.980)">LINE_VP</text>
+<text x="530.560" y="236.220" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 530.560 236.220)">LS_E</text>
 <polyline points="548.640,226.060 551.815,226.060" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="551.815,224.155 551.815,227.965" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="551.815,225.425 553.720,223.520" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -705,13 +705,13 @@
 <line x1="553.72" y1="231.14" x2="553.72" y2="228.6" stroke="#8a2f2f" stroke-width="0.2"/>
 <text x="553.320" y="229.870" font-size="1.03" text-anchor="middle" fill="#8a2f2f" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 553.320 229.870)">2</text>
 <text x="552.450" y="212.090" font-size="1.46" text-anchor="middle" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">Q2</text>
-<text x="552.450" y="240.030" font-size="1.46" text-anchor="middle" fill="#444" font-weight="normal" dominant-baseline="middle">MMBTA92</text>
+<text x="552.450" y="242.570" font-size="1.46" text-anchor="middle" fill="#444" font-weight="normal" dominant-baseline="middle">MMBTA92</text>
 <line x1="546.0999999999999" y1="226.06" x2="543.56" y2="226.06" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="553.7199999999999" y1="220.98" x2="553.7199999999999" y2="218.44" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="553.7199999999999" y1="231.14000000000001" x2="553.7199999999999" y2="233.68" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="543.560" y="225.760" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LS_Q2B</text>
 <text x="553.420" y="218.440" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 553.420 218.440)">LS_HB</text>
-<text x="553.420" y="233.680" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 553.420 233.680)">LS_VP</text>
+<text x="553.420" y="233.680" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 553.420 233.680)">LINE_VP</text>
 <polyline points="571.500,228.600 574.675,228.600" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="574.675,226.695 574.675,230.505" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <circle cx="575.31" cy="228.6" r="2.8194" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -1015,7 +1015,7 @@
 <line x1="502.92" y1="257.81" x2="502.92" y2="255.27" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="502.92" y1="265.43" x2="502.92" y2="267.97" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="502.620" y="255.270" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 502.620 255.270)">LS_Q2B</text>
-<text x="502.620" y="267.970" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 502.620 267.970)">LS_VP</text>
+<text x="502.620" y="267.970" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 502.620 267.970)">LINE_VP</text>
 <rect x="514.604" y="259.08" width="2.0319999999999254" height="5.080000000000041" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="515.62" y1="257.81" x2="515.62" y2="259.08" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="515.62" y1="265.43" x2="515.62" y2="264.16" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -1024,7 +1024,7 @@
 <line x1="515.62" y1="257.81" x2="515.62" y2="255.27" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="515.62" y1="265.43" x2="515.62" y2="267.97" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="515.320" y="255.270" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 515.320 255.270)">LS_RNG1</text>
-<text x="515.320" y="267.970" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 515.320 267.970)">LS_TIP_F</text>
+<text x="515.320" y="267.970" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 515.320 267.970)">LINE_TIP_F</text>
 <rect x="524.764" y="259.08" width="2.032000000000039" height="5.080000000000041" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="525.78" y1="257.81" x2="525.78" y2="259.08" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="525.78" y1="265.43" x2="525.78" y2="264.16" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -1033,25 +1033,25 @@
 <line x1="525.78" y1="257.81" x2="525.78" y2="255.27" stroke="#1b7a3a" stroke-width="0.15"/>
 <line x1="525.78" y1="265.43" x2="525.78" y2="267.97" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="525.480" y="255.270" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 525.480 255.270)">LS_RNG2</text>
-<text x="525.480" y="267.970" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 525.480 267.970)">LS_RING_F</text>
-<rect x="534.924" y="261.62" width="2.032000000000039" height="5.079999999999984" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="535.94" y1="260.35" x2="535.94" y2="261.62" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="535.94" y1="267.97" x2="535.94" y2="266.7" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="538.480" y="263.525" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">R27</text>
-<text x="538.480" y="266.065" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">0R</text>
-<line x1="535.94" y1="260.35" x2="535.94" y2="257.81" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="535.94" y1="267.97" x2="535.94" y2="270.51000000000005" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="535.640" y="257.810" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 535.640 257.810)">LS_TIP_M</text>
-<text x="535.640" y="270.510" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 535.640 270.510)">LS_TIP_P</text>
-<rect x="545.084" y="261.62" width="2.032000000000039" height="5.079999999999984" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="546.1" y1="260.35" x2="546.1" y2="261.62" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="546.1" y1="267.97" x2="546.1" y2="266.7" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="548.640" y="263.525" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">R28</text>
-<text x="548.640" y="266.065" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">0R</text>
-<line x1="546.1" y1="260.35" x2="546.1" y2="257.81" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="546.1" y1="267.97" x2="546.1" y2="270.51000000000005" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="545.800" y="257.810" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 545.800 257.810)">LS_RING_M</text>
-<text x="545.800" y="270.510" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 545.800 270.510)">LINE_RING</text>
+<text x="525.480" y="267.970" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 525.480 267.970)">LINE_RING_F</text>
+<rect x="534.924" y="264.16" width="2.032000000000039" height="5.079999999999984" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="535.94" y1="262.89" x2="535.94" y2="264.16" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="535.94" y1="270.51" x2="535.94" y2="269.24" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="538.480" y="266.065" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">R27</text>
+<text x="538.480" y="268.605" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">0R</text>
+<line x1="535.94" y1="262.89" x2="535.94" y2="260.34999999999997" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="535.94" y1="270.51" x2="535.94" y2="273.05" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="535.640" y="260.350" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 535.640 260.350)">LINE_TIP_M</text>
+<text x="535.640" y="273.050" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 535.640 273.050)">LINE_TIP_P</text>
+<rect x="545.084" y="264.16" width="2.032000000000039" height="5.079999999999984" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="546.1" y1="262.89" x2="546.1" y2="264.16" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="546.1" y1="270.51" x2="546.1" y2="269.24" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="548.640" y="266.065" font-size="1.46" text-anchor="start" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">R28</text>
+<text x="548.640" y="268.605" font-size="1.46" text-anchor="start" fill="#444" font-weight="normal" dominant-baseline="middle">0R</text>
+<line x1="546.1" y1="262.89" x2="546.1" y2="260.34999999999997" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="546.1" y1="270.51" x2="546.1" y2="273.05" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="545.800" y="260.350" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 545.800 260.350)">LINE_RING_M</text>
+<text x="545.800" y="273.050" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 545.800 273.050)">LINE_RING</text>
 <rect x="413.004" y="38.1" width="2.0319999999999823" height="5.079999999999998" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="414.02" y1="36.83" x2="414.02" y2="38.1" stroke="#8a2f2f" stroke-width="0.2"/>
 <line x1="414.02" y1="44.45" x2="414.02" y2="43.18" stroke="#8a2f2f" stroke-width="0.2"/>
@@ -1070,17 +1070,17 @@
 <line x1="424.18" y1="44.45" x2="424.18" y2="46.99" stroke="#1b7a3a" stroke-width="0.15"/>
 <text x="423.880" y="34.290" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 423.880 34.290)">LED_RI</text>
 <text x="423.880" y="46.990" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto" transform="rotate(-90 423.880 46.990)">LED_RI_A</text>
-<polyline points="568.960,250.190 568.960,252.730 574.040,250.190 574.040,252.730 568.960,250.190" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="572.008,250.190 571.500,250.190 571.500,252.730 570.992,252.730" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<polyline points="572.770,251.460 570.230,251.460" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="567.69" y1="251.46" x2="570.23" y2="251.46" stroke="#8a2f2f" stroke-width="0.2"/>
-<line x1="575.31" y1="251.46" x2="572.77" y2="251.46" stroke="#8a2f2f" stroke-width="0.2"/>
-<text x="571.500" y="248.920" font-size="1.46" text-anchor="middle" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">RV1</text>
-<text x="571.500" y="254.000" font-size="1.46" text-anchor="middle" fill="#444" font-weight="normal" dominant-baseline="middle">P3100SC</text>
-<line x1="567.69" y1="251.46" x2="565.15" y2="251.46" stroke="#1b7a3a" stroke-width="0.15"/>
-<line x1="575.31" y1="251.46" x2="577.85" y2="251.46" stroke="#1b7a3a" stroke-width="0.15"/>
-<text x="565.150" y="251.160" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LS_TIP_P</text>
-<text x="577.850" y="251.160" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto">LINE_RING</text>
+<polyline points="571.500,250.190 571.500,252.730 576.580,250.190 576.580,252.730 571.500,250.190" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="574.548,250.190 574.040,250.190 574.040,252.730 573.532,252.730" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<polyline points="575.310,251.460 572.770,251.460" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="570.23" y1="251.46" x2="572.77" y2="251.46" stroke="#8a2f2f" stroke-width="0.2"/>
+<line x1="577.85" y1="251.46" x2="575.31" y2="251.46" stroke="#8a2f2f" stroke-width="0.2"/>
+<text x="574.040" y="248.920" font-size="1.46" text-anchor="middle" fill="#0b5c5c" font-weight="normal" dominant-baseline="middle">RV1</text>
+<text x="574.040" y="254.000" font-size="1.46" text-anchor="middle" fill="#444" font-weight="normal" dominant-baseline="middle">P3100SC</text>
+<line x1="570.23" y1="251.46" x2="567.6899999999999" y2="251.46" stroke="#1b7a3a" stroke-width="0.15"/>
+<line x1="577.8499999999999" y1="251.46" x2="580.39" y2="251.46" stroke="#1b7a3a" stroke-width="0.15"/>
+<text x="567.690" y="251.160" font-size="1.46" text-anchor="end" fill="#222" font-weight="normal" dominant-baseline="auto">LINE_TIP_P</text>
+<text x="580.390" y="251.160" font-size="1.46" text-anchor="start" fill="#222" font-weight="normal" dominant-baseline="auto">LINE_RING</text>
 <circle cx="272.288" cy="30.48" r="0.508" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <polyline points="274.320,29.210 274.320,27.432" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>
 <circle cx="276.352" cy="30.48" r="0.508" fill="none" stroke="#8a2f2f" stroke-width="0.2"/>

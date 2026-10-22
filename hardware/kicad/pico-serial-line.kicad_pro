@@ -255,7 +255,7 @@
       },
       {
         "bus_width": 12,
-        "clearance": 0.4,
+        "clearance": 0.25,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
@@ -266,8 +266,8 @@
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": -1,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.3,
-        "via_diameter": 0.6,
+        "track_width": 0.25,
+        "via_diameter": 0.55,
         "via_drill": 0.3,
         "wire_width": 6
       },
@@ -340,6 +340,24 @@
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.2,
         "via_diameter": 0.55,
+        "via_drill": 0.3,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.4,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "TipRing",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": -1,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.3,
+        "via_diameter": 0.6,
         "via_drill": 0.3,
         "wire_width": 6
       },
@@ -423,12 +441,12 @@
         "pattern": "/USB_*"
       },
       {
-        "netclass": "Line",
-        "pattern": "/LS_*"
+        "netclass": "TipRing",
+        "pattern": "/LINE_*"
       },
       {
         "netclass": "Line",
-        "pattern": "/LINE_*"
+        "pattern": "/LS_*"
       }
     ]
   },

@@ -242,7 +242,10 @@ if N.LINE:
     ymax = max(y for _, y in OUTLINE)
     POUR_OUTLINE = [(-ST.BOARD_Y, BARRIER[1] + 0.2), (ST.BOARD_Y, BARRIER[1] + 0.2),
                     (ST.BOARD_Y, ymax), (-ST.BOARD_Y, ymax)]
-    NETCLASSES["Line"] = ((0.3, 0.4, 0.6, 0.3), ["/LS_*", "/LINE_*"])   # the line: up to ~200 V peak ringing
+    # the line side: TIP, RING and the bridge's + see the ringing signal (up to ~200 V peak) and
+    # the loop current; the Si3018's own side runs at a few volts
+    NETCLASSES["TipRing"] = ((0.3, 0.4, 0.6, 0.3), ["/LINE_*"])
+    NETCLASSES["Line"] = ((0.25, 0.25, 0.55, 0.3), ["/LS_*"])
     USB_Y = ST.USB_X1 - ST.BOARD_X0              # the receptacle's mouth
     RJ_Y = ST.RJ_PINS_X - ST.BOARD_X0            # the RJ11's rear contact row
     UY = 56.0                                    # the RP2040, behind the screw
@@ -269,15 +272,15 @@ if N.LINE:
         "U5": (0.0, 38.6, 90, "F"),
         "C19": (6.0, 38.6, 90, "F"), "C20": (-6.0, 38.6, 90, "F"),                 # VD, VA
         "R11": (8.0, 36.0, 90, "B"), "R12": (9.0, 36.0, 90, "B"), "R13": (8.0, 38.4, 90, "B"),  # pull-ups
-        "R14": (-4.2, 34.3, 0, "F"), "R15": (4.2, 34.3, 0, "F"),                   # 56.2R to C1A, C2A
+        "R14": (-3.4, 34.3, 0, "F"), "R15": (5.0, 34.3, 0, "F"),                   # 56.2R to C1A, C2A
         # --- the isolation gap: the Y2 caps straddle it, nothing else crosses
-        "C21": (-1.6, BY, 90, "F"), "C22": (1.6, BY, 90, "F"),                     # C1, C2: the data path
+        "C21": (-0.4, BY, 90, "F"), "C22": (2.6, BY, 90, "F"),                     # C1, C2: the data path, over C1B, C2B
         "C29": (-7.8, BY, 270, "F"), "C30": (7.8, BY, 270, "F"),                   # C8, C9: TIP/RING to ground
         # --- line side, top: Si3018, the surge suppressor behind the jack
-        "U6": (0.0, 24.7, 270, "F"),
+        "U6": (0.0, 24.7, 90, "F"),                                                 # C1B, C2B toward the barrier caps
         "RV1": (-5.6, 18.6, 0, "F"),                                                # between the jack and the Si3018
         "C28": (5.0, 17.5, 0, "F"), "C23": (5.0, 19.6, 0, "F"),                    # C3 10nF 250V, C4 1uF
-        "C24": (-6.2, 26.2, 90, "F"), "C25": (6.2, 26.2, 90, "F"),                 # VREG, VREG2
+        "C24": (5.6, 29.7, 90, "F"), "C25": (1.4, 20.3, 0, "F"),                   # VREG (pin 7), VREG2 (pin 10)
         "C26": (8.4, 21.0, 90, "F"), "C27": (8.4, 24.4, 90, "F"),                  # C7, C10
         "R17": (-8.4, 23.4, 90, "F"),                                               # IB 1M
         "FB1": (-8.4, 27.0, 90, "F"), "FB2": (8.4, 27.0, 90, "F"),                 # ferrites by C8, C9
@@ -868,6 +871,37 @@ def _dist(g, X, Y):
 RIP_COST = 4.0   # mm-equivalent for crossing another net's track in a rip-up search
 
 
+def _poly_mask(pts, X, Y, margin):
+    """Grid points inside the polygon pts, or within margin of its edges (numpy)."""
+    import numpy as np
+    inside = np.zeros(X.shape, dtype=bool)
+    near = np.zeros(X.shape, dtype=bool)
+    n = len(pts)
+    for i in range(n):
+        (x1, y1), (x2, y2) = pts[i], pts[(i + 1) % n]
+        cross = ((y1 > Y) != (y2 > Y)) & (X < x1 + (Y - y1) * (x2 - x1) / ((y2 - y1) or 1e-12))
+        inside ^= cross
+        dx, dy = x2 - x1, y2 - y1
+        L2 = dx * dx + dy * dy
+        t = np.clip(((X - x1) * dx + (Y - y1) * dy) / L2, 0, 1) if L2 else 0
+        near |= np.hypot(X - x1 - t * dx, Y - y1 - t * dy) < margin
+    return inside | near
+
+
+def _rule_areas(board):
+    """Each rule area as (points in mm, layers, no tracks, no vias), read once per board."""
+    T = pcbnew.ToMM
+    out = []
+    for z in board.Zones():
+        if not z.GetIsRuleArea() or not (z.GetDoNotAllowTracks() or z.GetDoNotAllowVias()):
+            continue
+        ol = z.Outline().Outline(0)
+        pts = [(T(ol.CPoint(i).x), T(ol.CPoint(i).y)) for i in range(ol.PointCount())]
+        layers = {L for L in ALL_CU if z.GetLayerSet().Contains(L)}
+        out.append((pts, layers, z.GetDoNotAllowTracks(), z.GetDoNotAllowVias()))
+    return out
+
+
 def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
     """A* from island src to island dst over a grid. Returns the items it added
     (empty if it found no way).
@@ -905,6 +939,13 @@ def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
     soft = {L: np.full(inside_t.shape, -1, dtype=np.int32) for L in lid}   # rip: whose track is there
     vsoft = np.full(inside_t.shape, -1, dtype=np.int32)
     soft_nets = []
+    ns = board.GetDesignSettings().m_NetSettings
+    oclr = {}   # each other net's own clearance: the larger of the two applies, as in KiCad's DRC
+
+    def clr_with(on):
+        if on not in oclr:
+            oclr[on] = T(ns.GetEffectiveNetClass(on).GetClearance()) + 0.005 if on else 0.0
+        return max(clr, oclr[on])
     xa, ya = x0 - 1, y0 - 1
     xb, yb = x0 + nx * GRID + 1, y0 + ny * GRID + 1
     for o in list(board.GetPads()) + list(board.GetTracks()):
@@ -920,16 +961,26 @@ def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
             if on not in soft_nets:
                 soft_nets.append(on)
             k = soft_nets.index(on)
+            c = clr_with(on)
             for L in lid:
                 if L in ls:
-                    m = (d < w / 2 + clr) & (soft[L] < 0)
+                    m = (d < w / 2 + c) & (soft[L] < 0)
                     soft[L][m] = k
-            vsoft[(d < vd / 2 + clr) & (vsoft < 0)] = k
+            vsoft[(d < vd / 2 + c) & (vsoft < 0)] = k
             continue
+        c = clr_with(on)
         for L in lid:
             if L in ls:
-                free[L] &= d >= w / 2 + clr
-        vfree &= d >= vd / 2 + clr
+                free[L] &= d >= w / 2 + c
+        vfree &= d >= vd / 2 + c
+    for pts, ls, no_t, no_v in _rule_areas(board):   # keep-outs: the isolation gap, screws, the crystal
+        if no_t:
+            m = _poly_mask(pts, X, Y, w / 2 + 0.01)
+            for L in lid:
+                if L in ls:
+                    free[L] &= ~m
+        if no_v:
+            vfree &= ~_poly_mask(pts, X, Y, vd / 2 + 0.01)
     for o in src + dst:   # no via inside a pad of the link's own ends
         if o.Type() == pcbnew.PCB_PAD_T:
             vfree &= _dist(_geom(o)[0], X, Y) > vd / 2
@@ -1065,6 +1116,29 @@ def _connect(board, net, layers):
     return added
 
 
+def _track_record(t):
+    """A track or via as plain values, enough to build it again."""
+    t = t.Cast()
+    xy = lambda p: (int(p.x), int(p.y))   # copies: KiCad's vectors are views into the object
+    if t.Type() == pcbnew.PCB_VIA_T:
+        return ("via", xy(t.GetPosition()), int(t.GetWidth(pcbnew.F_Cu)), int(t.GetDrillValue()), int(t.GetNetCode()))
+    return ("track", xy(t.GetStart()), xy(t.GetEnd()), int(t.GetWidth()), int(t.GetLayer()), int(t.GetNetCode()))
+
+
+def _track_rebuild(board, rec):
+    """Put a recorded track or via back on the board (a new object)."""
+    if rec[0] == "via":
+        _, pos, w, drill, net = rec
+        v = pcbnew.PCB_VIA(board)
+        v.SetPosition(pcbnew.VECTOR2I(*pos)); v.SetWidth(w); v.SetDrill(drill); v.SetNetCode(net)
+        board.Add(v)
+    else:
+        _, a, b, w, layer, net = rec
+        t = pcbnew.PCB_TRACK(board)
+        t.SetStart(pcbnew.VECTOR2I(*a)); t.SetEnd(pcbnew.VECTOR2I(*b)); t.SetWidth(w); t.SetLayer(layer); t.SetNetCode(net)
+        board.Add(t)
+
+
 def _rip_and_route(board, net, layers, depth=3, keep=()):
     """Rip up the signal nets in the way, route net, then route them again
     (ripping up in turn if they need it, depth levels deep, never touching
@@ -1079,18 +1153,23 @@ def _rip_and_route(board, net, layers, depth=3, keep=()):
         print(f"   rip {net} (depth {depth}, keep {sorted(keep)}): crosses {crossed}", flush=True)
     if not crossed:
         return False
-    removed = [t for t in board.GetTracks() if t.GetNetname() in crossed]
-    for t in removed:
+    # undo restores every track as it was: a deeper rip-up may have re-routed
+    # other nets meanwhile, and putting back only this level's tracks would
+    # lay them over those new routes. It rebuilds what's missing from a record
+    # of each track rather than re-adding the removed objects (KiCad's Python
+    # binding doesn't survive that across nested removals).
+    snap = {t.m_Uuid.AsString(): _track_record(t) for t in board.GetTracks()}
+    for t in [t for t in board.GetTracks() if t.GetNetname() in crossed]:
         board.Remove(t)
-    before = {n: {t.m_Uuid.AsString() for t in board.GetTracks() if t.GetNetname() == n}
-              for n in [net] + sorted(crossed)}
 
-    def undo():   # take out what this attempt added, put back what it ripped up
-        for m, had in before.items():
-            for t in [t for t in board.GetTracks() if t.GetNetname() == m and t.m_Uuid.AsString() not in had]:
+    def undo():
+        now = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
+        for u, t in now.items():
+            if u not in snap:
                 board.Remove(t)
-        for t in removed:
-            board.Add(t)
+        for u, rec in snap.items():
+            if u not in now:
+                _track_rebuild(board, rec)
         board.BuildConnectivity()
 
     if _connect(board, net, layers) is None:
