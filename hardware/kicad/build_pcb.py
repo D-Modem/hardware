@@ -939,6 +939,13 @@ def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
     soft = {L: np.full(inside_t.shape, -1, dtype=np.int32) for L in lid}   # rip: whose track is there
     vsoft = np.full(inside_t.shape, -1, dtype=np.int32)
     soft_nets = []
+    ns = board.GetDesignSettings().m_NetSettings
+    oclr = {}   # each other net's own clearance: the larger of the two applies, as in KiCad's DRC
+
+    def clr_with(on):
+        if on not in oclr:
+            oclr[on] = T(ns.GetEffectiveNetClass(on).GetClearance()) + 0.005 if on else 0.0
+        return max(clr, oclr[on])
     xa, ya = x0 - 1, y0 - 1
     xb, yb = x0 + nx * GRID + 1, y0 + ny * GRID + 1
     for o in list(board.GetPads()) + list(board.GetTracks()):
@@ -954,16 +961,18 @@ def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
             if on not in soft_nets:
                 soft_nets.append(on)
             k = soft_nets.index(on)
+            c = clr_with(on)
             for L in lid:
                 if L in ls:
-                    m = (d < w / 2 + clr) & (soft[L] < 0)
+                    m = (d < w / 2 + c) & (soft[L] < 0)
                     soft[L][m] = k
-            vsoft[(d < vd / 2 + clr) & (vsoft < 0)] = k
+            vsoft[(d < vd / 2 + c) & (vsoft < 0)] = k
             continue
+        c = clr_with(on)
         for L in lid:
             if L in ls:
-                free[L] &= d >= w / 2 + clr
-        vfree &= d >= vd / 2 + clr
+                free[L] &= d >= w / 2 + c
+        vfree &= d >= vd / 2 + c
     for pts, ls, no_t, no_v in _rule_areas(board):   # keep-outs: the isolation gap, screws, the crystal
         if no_t:
             m = _poly_mask(pts, X, Y, w / 2 + 0.01)
@@ -1107,6 +1116,28 @@ def _connect(board, net, layers):
     return added
 
 
+def _track_record(t):
+    """A track or via as plain values, enough to build it again."""
+    t = t.Cast()
+    if t.Type() == pcbnew.PCB_VIA_T:
+        return ("via", t.GetPosition(), t.GetWidth(pcbnew.F_Cu), t.GetDrillValue(), t.GetNetCode())
+    return ("track", t.GetStart(), t.GetEnd(), t.GetWidth(), t.GetLayer(), t.GetNetCode())
+
+
+def _track_rebuild(board, rec):
+    """Put a recorded track or via back on the board (a new object)."""
+    if rec[0] == "via":
+        _, pos, w, drill, net = rec
+        v = pcbnew.PCB_VIA(board)
+        v.SetPosition(pos); v.SetWidth(w); v.SetDrill(drill); v.SetNetCode(net)
+        board.Add(v)
+    else:
+        _, a, b, w, layer, net = rec
+        t = pcbnew.PCB_TRACK(board)
+        t.SetStart(a); t.SetEnd(b); t.SetWidth(w); t.SetLayer(layer); t.SetNetCode(net)
+        board.Add(t)
+
+
 def _rip_and_route(board, net, layers, depth=3, keep=()):
     """Rip up the signal nets in the way, route net, then route them again
     (ripping up in turn if they need it, depth levels deep, never touching
@@ -1121,18 +1152,23 @@ def _rip_and_route(board, net, layers, depth=3, keep=()):
         print(f"   rip {net} (depth {depth}, keep {sorted(keep)}): crosses {crossed}", flush=True)
     if not crossed:
         return False
-    removed = [t for t in board.GetTracks() if t.GetNetname() in crossed]
-    for t in removed:
+    # undo restores every track as it was: a deeper rip-up may have re-routed
+    # other nets meanwhile, and putting back only this level's tracks would
+    # lay them over those new routes. It rebuilds what's missing from a record
+    # of each track rather than re-adding the removed objects (KiCad's Python
+    # binding doesn't survive that across nested removals).
+    snap = {t.m_Uuid.AsString(): _track_record(t) for t in board.GetTracks()}
+    for t in [t for t in board.GetTracks() if t.GetNetname() in crossed]:
         board.Remove(t)
-    before = {n: {t.m_Uuid.AsString() for t in board.GetTracks() if t.GetNetname() == n}
-              for n in [net] + sorted(crossed)}
 
-    def undo():   # take out what this attempt added, put back what it ripped up
-        for m, had in before.items():
-            for t in [t for t in board.GetTracks() if t.GetNetname() == m and t.m_Uuid.AsString() not in had]:
+    def undo():
+        now = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
+        for u, t in now.items():
+            if u not in snap:
                 board.Remove(t)
-        for t in removed:
-            board.Add(t)
+        for u, rec in snap.items():
+            if u not in now:
+                _track_rebuild(board, rec)
         board.BuildConnectivity()
 
     if _connect(board, net, layers) is None:
