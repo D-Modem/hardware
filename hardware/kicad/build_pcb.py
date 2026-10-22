@@ -1119,9 +1119,10 @@ def _connect(board, net, layers):
 def _track_record(t):
     """A track or via as plain values, enough to build it again."""
     t = t.Cast()
+    xy = lambda p: (int(p.x), int(p.y))   # copies: KiCad's vectors are views into the object
     if t.Type() == pcbnew.PCB_VIA_T:
-        return ("via", t.GetPosition(), t.GetWidth(pcbnew.F_Cu), t.GetDrillValue(), t.GetNetCode())
-    return ("track", t.GetStart(), t.GetEnd(), t.GetWidth(), t.GetLayer(), t.GetNetCode())
+        return ("via", xy(t.GetPosition()), int(t.GetWidth(pcbnew.F_Cu)), int(t.GetDrillValue()), int(t.GetNetCode()))
+    return ("track", xy(t.GetStart()), xy(t.GetEnd()), int(t.GetWidth()), int(t.GetLayer()), int(t.GetNetCode()))
 
 
 def _track_rebuild(board, rec):
@@ -1129,12 +1130,12 @@ def _track_rebuild(board, rec):
     if rec[0] == "via":
         _, pos, w, drill, net = rec
         v = pcbnew.PCB_VIA(board)
-        v.SetPosition(pos); v.SetWidth(w); v.SetDrill(drill); v.SetNetCode(net)
+        v.SetPosition(pcbnew.VECTOR2I(*pos)); v.SetWidth(w); v.SetDrill(drill); v.SetNetCode(net)
         board.Add(v)
     else:
         _, a, b, w, layer, net = rec
         t = pcbnew.PCB_TRACK(board)
-        t.SetStart(a); t.SetEnd(b); t.SetWidth(w); t.SetLayer(layer); t.SetNetCode(net)
+        t.SetStart(pcbnew.VECTOR2I(*a)); t.SetEnd(pcbnew.VECTOR2I(*b)); t.SetWidth(w); t.SetLayer(layer); t.SetNetCode(net)
         board.Add(t)
 
 
