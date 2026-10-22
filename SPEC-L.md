@@ -14,6 +14,8 @@ running on whatever the stick is plugged into:
 
 - **Linux:** `dmodemd` drives it through libusb, as it drives Smart
   Link's SmartUSB56 today (§6). The modem appears as a pty.
+- **Windows:** `dmodemd` drives it through libusb on WinUSB, which
+  Windows binds by itself (Microsoft OS 2.0 descriptors: no INF).
 - **Android:** dmodem-android gets a real telephone line beside SIP
   (§6.2).
 
@@ -36,7 +38,7 @@ side.
 | L4 | Hook control fast enough for **pulse dialling** (D-Modem times the pulses) and hook flash |
 | L5 | **Ring detection** and **caller ID** (the line heard while on hook) |
 | L6 | Isolation from the line: ≥ 1500 Vrms, the DAA's capacitive barrier; line surge protection and a telecom fuse |
-| L7 | Driverless on Linux and Android: a vendor-class USB interface for libusb (no kernel driver) |
+| L7 | Driverless on Linux, Android and Windows: a vendor-class USB interface for libusb (no kernel driver; WinUSB by Microsoft OS 2.0 descriptors) |
 | L8 | Firmware update over the same USB-C cable (UF2) |
 | L9 | A stick about **82 mm** long (a disposable lighter), RJ11 at one end, USB-C at the other |
 | L10 | Every part normally stocked and buyable at qty 1 |

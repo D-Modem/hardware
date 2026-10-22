@@ -33,6 +33,7 @@ enum {
     LP_REQ_DAA_WRITE = 0x21,    // OUT: wValue = register << 8 | value
     LP_REQ_RESET = 0x30,        // OUT: the DAA reset and brought up again, on hook
     LP_REQ_REBOOT_UF2 = 0x31,   // OUT: into the RP2040's UF2 loader
+    LP_REQ_MS_OS_20 = 0x4D,     // IN, wIndex 7: the Microsoft OS 2.0 descriptor set (Windows)
 };
 
 // State bits (lp_info_t.state, lp_status_t.state, lp_event_t.state)

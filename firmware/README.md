@@ -227,6 +227,7 @@ softmodem front end. The host's driver sees one vendor interface with an
 isochronous pair for the line's samples and an interrupt endpoint for
 events, shaped like Smart Link's SmartUSB56 so D-Modem's driver for that is
 the model; the protocol is in [PROTOCOL.md](PROTOCOL.md#line-stick-pico-serial-line).
+Microsoft OS 2.0 descriptors bind WinUSB to it on Windows, with no INF.
 
 - **Bring-up:** MCLK is the USB PLL's 48 MHz on GPIO21 (no fractional
   divider: a clean clock). The Si3056 is reset with M0 = M1 = 0 (serial mode

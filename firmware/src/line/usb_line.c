@@ -6,8 +6,9 @@
 // Link SmartUSB56's (D-Modem's dmodemd drives that one): alternate setting 0
 // with no endpoints, alternate setting 1 with an isochronous OUT and IN pair
 // for the samples and an interrupt IN for events; plus Raspberry Pi's reset
-// interface (picotool). The protocol: firmware/PROTOCOL.md "Line stick",
-// line_proto.h.
+// interface (picotool). Microsoft OS 2.0 descriptors bind WinUSB to both
+// interfaces on Windows, with no INF. The protocol: firmware/PROTOCOL.md
+// "Line stick", line_proto.h.
 #include <string.h>
 #include "tusb.h"
 #include "device/usbd_pvt.h"
@@ -33,7 +34,7 @@ enum { STR_LANG, STR_MANUFACTURER, STR_PRODUCT, STR_SERIAL, STR_LINE, STR_RESET 
 static const tusb_desc_device_t desc_device = {
     .bLength = sizeof(tusb_desc_device_t),
     .bDescriptorType = TUSB_DESC_DEVICE,
-    .bcdUSB = 0x0200,
+    .bcdUSB = 0x0210,              // 2.1: the BOS descriptor (Microsoft OS 2.0) is there
     .bDeviceClass = 0,             // each interface says
     .bDeviceSubClass = 0,
     .bDeviceProtocol = 0,
@@ -74,6 +75,50 @@ TU_VERIFY_STATIC(sizeof desc_config == CONFIG_LEN, "config descriptor length");
 const uint8_t *tud_descriptor_device_cb(void) { return (const uint8_t *)&desc_device; }
 // TinyUSB, on GET_DESCRIPTOR(CONFIGURATION): the one configuration (index is always 0).
 const uint8_t *tud_descriptor_configuration_cb(uint8_t index) { (void)index; return desc_config; }
+
+// Microsoft OS 2.0: the BOS descriptor names the descriptor set and the
+// vendor request Windows reads it with (LP_REQ_MS_OS_20, wIndex 7). The set
+// binds WinUSB to each interface: the line one with D-Modem's interface GUID
+// (as its dmodem-usb.inf gives), the reset one as the Pico SDK does.
+#define MS_OS_20_INDEX 7
+#define LINE_MS_OS_20_LEN (0x08 + 0x14 + 0x80)
+#define MS_OS_20_LEN (0x0A + LINE_MS_OS_20_LEN + RPI_RESET_MS_OS_20_DESC_LEN)
+#define BOS_LEN (TUD_BOS_DESC_LEN + TUD_BOS_MICROSOFT_OS_DESC_LEN)
+#define W16(c) (c), 0
+
+static const uint8_t desc_bos[] = {
+    TUD_BOS_DESCRIPTOR(BOS_LEN, 1),
+    TUD_BOS_MS_OS_20_DESCRIPTOR(MS_OS_20_LEN, LP_REQ_MS_OS_20),
+};
+TU_VERIFY_STATIC(sizeof desc_bos == BOS_LEN, "BOS descriptor length");
+
+static const uint8_t desc_ms_os_20[] = {
+    // set header: length, type, Windows version (8.1), total length
+    U16_TO_U8S_LE(0x000A), U16_TO_U8S_LE(MS_OS_20_SET_HEADER_DESCRIPTOR), U32_TO_U8S_LE(0x06030000),
+    U16_TO_U8S_LE(MS_OS_20_LEN),
+    // the line interface: function subset header (length, type, first interface, reserved, subset length)
+    U16_TO_U8S_LE(0x0008), U16_TO_U8S_LE(MS_OS_20_SUBSET_HEADER_FUNCTION), ITF_LINE, 0,
+    U16_TO_U8S_LE(LINE_MS_OS_20_LEN),
+    // compatible ID WINUSB, no sub-compatible ID
+    U16_TO_U8S_LE(0x0014), U16_TO_U8S_LE(MS_OS_20_FEATURE_COMPATBLE_ID), 'W', 'I', 'N', 'U', 'S', 'B', 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    // registry property DeviceInterfaceGUID (REG_SZ, UTF-16): D-Modem's
+    U16_TO_U8S_LE(0x0080), U16_TO_U8S_LE(MS_OS_20_FEATURE_REG_PROPERTY), U16_TO_U8S_LE(0x0001), U16_TO_U8S_LE(0x0028),
+    W16('D'), W16('e'), W16('v'), W16('i'), W16('c'), W16('e'), W16('I'), W16('n'), W16('t'), W16('e'),
+    W16('r'), W16('f'), W16('a'), W16('c'), W16('e'), W16('G'), W16('U'), W16('I'), W16('D'), W16(0),
+    U16_TO_U8S_LE(0x004E),
+    // {0463C853-BB62-4057-9E76-D14B0E3ACAFD}
+    W16('{'), W16('0'), W16('4'), W16('6'), W16('3'), W16('C'), W16('8'), W16('5'), W16('3'), W16('-'),
+    W16('B'), W16('B'), W16('6'), W16('2'), W16('-'), W16('4'), W16('0'), W16('5'), W16('7'), W16('-'),
+    W16('9'), W16('E'), W16('7'), W16('6'), W16('-'), W16('D'), W16('1'), W16('4'), W16('B'), W16('0'),
+    W16('E'), W16('3'), W16('A'), W16('C'), W16('A'), W16('F'), W16('D'), W16('}'), W16(0),
+    // the reset interface (picotool), the SDK's
+    RPI_RESET_MS_OS_20_DESCRIPTOR(ITF_RESET),
+};
+TU_VERIFY_STATIC(sizeof desc_ms_os_20 == MS_OS_20_LEN, "MS OS 2.0 descriptor set length");
+
+// TinyUSB, on GET_DESCRIPTOR(BOS): the BOS descriptor above.
+const uint8_t *tud_descriptor_bos_cb(void) { return desc_bos; }
 
 static uint16_t desc_str[33];
 
@@ -228,9 +273,15 @@ static bool ld_control_xfer_cb(uint8_t rhport, uint8_t stage, const tusb_control
 
 // TinyUSB hands vendor requests to the device (not an interface) here: the
 // same requests, as the SmartUSB56's driver sends them.
+// Windows' request for the Microsoft OS 2.0 descriptor set comes here too.
 bool tud_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, const tusb_control_request_t *r) {
     if (r->bmRequestType_bit.recipient == TUSB_REQ_RCPT_INTERFACE) return ld_control_xfer_cb(rhport, stage, r);
     if (r->bmRequestType_bit.recipient != TUSB_REQ_RCPT_DEVICE) return false;
+    if (r->bRequest == LP_REQ_MS_OS_20 && r->wIndex == MS_OS_20_INDEX &&
+        r->bmRequestType_bit.direction == TUSB_DIR_IN) {
+        if (stage != CONTROL_STAGE_SETUP) return true;
+        return tud_control_xfer(rhport, r, (void *)(uintptr_t)desc_ms_os_20, sizeof desc_ms_os_20);
+    }
     return vendor_request(rhport, stage, r);
 }
 

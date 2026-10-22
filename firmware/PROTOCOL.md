@@ -170,6 +170,14 @@ ST7554, which `dmodemd/usb_line.cpp` drives), so that driver is the model.
 - USB `1209:0002` (a pid.codes *test* PID until a real one is assigned),
   product "pico-serial Line". No kernel driver claims it: open it with
   libusb.
+- **Windows** binds WinUSB to both interfaces by itself (no INF, no
+  Zadig): the stick is USB 2.1 with a BOS descriptor whose Microsoft OS 2.0
+  platform capability names vendor request `0x4D`. Windows reads the
+  descriptor set with it (`bmRequestType` `0xC0`, `wIndex` 7). The set gives
+  each interface the compatible ID `WINUSB` and a `DeviceInterfaceGUID`:
+  `{0463C853-BB62-4057-9E76-D14B0E3ACAFD}` for the line (D-Modem's, as its
+  `dmodem-usb.inf` gives it), the Pico SDK's
+  `{bc7398c1-73cd-4cb7-98b8-913a8fca7bf6}` for the reset interface.
 - Interface 0: class `0xFF`, subclass `0x4C`, protocol `0x01`, "pico-serial
   Line". (Interface 1 is Raspberry Pi's reset interface, for `picotool`.)
 - **Alternate setting 0** has no endpoints. **Alternate setting 1** has:
@@ -221,6 +229,7 @@ bad value stalls.
 | `0x21` | DAA_WRITE | OUT | `register << 8 \| value` | a register; register 5 keeps OHE set (the hook stays the pin's) and its ONHM bit sets the monitor |
 | `0x30` | RESET | OUT | 0 | the DAA reset and brought up again, on hook (~150 ms) |
 | `0x31` | REBOOT_UF2 | OUT | 0 | into the RP2040's UF2 loader, 50 ms after the status stage |
+| `0x4D` | MS_OS_20 | IN | 0 | (device, `wIndex` 7) the Microsoft OS 2.0 descriptor set, for Windows |
 
 **Pulse dialling** is the host's: it sends `SET_HOOK` 0 and 1 for each
 break and make, as `dmodemd` does with the SmartUSB56's hook GPIO. Each
