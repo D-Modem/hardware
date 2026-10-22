@@ -299,3 +299,54 @@ Not reviewed by a person, nothing built.
 - **Before ordering:** everything under "Before ordering" above, plus a
   test print of the hood, to confirm the screw holes, LED and button
   positions.
+
+## pico-serial Line (phone-line stick)
+
+![Line top](kicad/render-line-top.png)
+![Line bottom](kicad/render-line-bottom.png)
+
+A USB-C stick for a telephone line, shaped like Apple's USB Modem
+([SPEC-L.md](../SPEC-L.md)): the RP2040 core and a Skyworks Si3056 +
+Si3018 DAA. The modem itself is D-Modem-RE on the computer or phone
+(`dmodemd --usb`). Every script takes `--variant line`; the shell is
+`enclosure/stick.py`.
+
+```sh
+python3 hardware/netlist/build_netlist.py --variant line
+python3 hardware/kicad/build_schematic.py --variant line
+python3 hardware/enclosure/stick.py          # the shell; needs CadQuery
+python3 hardware/kicad/build_pcb.py --variant line --kicad-fp kicad-footprints \
+    --route --freerouting freerouting-1.9.0.jar --fab
+```
+
+**Status:** fully routed (190 vias, 1036 tracks). KiCad's DRC finds no
+errors and nothing unconnected, and the PCB matches its schematic; ERC is
+clean. Not reviewed by a person, nothing built: **have the line side and
+the isolation gap checked by someone who knows telecom safety before it
+goes near a phone line.**
+
+- **Board:** 78.4 × 20.6 mm, 4 layers, on the outline `stick.py` sets.
+  The RJ11 at the front edge, its opening flush with the stick's end;
+  the USB-C at the back.
+- **Line side** (front, about 30 mm): the surge suppressor, the 1.25 A
+  telecom fuse, the bridge, the Si3018 and its hook switch, DC
+  termination and caller-ID parts, on both sides of the board. **No
+  ground plane or pour** (Skyworks AN67): the planes and pours stop at
+  the isolation gap.
+- **Isolation gap:** a 2.5 mm band across the board, every layer, with no
+  tracks, vias or pours; only the four Y2 capacitors (C1, C2: the data
+  path; C8, C9: TIP and RING to ground) straddle it. A DRC rule
+  (`pico-serial-line.kicad_dru`) also holds 2.5 mm between any line-side
+  and USB-side copper.
+- **Net classes:** `TipRing` (TIP, RING, the bridge's +: the ringing
+  signal and loop current) 0.3 mm tracks, 0.4 mm clearance; `Line` (the
+  Si3018's low-voltage side) 0.25 mm.
+- **USB side:** the Si3056 by the gap, the one screw, the two LEDs under
+  the shell's light tubes, the RP2040 with its flash underneath, then the
+  USB-C with its ESD, fuse and regulator.
+- **Hand-fitted or consigned:** the Si3056 and Si3018 (DigiKey; the
+  Si3056 is "not for new designs") and the through-hole RJ11. They're in
+  neither the JLC BOM nor the CPL.
+- **Not checked yet:** the RJ11's body against a real one (its drawing
+  gives the pins and pegs; the body's edges are read off it), and the
+  shell's fit (not printed).

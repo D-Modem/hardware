@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 # Copyright (C) 2026 Neo-Desktop
 #
-# For both boards (the hood board and pico-serial W): the generated hardware
+# For every board (the hood board, pico-serial W and pico-serial Line): the generated hardware
 # files are up to date with the netlist script, the schematic passes ERC, and
 # the PCB passes DRC and matches the schematic. (The PCBs aren't re-routed
 # here: that needs Freerouting and takes minutes.)
@@ -42,6 +42,6 @@ jobs:
 
       - name: DRC, and the PCBs match their schematics
         run: |
-          for b in pico-serial pico-serial-w; do
+          for b in pico-serial pico-serial-w pico-serial-line; do
             kicad-cli pcb drc --schematic-parity --severity-error --exit-code-violations -o drc.rpt hardware/kicad/$b.kicad_pcb || { cat drc.rpt; exit 1; }
           done
