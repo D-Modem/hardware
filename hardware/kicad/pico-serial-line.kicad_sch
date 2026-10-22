@@ -4414,7 +4414,7 @@
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "923ff1d4-40b0-5ac3-8885-6738551ef2dd")
 	)
-	(label "LS_VP"
+	(label "LINE_VP"
 		(at 444.5 229.87 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "dbd3216e-2432-59ee-baeb-263cd8a5b096")
@@ -4469,14 +4469,14 @@
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "67a17ccc-afcb-5a90-b0aa-b3c6fdac1b34")
 	)
-	(label "LS_VP"
+	(label "LINE_VP"
 		(at 459.74 232.41 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "879ea2ad-4aa9-57e5-946e-edda95f91f35")
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 480.06 226.06 0)
+		(at 480.06 228.6 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4484,23 +4484,23 @@
 		(dnp no)
 		(uuid "fc8d087b-16c7-59a1-9ab0-7a4e7941a99a")
 		(property "Reference" "C29"
-			(at 483.87 225.425 0)
-			(effects (font (size 1.27 1.27)) (justify left))
-		)
-		(property "Value" "680pF Y2"
 			(at 483.87 227.965 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
+		(property "Value" "680pF Y2"
+			(at 483.87 230.505 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
 		(property "Footprint" "Capacitor_SMD:C_1808_4520Metric"
-			(at 480.06 226.06 0)
+			(at 480.06 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 480.06 226.06 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 480.06 228.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "TIP/RING to ground, Y2 safety (Murata)"
-			(at 480.06 226.06 0)
+			(at 480.06 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C524545" (at 480.06 226.06 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C524545" (at 480.06 228.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "f1c50f2c-1669-567a-b6f4-8fe5570124da"))
 		(pin "2" (uuid "f645773e-528f-5be3-88b9-07d0ac8472d5"))
 		(instances
@@ -4510,34 +4510,34 @@
 		)
 	)
 	(wire
-		(pts (xy 480.06 222.25) (xy 480.06 219.71))
+		(pts (xy 480.06 224.79) (xy 480.06 222.25))
 		(stroke (width 0) (type default))
-		(uuid "99a89129-17b8-5f0b-907b-c4d332acb15c")
+		(uuid "f0056d44-613b-5f7c-bc70-57701ad115ed")
 	)
 	(wire
-		(pts (xy 480.06 229.87) (xy 480.06 232.41))
+		(pts (xy 480.06 232.41) (xy 480.06 234.95))
 		(stroke (width 0) (type default))
-		(uuid "06a6ad10-562e-5553-8bfe-77b3babfd930")
+		(uuid "e0a6f5f4-c5d1-5b8f-9f9d-6691a28bf339")
 	)
-	(label "LS_TIP_M"
-		(at 480.06 219.71 90)
+	(label "LINE_TIP_M"
+		(at 480.06 222.25 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "ffe52920-d27c-58c3-8039-6ce5393b01ca")
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 480.06 232.41 0)
+		(at 480.06 234.95 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "1a91fec6-e5b0-59c0-8c88-e89a29af130e")
-		(property "Reference" "#PWR037" (at 480.06 232.41 0) (effects (font (size 1.27 1.27)) (hide yes)))
-		(property "Value" "GND" (at 480.06 236.01 90) (effects (font (size 1.27 1.27)) (justify right)))
-		(property "Footprint" "" (at 480.06 232.41 0) (effects (font (size 1.27 1.27)) (hide yes)))
-		(property "Datasheet" "" (at 480.06 232.41 0) (effects (font (size 1.27 1.27)) (hide yes)))
-		(property "Description" "" (at 480.06 232.41 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Reference" "#PWR037" (at 480.06 234.95 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Value" "GND" (at 480.06 238.55 90) (effects (font (size 1.27 1.27)) (justify right)))
+		(property "Footprint" "" (at 480.06 234.95 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "" (at 480.06 234.95 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Description" "" (at 480.06 234.95 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "2a7147d9-ba21-5dfa-9fb0-8f6cea296beb"))
 		(instances
 			(project "pico-serial-line"
@@ -4590,7 +4590,7 @@
 		(stroke (width 0) (type default))
 		(uuid "935b6323-6e7b-53c3-9382-09614832b08b")
 	)
-	(label "LS_RING_M"
+	(label "LINE_RING_M"
 		(at 497.84 222.25 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "81b28865-024c-5acf-ad5f-4772765591dc")
@@ -4757,7 +4757,7 @@
 		(uuid "537265cf-99b8-58d0-a6d5-b89f59091702")
 		(property "Reference" "D3" (at 478.79 165.1 0) (effects (font (size 1.27 1.27)) (justify left)))
 		(property "Value" "MMBD3004S"
-			(at 478.79 185.42 0)
+			(at 478.79 187.96 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
@@ -4799,40 +4799,40 @@
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "e5d9666e-6fdb-5c1f-87f3-4dd367923c39")
 	)
-	(label "LS_TIP_F"
+	(label "LINE_TIP_F"
 		(at 482.6 175.26 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "e51c7fda-b02d-59da-b4ce-78b990910114")
 	)
-	(label "LS_VP"
+	(label "LINE_VP"
 		(at 492.76 167.64 0)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "67238e4a-ef2a-5785-ac4e-c9ed3b1f5f3f")
 	)
 	(symbol
 		(lib_id "Device:D_Dual_Series_AKC")
-		(at 520.7 167.64 0)
+		(at 523.24 167.64 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "e04475c4-46af-51e2-bd1a-0800cf665923")
-		(property "Reference" "D4" (at 516.89 165.1 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Reference" "D4" (at 519.43 165.1 0) (effects (font (size 1.27 1.27)) (justify left)))
 		(property "Value" "MMBD3004S"
-			(at 516.89 186.69 0)
+			(at 519.43 187.96 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 520.7 167.64 0)
+			(at 523.24 167.64 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 520.7 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 523.24 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "two 350 V diodes in series"
-			(at 520.7 167.64 0)
+			(at 523.24 167.64 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C7436538" (at 520.7 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C7436538" (at 523.24 167.64 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "a2015f0a-3737-5205-ae57-0a99ccc0d48f"))
 		(pin "2" (uuid "f89bf438-bad4-5396-8034-cab7af3edfce"))
 		(pin "3" (uuid "f35df1cc-23b7-5661-8fd4-6907b9bf2d09"))
@@ -4843,32 +4843,32 @@
 		)
 	)
 	(wire
-		(pts (xy 513.08 167.64) (xy 510.54 167.64))
+		(pts (xy 515.62 167.64) (xy 513.08 167.64))
 		(stroke (width 0) (type default))
-		(uuid "bd698416-ff72-5d30-8cee-2040bbc0d055")
+		(uuid "d2ee28a7-40c2-511b-90c6-7b913d2ee47e")
 	)
 	(wire
-		(pts (xy 520.7 172.72) (xy 520.7 175.26))
+		(pts (xy 523.24 172.72) (xy 523.24 175.26))
 		(stroke (width 0) (type default))
-		(uuid "907230b9-94c5-5669-8e5a-2a7fde09709c")
+		(uuid "7f3a22d4-c517-5153-abc5-adaa29bed625")
 	)
 	(wire
-		(pts (xy 528.32 167.64) (xy 530.86 167.64))
+		(pts (xy 530.86 167.64) (xy 533.4 167.64))
 		(stroke (width 0) (type default))
-		(uuid "abe8fe45-f716-5825-8a24-86c0771a377b")
+		(uuid "543fcbfa-554d-552d-a4a3-2beb04dbf81f")
 	)
 	(label "LS_IGND"
-		(at 510.54 167.64 180)
+		(at 513.08 167.64 180)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "1f5eab0a-7dd1-5c3e-a8ef-84f6868c7068")
 	)
-	(label "LS_RING_F"
-		(at 520.7 175.26 270)
+	(label "LINE_RING_F"
+		(at 523.24 175.26 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "756ee8f0-8ba1-537b-bf03-11d1530f956e")
 	)
-	(label "LS_VP"
-		(at 530.86 167.64 0)
+	(label "LINE_VP"
+		(at 533.4 167.64 0)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "c134ddf2-dd34-5315-9d58-10c9763b90a0")
 	)
@@ -5069,25 +5069,25 @@
 	)
 	(symbol
 		(lib_id "Device:Fuse")
-		(at 541.02 177.8 0)
+		(at 546.1 177.8 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "bd747c68-e515-5504-975f-f0c2ce3909eb")
-		(property "Reference" "F2" (at 543.56 177.165 0) (effects (font (size 1.27 1.27)) (justify left)))
-		(property "Value" "1.25A" (at 543.56 179.705 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Reference" "F2" (at 548.64 177.165 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "1.25A" (at 548.64 179.705 0) (effects (font (size 1.27 1.27)) (justify left)))
 		(property "Footprint" "pico-serial:Fuse_Littelfuse_0461"
-			(at 541.02 177.8 0)
+			(at 546.1 177.8 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 541.02 177.8 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 546.1 177.8 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "Littelfuse TeleLink 04611.25ER, 600 V"
-			(at 541.02 177.8 0)
+			(at 546.1 177.8 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C99554" (at 541.02 177.8 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C99554" (at 546.1 177.8 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "8b2a41cf-ea4d-5b8f-a34f-8ee4c2cf8d34"))
 		(pin "2" (uuid "6cb8c979-1466-5a85-8f22-0a921bd5beb1"))
 		(instances
@@ -5097,28 +5097,28 @@
 		)
 	)
 	(wire
-		(pts (xy 541.02 173.99) (xy 541.02 171.45))
+		(pts (xy 546.1 173.99) (xy 546.1 171.45))
 		(stroke (width 0) (type default))
-		(uuid "28557ff3-409b-5f6f-b286-c9714b7eb445")
+		(uuid "26cc670b-cb21-5de5-85ad-c8c1cd3bf246")
 	)
 	(wire
-		(pts (xy 541.02 181.61) (xy 541.02 184.15))
+		(pts (xy 546.1 181.61) (xy 546.1 184.15))
 		(stroke (width 0) (type default))
-		(uuid "370bfd58-8bc7-5ab7-995b-0c793efeaba5")
+		(uuid "627485c1-6ff6-56c4-82e4-89cea02053cd")
 	)
 	(label "LINE_TIP"
-		(at 541.02 171.45 90)
+		(at 546.1 171.45 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "0f92154a-c6ae-54f0-b636-e69a7f9fb667")
 	)
-	(label "LS_TIP_P"
-		(at 541.02 184.15 270)
+	(label "LINE_TIP_P"
+		(at 546.1 184.15 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "b65bbb09-614d-5cb9-8d1d-900b83d74fbf")
 	)
 	(symbol
 		(lib_id "Device:FerriteBead")
-		(at 556.26 177.8 0)
+		(at 561.34 180.34 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5126,23 +5126,23 @@
 		(dnp no)
 		(uuid "30f67f21-7b3e-542a-901c-0ad69129a9d0")
 		(property "Reference" "FB1"
-			(at 560.07 177.165 0)
+			(at 565.15 179.705 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
 		(property "Value" "600R@100MHz"
-			(at 560.07 179.705 0)
+			(at 565.15 182.245 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
 		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
-			(at 556.26 177.8 0)
+			(at 561.34 180.34 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 556.26 177.8 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 561.34 180.34 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "Murata BLM18AG601SN1D, 200 mA"
-			(at 556.26 177.8 0)
+			(at 561.34 180.34 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C19330" (at 556.26 177.8 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C19330" (at 561.34 180.34 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "110855c9-8bc4-59ec-9786-f9f0b43120e4"))
 		(pin "2" (uuid "2b4d893b-f8f1-5d38-adac-1545670ea48f"))
 		(instances
@@ -5152,28 +5152,28 @@
 		)
 	)
 	(wire
-		(pts (xy 556.26 173.99) (xy 556.26 171.45))
+		(pts (xy 561.34 176.53) (xy 561.34 173.99))
 		(stroke (width 0) (type default))
-		(uuid "a6791616-d7c6-53fa-a17f-42bacf57f827")
+		(uuid "7b557509-41ad-53d5-8a14-201511a4f791")
 	)
 	(wire
-		(pts (xy 556.26 181.61) (xy 556.26 184.15))
+		(pts (xy 561.34 184.15) (xy 561.34 186.69))
 		(stroke (width 0) (type default))
-		(uuid "a7e8225e-1668-5769-b6e1-c7de3d92cc35")
+		(uuid "d919da54-1029-546d-8af5-b41c226c810b")
 	)
-	(label "LS_TIP_F"
-		(at 556.26 171.45 90)
+	(label "LINE_TIP_F"
+		(at 561.34 173.99 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "5b9b1495-98dc-584e-af7a-d944b6ff4a0b")
 	)
-	(label "LS_TIP_M"
-		(at 556.26 184.15 270)
+	(label "LINE_TIP_M"
+		(at 561.34 186.69 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "53ea0fb7-0e14-5ab3-bcdc-cc915aeef556")
 	)
 	(symbol
 		(lib_id "Device:FerriteBead")
-		(at 579.12 180.34 0)
+		(at 584.2 182.88 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5181,23 +5181,23 @@
 		(dnp no)
 		(uuid "e3abffbd-dbca-5f01-abde-e334539f9179")
 		(property "Reference" "FB2"
-			(at 582.93 179.705 0)
+			(at 588.01 182.245 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
 		(property "Value" "600R@100MHz"
-			(at 582.93 182.245 0)
+			(at 588.01 184.785 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
 		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
-			(at 579.12 180.34 0)
+			(at 584.2 182.88 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 579.12 180.34 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 584.2 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "Murata BLM18AG601SN1D, 200 mA"
-			(at 579.12 180.34 0)
+			(at 584.2 182.88 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C19330" (at 579.12 180.34 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C19330" (at 584.2 182.88 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "7e258eb5-1faa-56f6-9218-2fc723203650"))
 		(pin "2" (uuid "730e0412-8f80-50ed-803a-faebb725e1fc"))
 		(instances
@@ -5207,22 +5207,22 @@
 		)
 	)
 	(wire
-		(pts (xy 579.12 176.53) (xy 579.12 173.99))
+		(pts (xy 584.2 179.07) (xy 584.2 176.53))
 		(stroke (width 0) (type default))
-		(uuid "b1c41b7f-4267-52dd-baeb-6f39ca4ae785")
+		(uuid "d95c8f3c-8a86-5d24-92f0-d33a46513d13")
 	)
 	(wire
-		(pts (xy 579.12 184.15) (xy 579.12 186.69))
+		(pts (xy 584.2 186.69) (xy 584.2 189.23))
 		(stroke (width 0) (type default))
-		(uuid "c460878c-a271-5009-9335-6c4fbe1124c6")
+		(uuid "d343b201-5e7c-5bf4-b516-12043acdecaa")
 	)
-	(label "LS_RING_F"
-		(at 579.12 173.99 90)
+	(label "LINE_RING_F"
+		(at 584.2 176.53 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "50e66374-5b52-5bb1-846f-a7ccc85ddeda")
 	)
-	(label "LS_RING_M"
-		(at 579.12 186.69 270)
+	(label "LINE_RING_M"
+		(at 584.2 189.23 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "e102aea9-6e90-51b6-8421-30fb63ceec18")
 	)
@@ -5440,7 +5440,7 @@
 	(no_connect (at 360.68 182.88) (uuid "28711925-23ec-53f8-98af-c5327908b984"))
 	(symbol
 		(lib_id "Transistor_BJT:MMBTA42")
-		(at 528.32 226.06 0)
+		(at 528.32 228.6 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -5448,20 +5448,20 @@
 		(dnp no)
 		(uuid "d74cff4c-45fa-5c97-b1aa-cdca17c815f8")
 		(property "Reference" "Q1" (at 529.59 212.09 0) (effects (font (size 1.27 1.27))))
-		(property "Value" "MMBTA42" (at 529.59 240.03 0) (effects (font (size 1.27 1.27))))
+		(property "Value" "MMBTA42" (at 529.59 242.57 0) (effects (font (size 1.27 1.27))))
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 528.32 226.06 0)
+			(at 528.32 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
 		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/MMBTA42LT1-D.PDF"
-			(at 528.32 226.06 0)
+			(at 528.32 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
 		(property "Description" "NPN 300 V"
-			(at 528.32 226.06 0)
+			(at 528.32 228.6 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C94389" (at 528.32 226.06 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C94389" (at 528.32 228.6 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "205738a1-ef3b-5cae-8003-30f0b17aebba"))
 		(pin "2" (uuid "ee3acc4b-0bbb-59c6-92b7-83ea4c81f18c"))
 		(pin "3" (uuid "367e328a-6f48-557f-ac94-5e5d6c9931d7"))
@@ -5472,32 +5472,32 @@
 		)
 	)
 	(wire
-		(pts (xy 523.24 226.06) (xy 520.7 226.06))
+		(pts (xy 523.24 228.6) (xy 520.7 228.6))
 		(stroke (width 0) (type default))
-		(uuid "7e8f4957-739d-58bf-b313-df333f8751bb")
+		(uuid "4336e28e-9113-55b5-b175-acc750406cf3")
 	)
 	(wire
-		(pts (xy 530.86 220.98) (xy 530.86 218.44))
+		(pts (xy 530.86 223.52) (xy 530.86 220.98))
 		(stroke (width 0) (type default))
-		(uuid "058b15f8-b9c9-5949-880a-e192a907d939")
+		(uuid "2993e695-d68c-5bdf-a999-224d1256a8ce")
 	)
 	(wire
-		(pts (xy 530.86 231.14) (xy 530.86 233.68))
+		(pts (xy 530.86 233.68) (xy 530.86 236.22))
 		(stroke (width 0) (type default))
-		(uuid "2fe30022-7405-582d-84bf-a4eccd1b5b7c")
+		(uuid "f5c3ee3a-11be-5c5e-a5c2-fd9c54aebb49")
 	)
 	(label "LS_HB"
-		(at 520.7 226.06 180)
+		(at 520.7 228.6 180)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "432ddd18-7ae8-5b95-a026-d5c991c13bfb")
 	)
-	(label "LS_VP"
-		(at 530.86 218.44 90)
+	(label "LINE_VP"
+		(at 530.86 220.98 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "0b3ec990-5e37-514c-9e35-3950dafc9f99")
 	)
 	(label "LS_E"
-		(at 530.86 233.68 270)
+		(at 530.86 236.22 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "8c1135c8-3f79-5543-9787-c6e6c162eedd")
 	)
@@ -5511,7 +5511,7 @@
 		(dnp no)
 		(uuid "ab066b1f-a4c4-593c-9cfb-d56eed4ce27e")
 		(property "Reference" "Q2" (at 552.45 212.09 0) (effects (font (size 1.27 1.27))))
-		(property "Value" "MMBTA92" (at 552.45 240.03 0) (effects (font (size 1.27 1.27))))
+		(property "Value" "MMBTA92" (at 552.45 242.57 0) (effects (font (size 1.27 1.27))))
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
 			(at 551.18 226.06 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
@@ -5559,7 +5559,7 @@
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "5095bea0-e26e-51e3-b246-82c97ce61b48")
 	)
-	(label "LS_VP"
+	(label "LINE_VP"
 		(at 553.72 233.68 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "884a1240-d37a-5042-9616-fd0d7908f348")
@@ -7135,7 +7135,7 @@
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "b3ee577a-ef5e-5af1-89c5-60b5e1476965")
 	)
-	(label "LS_VP"
+	(label "LINE_VP"
 		(at 502.92 267.97 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "aa994b99-090c-5400-818a-e688cf8b5330")
@@ -7187,7 +7187,7 @@
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "382beafb-b5de-5153-af0e-e814d0f022e8")
 	)
-	(label "LS_TIP_F"
+	(label "LINE_TIP_F"
 		(at 515.62 267.97 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "3fbb7032-8685-51c0-b790-9742d49d21cf")
@@ -7239,14 +7239,14 @@
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "e75438cd-b88c-5911-a02a-2ce80634917d")
 	)
-	(label "LS_RING_F"
+	(label "LINE_RING_F"
 		(at 525.78 267.97 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "3cfad069-f25c-5865-b994-b63b2c04e3aa")
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 535.94 264.16 0)
+		(at 535.94 266.7 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7254,20 +7254,20 @@
 		(dnp no)
 		(uuid "a20b00d4-add4-5ca5-9810-f4b0ccc441ce")
 		(property "Reference" "R27"
-			(at 538.48 263.525 0)
+			(at 538.48 266.065 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Value" "0R" (at 538.48 266.065 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "0R" (at 538.48 268.605 0) (effects (font (size 1.27 1.27)) (justify left)))
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 535.94 264.16 0)
+			(at 535.94 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 535.94 264.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 535.94 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "Resistor"
-			(at 535.94 264.16 0)
+			(at 535.94 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C17168" (at 535.94 264.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C17168" (at 535.94 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "4830074a-ae27-55a3-a9a3-5607309ad4a0"))
 		(pin "2" (uuid "46c15edb-8925-5966-8d5c-eca6b357e6bb"))
 		(instances
@@ -7277,28 +7277,28 @@
 		)
 	)
 	(wire
-		(pts (xy 535.94 260.35) (xy 535.94 257.81))
+		(pts (xy 535.94 262.89) (xy 535.94 260.35))
 		(stroke (width 0) (type default))
-		(uuid "c0ed6fbb-63d1-595c-bc99-c9d181d26375")
+		(uuid "674c1491-0816-599e-ae6e-115e71aae59a")
 	)
 	(wire
-		(pts (xy 535.94 267.97) (xy 535.94 270.51))
+		(pts (xy 535.94 270.51) (xy 535.94 273.05))
 		(stroke (width 0) (type default))
-		(uuid "6a493dda-f1c1-5a5c-b193-caf89b488b13")
+		(uuid "42ef6f93-44ca-55af-a710-b5dc0b5bbc7d")
 	)
-	(label "LS_TIP_M"
-		(at 535.94 257.81 90)
+	(label "LINE_TIP_M"
+		(at 535.94 260.35 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "c8802915-8246-586d-8c1d-b967f231f57d")
 	)
-	(label "LS_TIP_P"
-		(at 535.94 270.51 270)
+	(label "LINE_TIP_P"
+		(at 535.94 273.05 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "d8f39674-0e3d-590f-9d51-4c57ae79290e")
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 546.1 264.16 0)
+		(at 546.1 266.7 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7306,20 +7306,20 @@
 		(dnp no)
 		(uuid "9be0f8af-f72f-5288-8980-ee644f452cb8")
 		(property "Reference" "R28"
-			(at 548.64 263.525 0)
+			(at 548.64 266.065 0)
 			(effects (font (size 1.27 1.27)) (justify left))
 		)
-		(property "Value" "0R" (at 548.64 266.065 0) (effects (font (size 1.27 1.27)) (justify left)))
+		(property "Value" "0R" (at 548.64 268.605 0) (effects (font (size 1.27 1.27)) (justify left)))
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 546.1 264.16 0)
+			(at 546.1 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 546.1 264.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 546.1 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "Resistor"
-			(at 546.1 264.16 0)
+			(at 546.1 266.7 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C17168" (at 546.1 264.16 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C17168" (at 546.1 266.7 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "2466d499-2e78-5784-a0b8-0f47994d216b"))
 		(pin "2" (uuid "324e9113-a693-59b7-93e1-0b88e67b2b1b"))
 		(instances
@@ -7329,22 +7329,22 @@
 		)
 	)
 	(wire
-		(pts (xy 546.1 260.35) (xy 546.1 257.81))
+		(pts (xy 546.1 262.89) (xy 546.1 260.35))
 		(stroke (width 0) (type default))
-		(uuid "004f5648-f165-550c-8f00-13da0e59b0aa")
+		(uuid "fdb8aa9b-b81e-5d64-bf52-49df39730491")
 	)
 	(wire
-		(pts (xy 546.1 267.97) (xy 546.1 270.51))
+		(pts (xy 546.1 270.51) (xy 546.1 273.05))
 		(stroke (width 0) (type default))
-		(uuid "06828819-9af0-5837-aee0-c4bbcdb32394")
+		(uuid "221b9c82-91d6-5002-991f-2082cc057293")
 	)
-	(label "LS_RING_M"
-		(at 546.1 257.81 90)
+	(label "LINE_RING_M"
+		(at 546.1 260.35 90)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "e404b05c-ae68-54f7-bf38-d0fdea939462")
 	)
 	(label "LINE_RING"
-		(at 546.1 270.51 270)
+		(at 546.1 273.05 270)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "4e419c1c-170a-51ef-bb98-afadc9a389d6")
 	)
@@ -7456,25 +7456,25 @@
 	)
 	(symbol
 		(lib_id "Device:D_TVS")
-		(at 571.5 251.46 0)
+		(at 574.04 251.46 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "3b4b488b-cb13-5b84-9509-aad4c184b8b6")
-		(property "Reference" "RV1" (at 571.5 248.92 0) (effects (font (size 1.27 1.27))))
-		(property "Value" "P3100SC" (at 571.5 254 0) (effects (font (size 1.27 1.27))))
+		(property "Reference" "RV1" (at 574.04 248.92 0) (effects (font (size 1.27 1.27))))
+		(property "Value" "P3100SC" (at 574.04 254 0) (effects (font (size 1.27 1.27))))
 		(property "Footprint" "Diode_SMD:D_SMB"
-			(at 571.5 251.46 0)
+			(at 574.04 251.46 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "Datasheet" "~" (at 571.5 251.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "Datasheet" "~" (at 574.04 251.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(property "Description" "Littelfuse P3100SCLRP, 275 V, 250 A 8/20"
-			(at 571.5 251.46 0)
+			(at 574.04 251.46 0)
 			(effects (font (size 1.27 1.27)) (hide yes))
 		)
-		(property "LCSC" "C151191" (at 571.5 251.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
+		(property "LCSC" "C151191" (at 574.04 251.46 0) (effects (font (size 1.27 1.27)) (hide yes)))
 		(pin "1" (uuid "8e71416f-26a1-56f1-aff2-95b856d7675d"))
 		(pin "2" (uuid "e97a80c5-fa76-5e2b-8fd9-b360d201695c"))
 		(instances
@@ -7484,22 +7484,22 @@
 		)
 	)
 	(wire
-		(pts (xy 567.69 251.46) (xy 565.15 251.46))
+		(pts (xy 570.23 251.46) (xy 567.69 251.46))
 		(stroke (width 0) (type default))
-		(uuid "85984e4f-34b4-53ce-9618-24394f116ada")
+		(uuid "95bc6f4c-d7f6-5ebb-a918-3a4941677aab")
 	)
 	(wire
-		(pts (xy 575.31 251.46) (xy 577.85 251.46))
+		(pts (xy 577.85 251.46) (xy 580.39 251.46))
 		(stroke (width 0) (type default))
-		(uuid "e636722a-a159-50ff-88de-e7f2e0920786")
+		(uuid "2e8ac67f-9f14-5477-8728-62ac4af2bed6")
 	)
-	(label "LS_TIP_P"
-		(at 565.15 251.46 180)
+	(label "LINE_TIP_P"
+		(at 567.69 251.46 180)
 		(effects (font (size 1.27 1.27)) (justify right bottom))
 		(uuid "3294a121-7d11-56d9-9fed-bc04274c0481")
 	)
 	(label "LINE_RING"
-		(at 577.85 251.46 0)
+		(at 580.39 251.46 0)
 		(effects (font (size 1.27 1.27)) (justify left bottom))
 		(uuid "dd84818f-a52b-57df-8aac-65b26381cb5d")
 	)

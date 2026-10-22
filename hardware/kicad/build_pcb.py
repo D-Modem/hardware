@@ -242,7 +242,10 @@ if N.LINE:
     ymax = max(y for _, y in OUTLINE)
     POUR_OUTLINE = [(-ST.BOARD_Y, BARRIER[1] + 0.2), (ST.BOARD_Y, BARRIER[1] + 0.2),
                     (ST.BOARD_Y, ymax), (-ST.BOARD_Y, ymax)]
-    NETCLASSES["Line"] = ((0.3, 0.4, 0.6, 0.3), ["/LS_*", "/LINE_*"])   # the line: up to ~200 V peak ringing
+    # the line side: TIP, RING and the bridge's + see the ringing signal (up to ~200 V peak) and
+    # the loop current; the Si3018's own side runs at a few volts
+    NETCLASSES["TipRing"] = ((0.3, 0.4, 0.6, 0.3), ["/LINE_*"])
+    NETCLASSES["Line"] = ((0.25, 0.25, 0.55, 0.3), ["/LS_*"])
     USB_Y = ST.USB_X1 - ST.BOARD_X0              # the receptacle's mouth
     RJ_Y = ST.RJ_PINS_X - ST.BOARD_X0            # the RJ11's rear contact row
     UY = 56.0                                    # the RP2040, behind the screw
@@ -868,6 +871,37 @@ def _dist(g, X, Y):
 RIP_COST = 4.0   # mm-equivalent for crossing another net's track in a rip-up search
 
 
+def _poly_mask(pts, X, Y, margin):
+    """Grid points inside the polygon pts, or within margin of its edges (numpy)."""
+    import numpy as np
+    inside = np.zeros(X.shape, dtype=bool)
+    near = np.zeros(X.shape, dtype=bool)
+    n = len(pts)
+    for i in range(n):
+        (x1, y1), (x2, y2) = pts[i], pts[(i + 1) % n]
+        cross = ((y1 > Y) != (y2 > Y)) & (X < x1 + (Y - y1) * (x2 - x1) / ((y2 - y1) or 1e-12))
+        inside ^= cross
+        dx, dy = x2 - x1, y2 - y1
+        L2 = dx * dx + dy * dy
+        t = np.clip(((X - x1) * dx + (Y - y1) * dy) / L2, 0, 1) if L2 else 0
+        near |= np.hypot(X - x1 - t * dx, Y - y1 - t * dy) < margin
+    return inside | near
+
+
+def _rule_areas(board):
+    """Each rule area as (points in mm, layers, no tracks, no vias), read once per board."""
+    T = pcbnew.ToMM
+    out = []
+    for z in board.Zones():
+        if not z.GetIsRuleArea() or not (z.GetDoNotAllowTracks() or z.GetDoNotAllowVias()):
+            continue
+        ol = z.Outline().Outline(0)
+        pts = [(T(ol.CPoint(i).x), T(ol.CPoint(i).y)) for i in range(ol.PointCount())]
+        layers = {L for L in ALL_CU if z.GetLayerSet().Contains(L)}
+        out.append((pts, layers, z.GetDoNotAllowTracks(), z.GetDoNotAllowVias()))
+    return out
+
+
 def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
     """A* from island src to island dst over a grid. Returns the items it added
     (empty if it found no way).
@@ -930,6 +964,14 @@ def _route_link(board, net, src, dst, layers, narrow=False, rip=False, keep=()):
             if L in ls:
                 free[L] &= d >= w / 2 + clr
         vfree &= d >= vd / 2 + clr
+    for pts, ls, no_t, no_v in _rule_areas(board):   # keep-outs: the isolation gap, screws, the crystal
+        if no_t:
+            m = _poly_mask(pts, X, Y, w / 2 + 0.01)
+            for L in lid:
+                if L in ls:
+                    free[L] &= ~m
+        if no_v:
+            vfree &= ~_poly_mask(pts, X, Y, vd / 2 + 0.01)
     for o in src + dst:   # no via inside a pad of the link's own ends
         if o.Type() == pcbnew.PCB_PAD_T:
             vfree &= _dist(_geom(o)[0], X, Y) > vd / 2

@@ -19,5 +19,5 @@
 # catches anything else). The RJ11's unused contacts are on the line side:
 # they're not counted as USB-side copper.
 (rule "Isolation barrier"
-    (condition "(A.NetClass == 'Line' && B.NetClass != 'Line' && B.NetName != '' && B.NetName != 'unconnected-*') || (B.NetClass == 'Line' && A.NetClass != 'Line' && A.NetName != '' && A.NetName != 'unconnected-*')")
+    (condition "((A.NetClass == 'Line' || A.NetClass == 'TipRing') && B.NetClass != 'Line' && B.NetClass != 'TipRing' && B.NetName != '' && B.NetName != 'unconnected-*') || ((B.NetClass == 'Line' || B.NetClass == 'TipRing') && A.NetClass != 'Line' && A.NetClass != 'TipRing' && A.NetName != '' && A.NetName != 'unconnected-*')")
     (constraint clearance (min 2.5mm)))

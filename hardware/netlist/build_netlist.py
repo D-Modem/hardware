@@ -465,7 +465,8 @@ if LINE:
     lp("C", "33pF Y2", "DAA_C1A_R", "LS_C1B")
     lp("C", "33pF Y2", "DAA_C2A_R", "LS_C2B")
 
-    block("line")  # line side: its own ground (IGND), no plane
+    block("line")  # line side: its own ground (IGND), no plane. LINE_*: nets at the line's voltage
+                   # (TIP, RING and the bridge's +); LS_*: the low-voltage side of the Si3018
     UL = lp("U", "Si3018", ref="U6", pins=SI3018, assembly="hand")
     for pin, net in (("1", "LS_QE"), ("2", "LS_DCT"), ("3", "LS_RX"), ("4", "LS_IB"), ("5", "LS_C1B"), ("6", "LS_C2B"),
                      ("7", "LS_VREG"), ("8", "LS_RNG1"), ("9", "LS_RNG2"), ("10", "LS_VREG2"), ("11", "LS_IGND"),
@@ -483,36 +484,36 @@ if LINE:
     lp("R", "73.2R 0.5W", "LS_E", "LS_Q5C")                  # R11
     lp("R", "2.49k 0.5W", "LS_QB", "LS_HB")                  # R4
     lp("R", "100k", "LS_E", "LS_HB")                         # R5
-    lp("C", "10nF", "LS_Q2B", "LS_VP")                       # C10
-    lp("R", "100k", "LS_Q2B", "LS_VP")                       # R6
-    lp("C", "10nF 250V", "LS_IGND", "LS_VP")                 # C3
-    lp("R", "20M", "LS_RNG1", "LS_TIP_F")                    # R7, caller ID
-    lp("R", "20M", "LS_RNG2", "LS_RING_F")                   # R8, caller ID
+    lp("C", "10nF", "LS_Q2B", "LINE_VP")                       # C10
+    lp("R", "100k", "LS_Q2B", "LINE_VP")                       # R6
+    lp("C", "10nF 250V", "LS_IGND", "LINE_VP")                 # C3
+    lp("R", "20M", "LS_RNG1", "LINE_TIP_F")                    # R7, caller ID
+    lp("R", "20M", "LS_RNG2", "LINE_RING_F")                   # R8, caller ID
     z = lp("D", "43V zener", pins=DIODE)                     # Z1
     conn("LS_HB", (z, "1")); conn("LS_QE", (z, "2"))
-    for key, b, e, c in (("MMBTA42", "LS_HB", "LS_E", "LS_VP"),       # Q1
-                         ("MMBTA92", "LS_Q2B", "LS_VP", "LS_HB"),     # Q2 (PNP)
+    for key, b, e, c in (("MMBTA42", "LS_HB", "LS_E", "LINE_VP"),       # Q1
+                         ("MMBTA92", "LS_Q2B", "LINE_VP", "LS_HB"),     # Q2 (PNP)
                          ("MMBTA42", "LS_DCT2", "LS_QE", "LS_Q2B"),   # Q3
                          ("MMBT2484", "LS_QB", "LS_QE2", "LS_E"),     # Q4
                          ("MMBT2484", "LS_Q5B", "LS_DCT3", "LS_Q5C")):  # Q5
         q = lp("Q", key, pins=BJT)
         conn(b, (q, "1")); conn(e, (q, "2")); conn(c, (q, "3"))
     # the bridge: two dual diodes, each pair's middle on one wire of the line
-    for wire in ("LS_TIP_F", "LS_RING_F"):
+    for wire in ("LINE_TIP_F", "LINE_RING_F"):
         d = lp("D", "dual diode", pins=DUALDIODE)
-        conn("LS_IGND", (d, "1")); conn("LS_VP", (d, "2")); conn(wire, (d, "3"))
-    lp("FB", "ferrite", "LS_TIP_F", "LS_TIP_M")              # FB1
-    lp("FB", "ferrite", "LS_RING_F", "LS_RING_M")            # FB2
-    lp("C", "680pF Y2", "LS_TIP_M", GND)                     # C8: across the barrier, to the USB ground
-    lp("C", "680pF Y2", "LS_RING_M", GND)                    # C9
-    lp("R", "0R line", "LS_TIP_M", "LS_TIP_P")               # R15
-    lp("R", "0R line", "LS_RING_M", "LS_RING_P")             # R16
-    lp("RV", "sidactor", "LS_TIP_P", "LS_RING_P")            # RV1, surge
-    lp("F", "telecom fuse", "LINE_TIP", "LS_TIP_P")          # power cross (datasheet appendix, Figure 37)
+        conn("LS_IGND", (d, "1")); conn("LINE_VP", (d, "2")); conn(wire, (d, "3"))
+    lp("FB", "ferrite", "LINE_TIP_F", "LINE_TIP_M")              # FB1
+    lp("FB", "ferrite", "LINE_RING_F", "LINE_RING_M")            # FB2
+    lp("C", "680pF Y2", "LINE_TIP_M", GND)                     # C8: across the barrier, to the USB ground
+    lp("C", "680pF Y2", "LINE_RING_M", GND)                    # C9
+    lp("R", "0R line", "LINE_TIP_M", "LINE_TIP_P")               # R15
+    lp("R", "0R line", "LINE_RING_M", "LINE_RING_P")             # R16
+    lp("RV", "sidactor", "LINE_TIP_P", "LINE_RING_P")            # RV1, surge
+    lp("F", "telecom fuse", "LINE_TIP", "LINE_TIP_P")          # power cross (datasheet appendix, Figure 37)
     JL = lp("J", "RJ11", ref="J2", pins=RJ, assembly="hand")          # through hole
     conn("LINE_RING", (JL, "3")); conn("LINE_TIP", (JL, "4"))
     nc(JL, "1", "2", "5", "6")
-    nets["LINE_RING"] += nets.pop("LS_RING_P")               # no fuse on RING: the jack's wire itself
+    nets["LINE_RING"] += nets.pop("LINE_RING_P")               # no fuse on RING: the jack's wire itself
     # GPIOs the stick doesn't use (22, 23: LEDs; 28: test pad; 29: VBUS sense)
     nc(U1, *[GPIO_PIN[g] for g in (0, 1, *range(12, 21), 24, 25, 26, 27)])
 
