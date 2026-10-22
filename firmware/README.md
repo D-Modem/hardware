@@ -9,12 +9,16 @@ The same firmware runs pico-serial W (SPEC-W.md), which adds Bluetooth: BLE
 for iPhone and classic Bluetooth serial (SPP) for Android. See
 [Bluetooth (W board)](#bluetooth-w-board).
 
+pico-serial Line, the phone-line stick (SPEC-L.md), builds from the same
+tree into different firmware: a USB front end for its Si3056 DAA, the
+modem itself being D-Modem on the host. See [Line stick](#line-stick).
+
 ## Build
 
 Needs CMake 3.13+, Ninja or Make, and the Arm GNU toolchain (`arm-none-eabi-gcc`).
 
 ```sh
-cmake -S firmware -B firmware/build -G Ninja      # -DPS_BOARD=hood (default), w or pico
+cmake -S firmware -B firmware/build -G Ninja      # -DPS_BOARD=hood (default), w, line or pico
 ninja -C firmware/build
 # -> firmware/build/pico-serial-hood.uf2
 ```
@@ -30,6 +34,9 @@ ninja -C firmware/build
   - `w`: pico-serial W, the hood board's circuit plus the RM2 radio wired as
     on Pico W. Adds BTstack and the radio's firmware (the `.uf2` is about
     900 KB).
+  - `line`: the phone-line stick: `src/line` and the portable
+    `src/core/daa_frame.c`, `line_dev.c` instead of the RS-232 core (about
+    31 KB of code, a 54 KB `.uf2`).
   - `pico`: a bench rig built on a Raspberry Pi Pico wired to the two
     transceivers as SPEC.md §4.5. Same GPIOs. The LEDs move off GP23/24,
     which belong to the Pico.
@@ -149,9 +156,13 @@ src/core/       portable: role detection, line mapping, flow control, baud-rate
 src/rp2040/     HAL (GPIO, UART + IRQ, PIO line timing, flash), USB descriptors
                 and callbacks, Bluetooth (W board: bt.c, the GATT database,
                 BTstack config), main
-src/generated/  board_pins.h and board_pins_w.h, written by
-                hardware/netlist/build_netlist.py
-boards/         SDK board headers for the hood and W boards
+src/line/       the line stick: the Si3056's pins, clock and serial port (PIO),
+                its USB device, main
+src/core/       (also) daa_frame.c, line_dev.c: the line stick's frame
+                engine and device logic, portable
+src/generated/  board_pins.h, board_pins_w.h and board_pins_line.h, written
+                by hardware/netlist/build_netlist.py
+boards/         SDK board headers for the hood, W and line boards
 test/           host tests for the core (fake HAL) and the emulator test
 tools/          check_docs.py: every function has a comment (CI runs it)
 ```
@@ -167,7 +178,7 @@ there, and the pin header follows.
 ## Tests
 
 ```sh
-make -C firmware/test run                                   # core, baud detector, host links; sanitizers on
+make -C firmware/test run                                   # core, baud detector, host links, line stick; sanitizers on
 firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware in an emulator
 ```
 
@@ -208,6 +219,44 @@ firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware 
     and later "ATI3\r" at 115200 (2% slow) reach the host, the UART
     switches, and GET_INFO reports it. rp2040js runs PIO on its own timer,
     so the test steps PIO once per CPU cycle to keep its timing true.
+
+## Line stick
+
+`-DPS_BOARD=line`: the firmware of pico-serial Line (SPEC-L.md), a USB
+softmodem front end. The host's driver sees one vendor interface with an
+isochronous pair for the line's samples and an interrupt endpoint for
+events, shaped like Smart Link's SmartUSB56 so D-Modem's driver for that is
+the model; the protocol is in [PROTOCOL.md](PROTOCOL.md#line-stick-pico-serial-line).
+
+- **Bring-up:** MCLK is the USB PLL's 48 MHz on GPIO21 (no fractional
+  divider: a clean clock). The Si3056 is reset with M0 = M1 = 0 (serial mode
+  0, the RGDT pin driven low through reset), its frames start at the reset
+  PLL setting, then PLL1 is set (N = 125, M = 256: 98.304 MHz), the rate
+  (9600 Hz), 16-bit mode (FC pin requests from then on), and the line side
+  powered up. FDT (register 12) says the link across the barrier works; it's
+  checked again every second.
+- **Frames:** `si3056.pio` is the serial port's slave, following SCLK and
+  FSYNC; every word goes through `daa_frame.c` from the PIO's interrupt
+  (highest priority): the primary word is the line's sample in and the
+  modem's out, and a register access is a secondary word in the same frame.
+- **Hook** on the OFHK pin (pulled up: on hook whenever the firmware
+  isn't running), **ring detector** on RGDT (its edges counted for the
+  host), the DAA's **interrupt** on AOUT/INT (register 4 read out and
+  cleared). LEDs: OH while off hook, RI with the ring detector.
+- **Tests** (`test_line.c`): the frame engine against a model of the
+  Si3056's serial port (Figures 27-30: the LSB flag in 15-bit mode, the FC
+  pin in 16-bit mode, register reads and writes), the sample streams
+  (order, head start, under- and overruns, samples kept in order across
+  register accesses) and the device logic and requests on a fake board.
+  Checked by breaking the frame engine on purpose: not clearing the LSB in
+  15-bit mode, taking a sample on a secondary word, never dropping FC.
+  Each break is caught.
+
+**Not verified on hardware:** no Si3056 here, and the emulator has none.
+The PIO timing (SDI out after SCLK rises, SDO in as it falls; ~50 ns from
+FSYNC to the first bit, against a half-period of 200 ns at 9600 Hz), the
+reset-time PLL setting, the isochronous endpoints with a real host and the
+host's driver are all still to be tried.
 
 ## Not yet verified
 
