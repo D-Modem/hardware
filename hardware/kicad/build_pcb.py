@@ -272,15 +272,15 @@ if N.LINE:
         "U5": (0.0, 38.6, 90, "F"),
         "C19": (6.0, 38.6, 90, "F"), "C20": (-6.0, 38.6, 90, "F"),                 # VD, VA
         "R11": (8.0, 36.0, 90, "B"), "R12": (9.0, 36.0, 90, "B"), "R13": (8.0, 38.4, 90, "B"),  # pull-ups
-        "R14": (-4.2, 34.3, 0, "F"), "R15": (4.2, 34.3, 0, "F"),                   # 56.2R to C1A, C2A
+        "R14": (-3.4, 34.3, 0, "F"), "R15": (5.0, 34.3, 0, "F"),                   # 56.2R to C1A, C2A
         # --- the isolation gap: the Y2 caps straddle it, nothing else crosses
-        "C21": (-1.6, BY, 90, "F"), "C22": (1.6, BY, 90, "F"),                     # C1, C2: the data path
+        "C21": (-0.4, BY, 90, "F"), "C22": (2.6, BY, 90, "F"),                     # C1, C2: the data path, over C1B, C2B
         "C29": (-7.8, BY, 270, "F"), "C30": (7.8, BY, 270, "F"),                   # C8, C9: TIP/RING to ground
         # --- line side, top: Si3018, the surge suppressor behind the jack
-        "U6": (0.0, 24.7, 270, "F"),
+        "U6": (0.0, 24.7, 90, "F"),                                                 # C1B, C2B toward the barrier caps
         "RV1": (-5.6, 18.6, 0, "F"),                                                # between the jack and the Si3018
         "C28": (5.0, 17.5, 0, "F"), "C23": (5.0, 19.6, 0, "F"),                    # C3 10nF 250V, C4 1uF
-        "C24": (-6.2, 26.2, 90, "F"), "C25": (6.2, 26.2, 90, "F"),                 # VREG, VREG2
+        "C24": (5.6, 29.7, 90, "F"), "C25": (1.4, 20.3, 0, "F"),                   # VREG (pin 7), VREG2 (pin 10)
         "C26": (8.4, 21.0, 90, "F"), "C27": (8.4, 24.4, 90, "F"),                  # C7, C10
         "R17": (-8.4, 23.4, 90, "F"),                                               # IB 1M
         "FB1": (-8.4, 27.0, 90, "F"), "FB2": (8.4, 27.0, 90, "F"),                 # ferrites by C8, C9
