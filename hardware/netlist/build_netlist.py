@@ -33,7 +33,7 @@ from collections import defaultdict
 # output). Bump it with the revision when the circuit changes.
 DATE = "2026-10-18"
 
-VARIANTS = ("hood", "w", "line")
+VARIANTS = ("hood", "w", "line", "wb")
 VARIANT = os.environ.get("PS_VARIANT", "hood")
 if "--variant" in sys.argv[1:-1]:          # read early: the circuit is built on import
     VARIANT = sys.argv[sys.argv.index("--variant") + 1]
@@ -41,7 +41,9 @@ if VARIANT not in VARIANTS:
     raise SystemExit(f"unknown variant {VARIANT!r}; one of {VARIANTS}")
 W = VARIANT == "w"
 LINE = VARIANT == "line"     # the phone-line stick (SPEC-L.md): a DAA, no RS-232
-SUFFIX = {"hood": "", "w": "-w", "line": "-line"}[VARIANT]
+WB = VARIANT == "wb"         # the wideband bare-pair stick (SPEC-WB.md): a codec and a transformer
+STICK = LINE or WB           # the two sticks: no RS-232, the stick shell
+SUFFIX = {"hood": "", "w": "-w", "line": "-line", "wb": "-wb"}[VARIANT]
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOCAL_FP = os.path.join(HERE, "..", "kicad", "lib")   # our own footprints (pico-serial.pretty)
 
@@ -113,6 +115,20 @@ SI3056 = {"1": ("MCLK", I), "2": ("~{FSYNC}", O), "3": ("SCLK", O), "4": ("VD", 
 SI3018 = {"1": ("QE", P), "2": ("DCT", P), "3": ("RX", P), "4": ("IB", P), "5": ("C1B", P), "6": ("C2B", P),
           "7": ("VREG", P), "8": ("RNG1", P), "9": ("RNG2", P), "10": ("VREG2", P), "11": ("SC", P),
           "12": ("QE2", P), "13": ("QB", P), "14": ("DCT3", P), "15": ("IGND", P), "16": ("DCT2", P)}
+# TI TLV320AIC3204, RHB (QFN-32) package (SLOS602E, Pin Functions). AVDD,
+# DVDD and REF are outputs here: the internal LDOs (LDO_SELECT high, A-LDO on)
+# make them, and only their capacitors join them, so they're passive.
+AIC3204 = {"1": ("MCLK", I), "2": ("BCLK", B), "3": ("WCLK", B), "4": ("DIN/MFP1", I), "5": ("DOUT/MFP2", O),
+           "6": ("IOVDD", PI), "7": ("IOVSS", PI), "8": ("SCLK/MFP3", I), "9": ("SCL/~{SS}", I),
+           "10": ("SDA/MOSI", B), "11": ("MISO/MFP4", O), "12": ("SPI_SELECT", I), "13": ("IN1_L", I),
+           "14": ("IN1_R", I), "15": ("IN2_L", I), "16": ("IN2_R", I), "17": ("AVSS", PI), "18": ("REF", P),
+           "19": ("MICBIAS", O), "20": ("IN3_L", I), "21": ("IN3_R", I), "22": ("LOL", O), "23": ("LOR", O),
+           "24": ("AVDD", P), "25": ("HPL", O), "26": ("LDOIN/HPVDD", PI), "27": ("HPR", O), "28": ("DVSS", PI),
+           "29": ("DVDD", P), "30": ("LDO_SELECT", I), "31": ("~{RESET}", I), "32": ("GPIO/MFP5", B),
+           "33": ("EP", P)}
+# Pulse PE-65848NL line transformer: two split windings, 1-2 + 3-4 and 8-7 + 6-5
+# (Pulse drawing PE-65848NL rev M12; dots on 1, 3, 8 and 6).
+XFMR8 = {str(n): (str(n), P) for n in range(1, 9)}
 BJT = {"1": ("B", I), "2": ("E", P), "3": ("C", P)}      # SOT-23 B E C, as KiCad's Q_NPN_BEC / Q_PNP_BEC
 DUALDIODE = {"1": ("A", P), "2": ("K", P), "3": ("K/A", P)}   # two in series: 1 anode, 2 cathode, 3 the middle
 RJ = {str(n): ({3: "RING", 4: "TIP"}.get(n, str(n)), P if n in (3, 4) else NC) for n in range(1, 7)}  # 6P6C: TIP/RING the middle pair
@@ -130,7 +146,7 @@ SYMBOLS = {
     id(USB_C16): ("Connector", "USB_C_Receptacle_USB2.0_16P"), id(DB25F): ("Connector", "DB25_Socket"),
     id(XTAL4): ("Device", "Crystal_GND24"), id(DIODE): None, id(SW): ("Switch", "SW_Push"),
     id(TP): ("Connector", "TestPoint"), id(SP3238E): None, id(MAX3243E): None, id(RM2): None,
-    id(SI3056): None, id(SI3018): None, id(BJT): None, id(DUALDIODE): None, id(RJ): None,
+    id(SI3056): None, id(SI3018): None, id(AIC3204): None, id(XFMR8): None, id(BJT): None, id(DUALDIODE): None, id(RJ): None,
 }
 
 FP_R = "Resistor_SMD:R_0402_1005Metric"
@@ -333,7 +349,7 @@ GPIO_PIN.update({8: "11", 9: "12", 10: "13", 11: "14", 12: "15", 13: "16", 14: "
                  16: "27", 17: "28", 18: "29", 19: "30", 20: "31", 21: "32", 22: "34", 23: "35",
                  24: "36", 25: "37", 26: "38", 27: "39", 28: "40", 29: "41"})
 
-if not LINE:   # the hood and W boards: two RS-232 transceivers on a DB25
+if not STICK:   # the hood and W boards: two RS-232 transceivers on a DB25
     # --- §4.5 RS-232: chip A (DCE, SP3238E) and chip B (DTE, MAX3243E) -----------
     block("rsa")
     UA = part("U", "SP3238EEA", SP3238E, "Package_SO:SSOP-28_5.3x10.2mm_P0.65mm", "C49669",
@@ -517,6 +533,96 @@ if LINE:
     # GPIOs the stick doesn't use (22, 23: LEDs; 28: test pad; 29: VBUS sense)
     nc(U1, *[GPIO_PIN[g] for g in (0, 1, *range(12, 21), 24, 25, 26, 27)])
 
+if WB:
+    # --- SPEC-WB §3: the bare pair, TLV320AIC3204 codec + line transformer ---------
+    # Parts: SPEC-WB §8. key -> (value, LCSC, footprint, description)
+    WB_PARTS = {
+        "codec": ("TLV320AIC3204", "C24109", "Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm",
+                  "TI TLV320AIC3204IRHBR stereo codec, 96 kHz"),
+        "xfmr": ("PE-65848NL", "C7261159", "pico-serial:Pulse_PE-65848",
+                 "Pulse PE-65848NLT line transformer, 1500 Vrms"),
+        "60R4": ("60.4R", "C2933247", "Resistor_SMD:R_0603_1608Metric", "1%, line drive"),
+        "604R": ("604R", "C32183", "Resistor_SMD:R_0603_1608Metric", "1%, hybrid replica"),
+        "1k21": ("1.21k", "C22835", "Resistor_SMD:R_0603_1608Metric", "1%, hybrid replica (cable R)"),
+        "10nF C0G": ("10nF C0G", "C2971995", "Capacitor_SMD:C_0805_2012Metric", "hybrid replica (cable C), tune per cable"),
+        "1uF 250V": ("1uF 250V", "C381468", "Capacitor_SMD:C_1812_4532Metric", "X7R, DC block (two in series)"),
+        "tvs": ("ESDSLC5V0LB", "C2762104", "Diode_SMD:D_0402_1005Metric", "5 V bidirectional TVS, 0.8 pF, DFN1006"),
+        "bav99": ("BAV99", "C2500", "Package_TO_SOT_SMD:SOT-23", "two diodes in series, clamp to 3.3 V and ground"),
+        "ferrite": LINE_PARTS["ferrite"], "sidactor": LINE_PARTS["sidactor"],
+        "telecom fuse": LINE_PARTS["telecom fuse"], "RJ11": LINE_PARTS["RJ11"],
+    }
+
+    def wp(prefix, key, a=None, b=None, ref=None, pins=TWO, assembly="jlc"):
+        v, lcsc, fp, desc = WB_PARTS[key]
+        r = part(prefix, v, pins, fp, lcsc, desc=desc, ref=ref, assembly=assembly)
+        if a:
+            conn(a, (r, "1"))
+        if b:
+            conn(b, (r, "2"))
+        return r
+
+    block("codec")   # the RP2040's side: 3.3 V, the USB ground
+    UC = wp("U", "codec", ref="U5", pins=AIC3204)
+    conn(V33, (UC, "6"), (UC, "26"), (UC, "30"))           # IOVDD, LDOIN/HPVDD, LDO_SELECT (D-LDO on)
+    conn(GND, (UC, "7"), (UC, "17"), (UC, "28"), (UC, "33"), (UC, "12"), (UC, "8"))   # grounds; I2C mode; MFP3 unused
+    for pin, net, g in (("1", "CODEC_MCLK", 21), ("2", "CODEC_BCLK", 2), ("3", "CODEC_WCLK", 3),
+                        ("5", "CODEC_DOUT", 4), ("4", "CODEC_DIN", 5), ("10", "CODEC_SDA", 6),
+                        ("9", "CODEC_SCL", 7), ("31", "CODEC_RESET_N", 8), ("32", "CODEC_MFP5", 9)):
+        conn(net, (U1, GPIO_PIN[g]), (UC, pin))            # I2S on GP2-5 (one PIO block), I2C1 on GP6/7
+    nc(UC, "11", "19", "22", "23")                          # MISO/MFP4, MICBIAS, LOL, LOR
+    passive("R", "4.7k", V33, "CODEC_SDA", "I2C pull-up")
+    passive("R", "4.7k", V33, "CODEC_SCL", "I2C pull-up")
+    passive("R", "10k", "CODEC_RESET_N", GND, "codec held in reset until the firmware starts")
+    conn("CODEC_AVDD", (UC, "24")); conn("CODEC_DVDD", (UC, "29")); conn("CODEC_REF", (UC, "18"))
+    passive("C", "100nF", V33, GND, "codec IOVDD")
+    passive("C", "100nF", V33, GND, "codec LDOIN")
+    passive("C", "10uF", V33, GND, "codec LDOIN, headphone driver supply")
+    passive("C", "100nF", "CODEC_AVDD", GND, "A-LDO output")
+    passive("C", "10uF", "CODEC_AVDD", GND, "A-LDO output")
+    passive("C", "100nF", "CODEC_DVDD", GND, "D-LDO output")
+    passive("C", "10uF", "CODEC_DVDD", GND, "D-LDO output")
+    passive("C", "10uF", "CODEC_REF", GND, "reference filter (datasheet 10.2.1.1)")
+
+    block("hybrid")   # SPEC-WB §3: drive, replica, and the codec's mixer subtracts one from the other
+    conn("HP_L", (UC, "25")); conn("HP_R", (UC, "27"))
+    wp("R", "60R4", "HP_L", "XF_A")                         # line arm: 2 x 60.4 R ~ the pair's 120 R
+    wp("R", "60R4", "HP_R", "XF_B")
+    wp("R", "604R", "HP_L", "REP_A")                        # replica arm: ten times the impedance
+    wp("R", "604R", "HP_R", "REP_B")
+    wp("R", "1k21", "REP_A", "REP_M")                       # Zb: the cable's R and C, times ten
+    wp("C", "10nF C0G", "REP_M", "REP_B")
+    # each mixer input through 1k (current limit for the clamps) and 1 uF (the codec wants AC coupling)
+    for node, pin, what in (("XF_A", "13", "IN1_L: P, line +"), ("REP_B", "14", "IN1_R: P, replica -"),
+                            ("XF_B", "16", "IN2_R: M, line -"), ("REP_A", "21", "IN3_R: M, replica +")):
+        mid = f"MIX_{pin}"
+        passive("R", "1k", node, mid, f"{what}: input series R")
+        passive("C", "1uF", mid, f"CODEC_IN{pin}", f"{what}: AC coupling")
+        conn(f"CODEC_IN{pin}", (UC, pin))
+    conn("CODEC_IN_NC", (UC, "15"), (UC, "20"))             # IN2_L, IN3_L unused: together, to ground by 100 nF
+    passive("C", "100nF", "CODEC_IN_NC", GND, "unused inputs (datasheet 10.2.2.1)")
+    # codec-side protection: whatever the transformer passes of a surge
+    d = wp("D", "tvs", "XF_A", "XF_B")
+    for node in ("XF_A", "XF_B"):
+        c = wp("D", "bav99", pins=DUALDIODE)
+        conn(GND, (c, "1")); conn(V33, (c, "2")); conn(node, (c, "3"))
+
+    block("pair")   # line side: no ground. LINE_*: the pair's own voltage; only the transformer crosses
+    T1 = wp("T", "xfmr", ref="T1", pins=XFMR8)
+    conn("XF_A", (T1, "1")); conn("XF_MID", (T1, "2"), (T1, "3")); conn("XF_B", (T1, "4"))
+    conn("LINE_TIP_X", (T1, "8")); conn("LINE_BLK1", (T1, "7")); conn("LINE_BLK2", (T1, "6"))
+    conn("LINE_RING_X", (T1, "5"))
+    wp("C", "1uF 250V", "LINE_BLK1", "LINE_BLKM")           # DC block: 0.5 uF, 500 V, in the split winding
+    wp("C", "1uF 250V", "LINE_BLKM", "LINE_BLK2")
+    wp("FB", "ferrite", "LINE_TIP_P", "LINE_TIP_X")
+    wp("FB", "ferrite", "LINE_RING", "LINE_RING_X")
+    wp("RV", "sidactor", "LINE_TIP_P", "LINE_RING")         # surge
+    wp("F", "telecom fuse", "LINE_TIP", "LINE_TIP_P")       # power cross
+    JL = wp("J", "RJ11", ref="J2", pins=RJ, assembly="hand")
+    conn("LINE_RING", (JL, "3")); conn("LINE_TIP", (JL, "4"))
+    nc(JL, "1", "2", "5", "6")
+    # GPIOs the stick doesn't use (22, 23: LEDs; 28: test pad; 29: VBUS sense)
+    nc(U1, *[GPIO_PIN[g] for g in (0, 1, *range(10, 21), 24, 25, 26, 27)])
+
 # --- §4.8 LEDs: optional on the hood board; fitted on W (SPEC-W §3.2-3.3) -------
 block("led")
 if W:
@@ -524,10 +630,12 @@ if W:
             ("RD", (RM, "18")), ("SD", (RM, "17")))
 elif LINE:   # SPEC-L §4: off hook, ringing
     LEDS = (("OH", (U1, GPIO_PIN[22])), ("RI", (U1, GPIO_PIN[23])))
+elif WB:     # SPEC-WB: carrier up, data
+    LEDS = (("LINK", (U1, GPIO_PIN[22])), ("DATA", (U1, GPIO_PIN[23])))
 else:
     LEDS = tuple((name, (U1, GPIO_PIN[g])) for g, name in zip(range(22, 28), ("PWR", "TR", "CD", "SD", "RD", "RI")))
 for name, node in LEDS:
-    fitted = W or LINE
+    fitted = W or STICK
     led = part("D", f"LED_{name}", DIODE, "LED_SMD:LED_0603_1608Metric", "C2286", dnp=not fitted,
                desc=f"{name} status LED" + ("" if fitted else ", optional"))
     conn(f"LED_{name}", node)
@@ -539,6 +647,7 @@ block("tp")
 if not W:
     conn("GP28", (U1, GPIO_PIN[28]))
 SERIAL_TPS = ((("DAA_SCLK", "SCLK"), ("DAA_FSYNC", "FSYNC"), ("DAA_SDO", "SDO"), ("DAA_SDI", "SDI")) if LINE else
+              (("CODEC_BCLK", "BCLK"), ("CODEC_WCLK", "WCLK"), ("CODEC_DOUT", "DOUT"), ("CODEC_DIN", "DIN")) if WB else
               (("A_TX", "A_TX"), ("A_RX", "A_RX"), ("B_TX", "B_TX"), ("B_RX", "B_RX")))
 for net, label in ((VBUS, "VBUS"), (V33, "3V3"), (V11, "1V1"), (GND, "GND"), ("SWCLK", "SWCLK"),
                    ("SWDIO", "SWDIO"), ("RUN", "RUN"), ("GP28", "GP28")) + SERIAL_TPS:
@@ -591,7 +700,7 @@ def check():
         for r, p in members:
             if pin_type(r, p) == PI and net not in SUPPLIES:
                 errs.append(f"{r}.{p} is a power input on non-supply net {net}")
-    for net, *_ in ([] if LINE else RS232):
+    for net, *_ in ([] if STICK else RS232):
         kinds = sorted(pin_type(r, p) for r, p in nets[net] if r in (UA, UB))
         if kinds != [I, O]:
             errs.append(f"RS-232 line {net} needs one driver and one receiver, has {kinds}")
@@ -704,7 +813,7 @@ def write_kicad(path):
 
 def write_md(path):
     L = ["<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->", "<!-- Copyright (C) 2026 Neo-Desktop -->",
-         f"# pico-serial{' W' if W else ''} netlist", "",
+         f"# pico-serial{' W' if W else ' Line' if LINE else ' WB' if WB else ''} netlist", "",
          "Generated by `build_netlist.py`; edit that script, not this file.", "",
          f"{len(parts)} parts, {len(nets)} nets. DNP = not fitted by default.", "",
          "## Nets", "", "| Net | Pins |", "|---|---|"]
