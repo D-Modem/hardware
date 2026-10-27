@@ -361,6 +361,15 @@ if N.WB:
                 *(f"R{n}" for n in range(19, 23)), *(f"C{n}" for n in range(28, 32))):
         x, y, rot, side = PLACE[ref]
         PLACE[ref] = (-x, y, rot, side)
+    # its inputs (IN1/IN2 on the top row's left end, IN3_R on the left side) are now at its
+    # top-left corner: their 1k and 1 uF go on top beside them, in rows
+    for k in range(4):
+        PLACE[f"R{19 + k}"] = (-8.6, CY - 3.9 + 1.1 * k, 0, "F")
+        PLACE[f"C{28 + k}"] = (-6.6, CY - 3.9 + 1.1 * k, 0, "F")
+    # and the left side runs REF (pin 18) at the top to AVDD (pin 24) at the bottom
+    PLACE["C26"] = (-4.2, CY - 1.6, 90, "F")
+    PLACE["C22"] = (-4.2, CY + 2.0, 90, "F")
+    PLACE["C23"] = (-5.4, CY + 2.0, 90, "F")
     for i, (name, sx, sy) in enumerate(ST.LEDS):
         x, y = stick(sx, sy)
         PLACE[f"D{5 + i}"] = (x, y, 90, "F")
