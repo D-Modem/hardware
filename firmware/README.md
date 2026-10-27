@@ -12,13 +12,15 @@ for iPhone and classic Bluetooth serial (SPP) for Android. See
 pico-serial Line, the phone-line stick (SPEC-L.md), builds from the same
 tree into different firmware: a USB front end for its Si3056 DAA, the
 modem itself being D-Modem on the host. See [Line stick](#line-stick).
+Its sibling for bare copper pairs, pico-serial WB (SPEC-WB.md), does the
+same for a TLV320AIC3204 codec at 96 kHz. See [WB stick](#wb-stick).
 
 ## Build
 
 Needs CMake 3.13+, Ninja or Make, and the Arm GNU toolchain (`arm-none-eabi-gcc`).
 
 ```sh
-cmake -S firmware -B firmware/build -G Ninja      # -DPS_BOARD=hood (default), w, line or pico
+cmake -S firmware -B firmware/build -G Ninja      # -DPS_BOARD=hood (default), w, line, wb or pico
 ninja -C firmware/build
 # -> firmware/build/pico-serial-hood.uf2
 ```
@@ -37,6 +39,10 @@ ninja -C firmware/build
   - `line`: the phone-line stick: `src/line` and the portable
     `src/core/daa_frame.c`, `line_dev.c` instead of the RS-232 core (about
     31 KB of code, a 54 KB `.uf2`).
+  - `wb`: the wideband bare-pair stick: `src/wb` and the portable
+    `src/core/wb_codec.c`, `wb_audio.c`, `wb_dev.c`, with the Line stick's
+    USB device (`src/stick`) and sample streams (about 33 KB of code, a 58 KB
+    `.uf2`).
   - `pico`: a bench rig built on a Raspberry Pi Pico wired to the two
     transceivers as SPEC.md §4.5. Same GPIOs. The LEDs move off GP23/24,
     which belong to the Pico.
@@ -158,14 +164,17 @@ src/rp2040/     HAL (GPIO, UART + IRQ, PIO line timing, flash), USB descriptors
                 BTstack config), main
 src/line/       the line stick: the Si3056's pins, clock and serial port (PIO),
                 its part of the USB device (line_stick.c), main
+src/wb/         the WB stick: the codec's pins, MCLK, I2C, its I2S frames (PIO
+                and DMA), its part of the USB device (wb_stick.c), main
 src/stick/      the sticks' USB device (usb_stick.c: descriptors, the class
                 driver, Microsoft OS 2.0) and what it needs from a stick (stick.h)
 src/core/       (also) sstream.c: the sticks' sample streams; daa_frame.c,
-                line_dev.c: the line stick's frame engine and device logic,
-                portable
-src/generated/  board_pins.h, board_pins_w.h and board_pins_line.h, written
-                by hardware/netlist/build_netlist.py
-boards/         SDK board headers for the hood, W and line boards
+                line_dev.c: the line stick's frame engine and device logic;
+                wb_codec.c, wb_audio.c, wb_dev.c: the WB stick's codec
+                bring-up, samples and device logic; portable
+src/generated/  board_pins.h, board_pins_w.h, board_pins_line.h and
+                board_pins_wb.h, written by hardware/netlist/build_netlist.py
+boards/         SDK board headers for the hood, W, line and WB boards
 test/           host tests for the core (fake HAL) and the emulator test
 tools/          check_docs.py: every function has a comment (CI runs it)
 ```
@@ -181,7 +190,7 @@ there, and the pin header follows.
 ## Tests
 
 ```sh
-make -C firmware/test run                                   # core, baud detector, host links, line stick; sanitizers on
+make -C firmware/test run                                   # core, baud detector, host links, the sticks; sanitizers on
 firmware/test/emu/run.sh firmware/build/pico-serial-hood.bin   # whole firmware in an emulator
 ```
 
@@ -261,6 +270,78 @@ The PIO timing (SDI out after SCLK rises, SDO in as it falls; ~50 ns from
 FSYNC to the first bit, against a half-period of 200 ns at 9600 Hz), the
 reset-time PLL setting, the isochronous endpoints with a real host and the
 host's driver are all still to be tried.
+
+## WB stick
+
+`-DPS_BOARD=wb`: the firmware of pico-serial WB (SPEC-WB.md), the
+wideband bare-pair stick: the Line stick's USB device (`src/stick`, the
+same interface, endpoints and Microsoft OS 2.0 set; USB `1209:0003`) in
+front of a TLV320AIC3204 codec at 96 kHz (48 and 192 kHz for tests). The
+protocol is in [PROTOCOL.md](PROTOCOL.md#wb-stick-pico-serial-wb).
+
+- **Clocks:** MCLK is the 12 MHz crystal itself on GPIO21 (GPOUT0,
+  undivided). The codec's PLL makes 98.304 MHz (P = 1, R = 1, J.D =
+  8.1920); NDAC = NADC = MDAC = MADC = 4; DOSR = AOSR = 64 with PRB_P7 and
+  PRB_R7 at 96 kHz (32, PRB_P17, PRB_R13 at 192; 128, PRB_P1, PRB_R1 at
+  48); BCLK = DAC_CLK / 4 = 6.144 MHz, 64 a frame. The codec is the I2S
+  master, so the samples run on the stick's crystal and USB follows them,
+  as on the Line stick.
+- **Bring-up** (`wb_codec.c`, in SLAA557's order): reset (pin, then
+  software); PLL; dividers, OSR, processing blocks; I2S master with 32-bit
+  words; INT1 (overflows, over current) on MFP5; the weak AVDD link off and
+  the A-LDO on at 1.77 V; common mode 0.9 V; the drivers' routing (the left
+  DAC's + to HPL, its − to HPR: one DAC, a differential line drive), 0 dB,
+  powered up, and their gain flags waited for (500 ms at most); then the
+  left DAC and both ADCs powered and unmuted, their power flags and the
+  MicPGAs' gain flags waited for (200 ms at most).
+- **The hybrid** is in the left MicPGA: + is IN1L (line A) and IN1R
+  (replica B), − is IN2R (line B) and IN3R (replica A), 10 kΩ each (page 1
+  registers 52 = `0x41`, 54 = `0x14`), so the left ADC hears the line
+  minus the replica of our own signal. The right MicPGA takes the line
+  alone (IN2R − IN1L, 20 kΩ: registers 55 = `0x20`, 57 = `0x20`); the
+  replica alone can't be routed differentially (both its nodes reach only
+  the right MicPGA's + side). The host gets one channel (the hybrid by
+  default), and the peaks of both.
+- **Frames:** `i2s.pio` is the I2S slave, full duplex, following BCLK and
+  WCLK; DMA moves the words both ways in blocks of 32 frames, ping-pong,
+  and `wb_audio.c` runs from the DMA's interrupt (highest priority). A
+  frame out of step (WCLK not where 32 bits each side put it) stops the
+  PIO; the main loop starts it over and counts it.
+- **LEDs:** LINK as the host says (`SET_CARRIER`; by default while the
+  samples stream), DATA while the host's samples aren't silent (and 50 ms
+  after).
+- **Tests** (`test_wb.c`): the bring-up against a model of the codec's
+  registers; each rate's clocks re-derived from the registers written and
+  checked against SLAA557's limits (PLL input and output ranges, every
+  divider's clock, DOSR × fs, the blocks' resource classes and filters);
+  the MicPGA routing bits checked against the board's netlist (left = line
+  − replica, right = the line); the order of the bring-up; failures and
+  timeouts; packet sizing; the samples to and from the frames, the peaks,
+  the firmware loopback; and the device logic and requests on a fake
+  board. Checked by breaking the code on purpose (PLL D off by one, a wrong
+  block or BCLK divider, a MicPGA input on the wrong pin or resistance,
+  HPR on the right DAC, no wait for the drivers' flags or the PLL, the
+  weak AVDD link left on, one TX slot only, the channels swapped, SET_RATE
+  in Hz, the page select writable, overflow flags never cleared): each
+  break is caught.
+
+**Levels:** at 0 dBFS the drivers put 1.0 Vrms between HPL and HPR, 0.5
+Vrms on a 120 Ω pair through the 2 × 60.4 Ω: +3.2 dBm for a full-scale
+sine, about +4.8 dBm where the drivers clip on AVDD (1.77 V). SPEC-WB's
+"about +8 dBm at most" would need the drivers on LDOIN (3.3 V, common mode
+1.65 V), which SLAA557 allows only single-ended ("Differential Loading:
+supported only when using the headphone-output stage powered from the
+AVDD supply"). Likewise SLAA557 wants AVDD at 1.8 V or more for the 0.9 V
+common mode, and the A-LDO gives 1.77 V at most: 0.9 V is kept for the
+swing; if the bench shows distortion near full scale, 0.75 V (page 1
+register 10 = `0x40`) trades 2.5 dB of swing for headroom.
+
+**Not verified on hardware:** no WB board yet, and the emulator has no
+codec. The PIO timing (the codec's bit taken ~25 ns after BCLK rises,
+before it changes ≥ 40 ns later at 192 kHz; ours out ~40 ns after the
+rise, 8 ns of setup needed), the codec's real power-up times, the 12 MHz
+GPOUT as MCLK, the isochronous endpoints at 480 bytes with a real host,
+and the levels above are all still to be tried.
 
 ## Not yet verified
 
