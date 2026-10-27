@@ -41,6 +41,7 @@
 #define AIC0_BCLK_N 30           // D7 power, D6:0 N (0 means 128)
 #define AIC0_ADC_FLAGS 36        // D7 left PGA at gain, D6 left ADC up, D3 right PGA, D2 right ADC up
 #define AIC0_ADC_FLAGS_UP 0x44
+#define AIC0_ADC_FLAGS_PGA 0x88   // both MicPGAs at their programmed gain
 #define AIC0_DAC_FLAGS 37        // D7 left DAC up, D5 HPL up, D3 right DAC up, D1 HPR up
 #define AIC0_DAC_FLAGS_UP 0xA2   // left DAC, HPL, HPR (the right DAC stays down)
 #define AIC0_STICKY1 42          // overflows since the last read: D7/D6 left/right DAC, D3/D2 left/right ADC

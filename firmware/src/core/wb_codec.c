@@ -154,11 +154,12 @@ wb_codec_result_t wb_codec_start(const wb_codec_cfg_t *cfg) {
     W(0, AIC0_DAC_SETUP1, AIC0_DAC_LEFT_ON | AIC0_DAC_LEFT_DATA);
     W(0, AIC0_DAC_VOL_L, cfg->tx_gain);
     W(0, AIC0_DAC_SETUP2, AIC0_DAC_MUTE_R);
-    // both ADCs up, unmuted, 0 dB digital
+    // both ADCs up, unmuted, 0 dB digital; then all of it up, and the MicPGAs
+    // at their gain (soft-stepped from mute)
     W(0, AIC0_ADC_SETUP, AIC0_ADC_ON);
     W(0, AIC0_ADC_FINE, 0x00);
     if (!wait_flags(0, AIC0_DAC_FLAGS, AIC0_DAC_FLAGS_UP, POWER_TIMEOUT_MS) ||
-        !wait_flags(0, AIC0_ADC_FLAGS, AIC0_ADC_FLAGS_UP, POWER_TIMEOUT_MS))
+        !wait_flags(0, AIC0_ADC_FLAGS, AIC0_ADC_FLAGS_UP | AIC0_ADC_FLAGS_PGA, POWER_TIMEOUT_MS))
         return WB_CODEC_POWER_TIMEOUT;
     return WB_CODEC_OK;
 }

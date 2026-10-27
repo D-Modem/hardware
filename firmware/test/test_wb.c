@@ -37,6 +37,7 @@ static struct {
     uint8_t page;
     bool answers;              // I2C: the codec acks
     bool hp_never;             // the drivers never reach their gain
+    bool pga_never;            // nor the MicPGAs theirs
     int hp_delay, hp_reads;    // reads of P1 R63 before its flags show
     wr_t log[LOG_MAX];
     int nlog;
@@ -71,7 +72,8 @@ static void aic_flags(void) {
     uint8_t out = aic.reg[1][AIC1_OUT_POWER], dac = aic.reg[0][AIC0_DAC_SETUP1], adc = aic.reg[0][AIC0_ADC_SETUP];
     aic.reg[0][AIC0_DAC_FLAGS] = (uint8_t)((dac & 0x80 ? 0x80 : 0) | (dac & 0x40 ? 0x08 : 0) |
                                            (out & AIC1_OUT_HPL ? 0x20 : 0) | (out & AIC1_OUT_HPR ? 0x02 : 0));
-    aic.reg[0][AIC0_ADC_FLAGS] = (uint8_t)((adc & 0x80 ? 0xC0 : 0) | (adc & 0x40 ? 0x0C : 0));
+    uint8_t pga = aic.pga_never ? 0x44 : 0xCC;
+    aic.reg[0][AIC0_ADC_FLAGS] = (uint8_t)(((adc & 0x80 ? 0xC0 : 0) | (adc & 0x40 ? 0x0C : 0)) & pga);
 }
 
 static struct {
@@ -394,7 +396,7 @@ TEST(codec_sequence) {
     CHECK(wb_codec_loop(false) && aic.reg[0][AIC0_IFACE3] == AIC0_IFACE3_CLKS_ON);
 }
 
-// A codec that doesn't answer, or whose drivers never come up: the bring-up
+// A codec that doesn't answer, or whose drivers or MicPGAs never come up: the bring-up
 // says so (within its timeouts), and the device's requests still work.
 TEST(codec_failures) {
     board();
@@ -407,6 +409,11 @@ TEST(codec_failures) {
     CHECK(wb_codec_start(&cfg) == WB_CODEC_HP_TIMEOUT);
     CHECK(fb.now - t0 >= 500 && fb.now - t0 < 600);
     CHECK((aic.reg[0][AIC0_DAC_SETUP1] & 0x80) == 0);   // no DAC without its drivers
+    board();
+    aic.pga_never = true;
+    t0 = fb.now;
+    CHECK(wb_codec_start(&cfg) == WB_CODEC_POWER_TIMEOUT);
+    CHECK(fb.now - t0 >= 200 && fb.now - t0 < 300);
     // the device: no codec, no CODEC state; GET_INFO still answers
     board();
     aic.answers = false;
