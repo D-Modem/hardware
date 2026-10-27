@@ -365,9 +365,9 @@ if N.WB:
         x, y = stick(sx, sy)
         PLACE[f"D{5 + i}"] = (x, y, 90, "F")
         PLACE[f"R{23 + i}"] = (x - 1.5 if x > 0 else x + 1.5, y, 90, "F")
-    # test pads: bottom, beside the screw
+    # test pads: bottom, between the codec and the RP2040, beside the screw
     for i, ref in enumerate(f"TP{n}" for n in range(1, 13)):
-        PLACE[ref] = ((-9.0, -6.4, 6.4, 9.0)[i % 4], 43.0 + 2.6 * (i // 4), 0, "B")
+        PLACE[ref] = ((-2.6, 0.0, 2.6, 5.2)[i % 4], 43.2 + 2.6 * (i // 4), 0, "B")
 
 
 def uid(*parts):

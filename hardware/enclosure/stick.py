@@ -98,7 +98,10 @@ LEDS = [("OH", 47.3, 8.6), ("RI", 47.3, -8.6)]
 XFMR_X, XFMR_W, XFMR_L, XFMR_H = 26.8, 12.07, 11.68, 8.64
 if WB:
     BARRIER_X = (XFMR_X - 2.0, XFMR_X + 2.0)
-    LEDS = [("LINK", 47.3, 8.6), ("DATA", 47.3, -8.6)]
+    # the screw to one side and the LEDs forward 3 mm: the codec's connections to the
+    # RP2040 run down the middle, where the Line stick has its screw
+    SCREWS = [(48.8, -6.4)]
+    LEDS = [("LINK", 44.3, 8.6), ("DATA", 44.3, -8.6)]
 LED_TUBE_Z0 = PCB_T / 2 + LED_H + 0.4
 BOSS_R = 2.4
 
