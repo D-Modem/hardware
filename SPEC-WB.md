@@ -62,11 +62,13 @@ end: see §9).
   live phone line's −48 V doesn't saturate the transformer.
 - **Line drive:** the codec's headphone outputs, differential (HPL = s,
   HPR = −s), through 60.4 Ω in each leg: 120 Ω, about the pair's
-  impedance; about +8 dBm at most. No op-amp.
+  impedance; about +3 dBm on the pair at full scale (TI's guide supports
+  a differential load only with the drivers on AVDD, 1.0 Vrms between
+  HPL and HPR). No op-amp.
 - **Hybrid:** frequency division keeps the far end's band apart from our
   own, but our own transmit level is far above what we receive. A
   replica arm at ten times the impedance (604 Ω each leg, and 1.21 kΩ in
-  series with 12 nF for the cable) makes a copy of what we send; the
+  series with 10 nF for the cable) makes a copy of what we send; the
   codec's input mixer subtracts it (P = IN1L + IN1R, M = IN2R + IN3R, 10
   kΩ each), taking 10–20 dB of our own signal out before the ADC. The
   modem's filters take the rest.
@@ -174,7 +176,7 @@ Checked against JLCPCB/LCSC stock on 2026-10-27.
 | DC block ×2, in series | FS43X105K251EGG 1 µF 250 V X7R | C381468 | 1812 | 0.5 µF, 500 V together (a live line peaks at ~260 V); in the transformer's split winding (TIP–8, 7–C–6, 5–RING) |
 | Codec-side TVS | Yangjie ESDSLC5V0LB | C2762104 | DFN1006-2 | across the codec winding, 0.8 pF |
 | Codec-side clamps ×2 | Nexperia BAV99 | C2500 | SOT-23 | each line node to 3.3 V and ground |
-| Drive and hybrid | 60.4 Ω, 604 Ω, 1.21 kΩ 1 %; 12 nF C0G | basic | 0603 | §3 |
+| Drive and hybrid | 60.4 Ω, 604 Ω, 1.21 kΩ 1 %; 10 nF C0G (no 12 nF C0G in stock) | C2933247, C32183, C22835, C2971995 | 0603, 0805 | §3 |
 
 Plugged into a live phone line by mistake: no DC path, so the exchange
 sees it on-hook; ringing drives about 6 mA through it.
