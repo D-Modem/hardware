@@ -38,6 +38,7 @@ symbol and footprint libraries. KiCad 10 opens it too.
 | `kicad/pico-serial-w.*`, `preview-w.svg`, `render-w-*.png` | pico-serial W's schematic, PCB, rules and renders |
 | `kicad/lib/make_footprints.py` | Writes `lib/pico-serial.pretty/`: the RM2 (from its datasheet's drawing), the M2 screw hole, the RJ11 and the telecom fuse |
 | `netlist/*-line.*`, `kicad/pico-serial-line.*`, `kicad/render-line-*.png` | pico-serial Line's netlist, BOM, schematic, PCB, rules and renders |
+| `netlist/*-wb.*`, `kicad/pico-serial-wb.*`, `kicad/render-wb-*.png` | pico-serial WB's netlist, BOM, schematic, PCB, rules and renders |
 | `enclosure/stick.py`, `enclosure/out-line/` | The Line stick's printed shell, its board outline and placement |
 | `kicad/fp-lib-table` | Points KiCad at `lib/pico-serial.pretty` |
 
@@ -350,3 +351,50 @@ goes near a phone line.**
 - **Not checked yet:** the RJ11's body against a real one (its drawing
   gives the pins and pegs; the body's edges are read off it), and the
   shell's fit (not printed).
+
+## pico-serial WB (wideband bare-pair stick)
+
+![WB top](kicad/render-wb-top.png)
+![WB bottom](kicad/render-wb-bottom.png)
+
+The Line stick's sibling for bare copper pairs ([SPEC-WB.md](../SPEC-WB.md)):
+the same RP2040 core and USB end, a TI TLV320AIC3204 codec sampling at
+96 kHz, and a Pulse PE-65848 line transformer. Two WB sticks talk to each
+other over the pair; the modem is D-Modem-RE's wideband mode on the
+computer or phone. Every script takes `--variant wb`; the shell is the
+Line stick's (`enclosure/stick.py --variant wb`).
+
+```sh
+python3 hardware/netlist/build_netlist.py --variant wb
+python3 hardware/kicad/build_schematic.py --variant wb
+python3 hardware/enclosure/stick.py --variant wb     # the shell; needs CadQuery
+python3 hardware/kicad/build_pcb.py --variant wb --kicad-fp kicad-footprints \
+    --route --freerouting freerouting-1.9.0.jar --fab
+```
+
+**Status:** fully routed. KiCad's DRC finds no errors and nothing unconnected, and the PCB matches its schematic; ERC is clean. Fab files in `kicad/fab/`. Not reviewed by a person, nothing built.
+
+- **Board:** the Line stick's outline and USB end (RP2040, flash, USB-C,
+  regulator). The screw is 6.4 mm off the centre line and the two LEDs
+  (LINK and DATA) 3 mm further forward than on the Line stick, so the
+  codec's connections can run down the middle; `stick.py --variant wb`
+  moves the shell's boss and light tubes to match.
+- **Pair side** (front): the RJ11, the 1.25 A telecom fuse and the
+  sidactor underneath, ferrites beside the transformer, and the DC block
+  (two 1 µF 250 V in series, 0.5 µF / 500 V) in the transformer's split
+  line winding. **No ground plane or pour.**
+- **Isolation gap:** a 4 mm band across the board under the transformer,
+  every layer, no tracks, vias or pours. Only the transformer crosses
+  it: its codec winding's pads and its line winding's are 10 mm apart. A
+  DRC rule (`pico-serial-wb.kicad_dru`) also holds 2.5 mm between any
+  pair-side (`TipRing`) and USB-side copper.
+- **Codec side:** the hybrid on the bottom behind the transformer (60.4 Ω
+  drive resistors, the ×10 replica arm, the 1 kΩ + 1 µF into each mixer
+  input), the clamps (a 5 V TVS across the winding, a BAV99 on each
+  end), and the codec on top with its supply and reference capacitors.
+- **Hand-fitted:** the through-hole RJ11. The transformer is a JLC part
+  (C7261159), but stock is low (about 250).
+- **Not checked yet:** the transformer's bandwidth and saturation (its
+  datasheet gives neither: sweep one from 1 to 200 kHz), the hybrid's
+  values on a real cable, and the shell's fit (not printed). The 1812 DC
+  block capacitors sit on the bottom, under the shell's 2.2 mm clearance.
