@@ -8,19 +8,24 @@
 #include "generated/board_pins_w.h"
 #elif defined(PS_BOARD_LINE)
 #include "generated/board_pins_line.h"
+#elif defined(PS_BOARD_WB)
+#include "generated/board_pins_wb.h"
 #else
 #include "generated/board_pins.h"
 #endif
 
-// USB IDs. 1209:0001 and 1209:0002 are pid.codes' shared *test* PIDs: fine
-// on the bench, not for boards given to other people. Apply for a PID
-// (Raspberry Pi's program under VID 2E8A, or pid.codes) and set it here
-// before release. The line stick has its own, being another kind of device
-// (no CDC port; its driver finds it by VID:PID, as dmodemd does the SmartUSB56).
+// USB IDs. 1209:0001, 1209:0002 and 1209:0003 are pid.codes' shared *test*
+// PIDs: fine on the bench, not for boards given to other people. Apply for a
+// PID (Raspberry Pi's program under VID 2E8A, or pid.codes) and set it here
+// before release. The line stick and the wideband stick each have their own,
+// being other kinds of device (no CDC port; their driver finds them by
+// VID:PID, as dmodemd does the SmartUSB56).
 #ifndef PS_USB_VID
 #define PS_USB_VID 0x1209
 #if defined(PS_BOARD_LINE)
 #define PS_USB_PID 0x0002
+#elif defined(PS_BOARD_WB)
+#define PS_USB_PID 0x0003
 #else
 #define PS_USB_PID 0x0001
 #endif
@@ -44,6 +49,11 @@
 // (src/line/daa.c drives them); no RS-232.
 #define PS_BOARD_ID 3
 #define PS_PRODUCT "pico-serial Line"
+#elif defined(PS_BOARD_WB)
+// pico-serial WB, the wideband bare-pair stick (SPEC-WB.md): two LEDs, LINK
+// and DATA (src/wb/codec.c drives them); no RS-232.
+#define PS_BOARD_ID 4
+#define PS_PRODUCT "pico-serial WB"
 #elif defined(PS_BOARD_W)
 // pico-serial W (SPEC-W.md). LEDs fitted. PWR/BT shows the Bluetooth state
 // (bt.c); RD and SD are on the RM2's own GPIOs (WLGPIO_LED_*), driven

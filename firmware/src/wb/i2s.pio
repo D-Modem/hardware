@@ -1,0 +1,69 @@
+; SPDX-License-Identifier: AGPL-3.0-only
+; Copyright (C) 2026 Neo-Desktop
+;
+; The RP2040 as the TLV320AIC3204's I2S slave, full duplex (SLAA557 2.6.3,
+; "I2S Mode"; datasheet 7.13, I2S timing in master mode). The codec makes
+; BCLK (64 a frame) and WCLK; WCLK is low for the left slot and changes one
+; BCLK before each slot's MSB. The codec changes DOUT and WCLK as BCLK
+; falls (at most 22 ns after) and samples DIN as BCLK rises (8 ns setup and
+; hold). So here: the codec's bit in as BCLK rises, ours out just after
+; (a whole BCLK of setup before the codec samples it), MSB first, 32 bits a
+; slot, left then right.
+;
+; BCLK and WCLK are GPIO 2 and 3 (wait gpio: absolute numbers; codec.c checks
+; them against the netlist's), and WCLK is the JMP pin too. IN base: DOUT;
+; OUT base: DIN. Autopush and autopull at 32 bits: the RX FIFO gets left,
+; right, left... and the TX FIFO is read the same way (DMA on both).
+;
+; In step, WCLK is high after each left slot's 32 bits and low after each
+; right slot's. If it isn't, the program raises IRQ 0 and stops; the
+; firmware starts it (and the DMA) again from the top.
+
+.program i2s_slave
+lost:
+    irq nowait 0           ; out of step: tell the firmware
+stop:
+    jmp stop               ; ... and wait for it to start over
+public entry:
+    wait 1 gpio 3          ; WCLK high: a right slot
+    wait 0 gpio 3          ; WCLK falls with BCLK: a frame starts
+    wait 1 gpio 2          ; BCLK rises: I2S's one-bit delay (the right word's LSB)
+.wrap_target
+    set y, 31
+lbit:
+    out pins, 1            ; our bit, for the codec to take on the next rise
+    wait 0 gpio 2
+    wait 1 gpio 2          ; BCLK rises: the codec's bit is valid
+    in pins, 1
+    jmp y-- lbit
+    jmp pin rslot          ; WCLK high: the right slot, in step
+    jmp lost
+rslot:
+    set y, 31
+rbit:
+    out pins, 1
+    wait 0 gpio 2
+    wait 1 gpio 2
+    in pins, 1
+    jmp y-- rbit
+    jmp pin lost           ; WCLK must be low again: the next frame's left slot
+.wrap
+
+% c-sdk {
+// The program on sm, from its entry: DOUT in, DIN out, WCLK the JMP pin,
+// shifting MSB first with autopush and autopull at 32 bits, at the system
+// clock (the PIO follows BCLK; it only needs to be fast enough to see it).
+static inline void i2s_slave_program_init(PIO pio, uint sm, uint offset, uint pin_dout, uint pin_din,
+                                          uint pin_wclk) {
+    pio_sm_config c = i2s_slave_program_get_default_config(offset);
+    sm_config_set_in_pins(&c, pin_dout);
+    sm_config_set_out_pins(&c, pin_din, 1);
+    sm_config_set_jmp_pin(&c, pin_wclk);
+    sm_config_set_in_shift(&c, false, true, 32);     // left: MSB first, autopush
+    sm_config_set_out_shift(&c, false, true, 32);    // left: MSB first, autopull
+    pio_gpio_init(pio, pin_din);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_din, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_dout, 1, false);
+    pio_sm_init(pio, sm, offset + i2s_slave_offset_entry, &c);
+}
+%}

@@ -4,9 +4,10 @@ cmake_minimum_required(VERSION 3.13)
 
 # Which board: "hood" (the DB25 hood board), "w" (pico-serial W, with the
 # RM2 Bluetooth module, SPEC-W.md), "line" (pico-serial Line, the phone-line
-# stick, SPEC-L.md: other firmware, src/line) or "pico" (bench rig: a
+# stick, SPEC-L.md: other firmware, src/line), "wb" (pico-serial WB, the
+# wideband bare-pair stick, SPEC-WB.md: src/wb) or "pico" (bench rig: a
 # Raspberry Pi Pico wired to the transceivers as SPEC.md 4.5).
-set(PS_BOARD hood CACHE STRING "pico-serial board: hood | w | line | pico")
+set(PS_BOARD hood CACHE STRING "pico-serial board: hood | w | line | wb | pico")
 if (PS_BOARD STREQUAL "hood")
     set(PICO_BOARD pico_serial_hood)
     set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
@@ -16,10 +17,13 @@ elseif (PS_BOARD STREQUAL "w")
 elseif (PS_BOARD STREQUAL "line")
     set(PICO_BOARD pico_serial_line)
     set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
+elseif (PS_BOARD STREQUAL "wb")
+    set(PICO_BOARD pico_serial_wb)
+    set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
 elseif (PS_BOARD STREQUAL "pico")
     set(PICO_BOARD pico)
 else ()
-    message(FATAL_ERROR "PS_BOARD must be hood, w, line or pico")
+    message(FATAL_ERROR "PS_BOARD must be hood, w, line, wb or pico")
 endif ()
 
 # Pico SDK: PICO_SDK_PATH, or fetched at this tag.
@@ -55,11 +59,29 @@ if (PS_BOARD STREQUAL "line")
     add_executable(pico_serial
         src/line/main.c
         src/line/daa.c
-        src/line/usb_line.c
+        src/line/line_stick.c
+        src/stick/usb_stick.c
         src/core/daa_frame.c
+        src/core/sstream.c
         src/core/line_dev.c
     )
     pico_generate_pio_header(pico_serial ${CMAKE_CURRENT_LIST_DIR}/src/line/si3056.pio)
+elseif (PS_BOARD STREQUAL "wb")
+    # the wideband stick: a USB front end for the TLV320AIC3204 codec, no RS-232 core
+    add_executable(pico_serial
+        src/wb/main.c
+        src/wb/codec.c
+        src/wb/wb_stick.c
+        src/stick/usb_stick.c
+        src/core/sstream.c
+        src/core/wb_audio.c
+        src/core/wb_codec.c
+        src/core/wb_dev.c
+    )
+    pico_generate_pio_header(pico_serial ${CMAKE_CURRENT_LIST_DIR}/src/wb/i2s.pio)
+    # the samples' FIFOs: ~20 ms at 192 kHz (sfifo.h)
+    target_compile_definitions(pico_serial PRIVATE SFIFO_SIZE=4096u)
+    target_link_libraries(pico_serial PRIVATE hardware_i2c hardware_dma)
 else ()
     add_executable(pico_serial
         src/rp2040/main.c
@@ -71,13 +93,14 @@ else ()
     )
     pico_generate_pio_header(pico_serial ${CMAKE_CURRENT_LIST_DIR}/src/rp2040/autobaud.pio)
 endif ()
-target_include_directories(pico_serial PRIVATE src src/core src/rp2040 src/line)
+target_include_directories(pico_serial PRIVATE src src/core src/rp2040 src/stick src/line src/wb)
 target_compile_options(pico_serial PRIVATE -Wall -Wextra)
 target_compile_definitions(pico_serial PRIVATE
     PS_FW_MAJOR=${PS_FW_MAJOR} PS_FW_MINOR=${PS_FW_MINOR} PS_FW_PATCH=${PS_FW_PATCH}
     $<$<STREQUAL:${PS_BOARD},pico>:PS_BOARD_PICO>
     $<$<STREQUAL:${PS_BOARD},w>:PS_BOARD_W>
     $<$<STREQUAL:${PS_BOARD},line>:PS_BOARD_LINE>
+    $<$<STREQUAL:${PS_BOARD},wb>:PS_BOARD_WB>
     # picotool can reboot it (into BOOTSEL or the app) through the reset interface;
     # no "1200 baud means reboot": 1200 baud is a real modem speed
     PICO_ENABLE_USB_RESET_VIA_VENDOR_INTERFACE=1

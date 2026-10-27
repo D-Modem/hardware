@@ -2,14 +2,16 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  * Copyright (C) 2026 Neo-Desktop
  */
-// Single-producer single-consumer ring of 16-bit samples, for the line
-// stick: the codec's interrupt on one side, USB in the main loop on the
-// other (single core). As ring.h: each index is written only by its owner.
+// Single-producer single-consumer ring of 16-bit samples, for the sticks
+// (sstream.h): the codec's interrupt on one side, USB in the main loop on
+// the other (single core). As ring.h: each index is written only by its owner.
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
 
-#define SFIFO_SIZE 1024u   // power of two: about 100 ms at 9600 Hz
+#ifndef SFIFO_SIZE
+#define SFIFO_SIZE 1024u   // power of two: about 100 ms at 9600 Hz (the WB stick's build sets 4096)
+#endif
 #define SFIFO_MASK (SFIFO_SIZE - 1u)
 
 typedef struct {

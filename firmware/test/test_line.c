@@ -123,10 +123,10 @@ TEST(read_in_15_bit_mode) {
 TEST(odd_samples_in_15_bit_mode) {
     line_stream_t ls;
     chip_reset(&ls, 0);
-    line_stream_set(&ls, true);
+    sstream_set(&ls.s, true);
     int16_t odd[16];
     for (int i = 0; i < 16; i++) odd[i] = (int16_t)(2 * i + 1);
-    line_stream_from_host(&ls, odd, 16);
+    sstream_from_host(&ls.s, odd, 16);
     for (int i = 0; i < 20; i++) chip_frame(&ls);
     CHECK(chip.secondaries == 0);
     bool saw = false;
@@ -154,9 +154,9 @@ TEST(switch_to_16_bit_mode) {
     CHECK(v == 5);
     CHECK(chip.secondaries == 3);
     // a modem sample with its LSB set goes out whole
-    line_stream_set(&ls, true);
+    sstream_set(&ls.s, true);
     int16_t odd[4] = {3, 5, 7, 9};
-    line_stream_from_host(&ls, odd, 4);
+    sstream_from_host(&ls.s, odd, 4);
     int before = chip.nsent;
     for (int i = 0; i < 6; i++) chip_frame(&ls);
     bool saw = false;
@@ -188,17 +188,17 @@ TEST(samples_to_host) {
     line_stream_t ls;
     chip_reset(&ls, 0);
     for (int i = 0; i < 10; i++) chip_frame(&ls);
-    CHECK(sfifo_count(&ls.to_host) == 0);
-    line_stream_set(&ls, true);
+    CHECK(sfifo_count(&ls.s.to_host) == 0);
+    sstream_set(&ls.s, true);
     int16_t first = chip.line;
     for (int i = 0; i < 50; i++) chip_frame(&ls);
     int16_t got[64];
-    uint32_t n = line_stream_to_host(&ls, got, 64);
+    uint32_t n = sstream_to_host(&ls.s, got, 64);
     CHECK(n == 50);
     bool ordered = true;
     for (uint32_t i = 0; i < n; i++) ordered &= got[i] == (int16_t)(first + (int16_t)i);
     CHECK(ordered);
-    CHECK(ls.samples_in == 50);
+    CHECK(ls.s.samples_in == 50);
 }
 
 // The modem's samples wait for their head start (prefill), then go out in
@@ -209,13 +209,13 @@ TEST(samples_from_host_with_accesses) {
     chip_reset(&ls, 8);
     ls.fr.fc_hw = true;
     chip.reg[SI_CONTROL1] = SI_CONTROL1_SB;
-    line_stream_set(&ls, true);
+    sstream_set(&ls.s, true);
     int16_t s[40];
     for (int i = 0; i < 40; i++) s[i] = (int16_t)(1000 + i);
-    line_stream_from_host(&ls, s, 4);
+    sstream_from_host(&ls.s, s, 4);
     for (int i = 0; i < 3; i++) chip_frame(&ls);
-    CHECK(ls.samples_out == 0);   // 4 < 8: still filling
-    line_stream_from_host(&ls, s + 4, 36);
+    CHECK(ls.s.samples_out == 0);   // 4 < 8: still filling
+    sstream_from_host(&ls.s, s + 4, 36);
     int from = chip.nsent;
     CHECK(chip_access(&ls, si_ctl_write(30, 1), NULL));
     for (int i = 0; i < 10; i++) chip_frame(&ls);
@@ -230,7 +230,7 @@ TEST(samples_from_host_with_accesses) {
     }
     CHECK(next == 1040);
     CHECK(extra == 0);
-    CHECK(ls.samples_out == 40);
+    CHECK(ls.s.samples_out == 40);
 }
 
 // Running dry counts an underrun and waits for the head start again; a host
@@ -238,21 +238,21 @@ TEST(samples_from_host_with_accesses) {
 TEST(under_and_overruns) {
     line_stream_t ls;
     chip_reset(&ls, 4);
-    line_stream_set(&ls, true);
+    sstream_set(&ls.s, true);
     int16_t s[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-    line_stream_from_host(&ls, s, 4);
+    sstream_from_host(&ls.s, s, 4);
     for (int i = 0; i < 6; i++) chip_frame(&ls);
-    CHECK(ls.underruns == 1);
-    CHECK(!ls.playing);
-    line_stream_from_host(&ls, s, 2);
+    CHECK(ls.s.underruns == 1);
+    CHECK(!ls.s.playing);
+    sstream_from_host(&ls.s, s, 2);
     for (int i = 0; i < 4; i++) chip_frame(&ls);
-    CHECK(ls.underruns == 1);    // waiting for its head start, not running dry
+    CHECK(ls.s.underruns == 1);    // waiting for its head start, not running dry
     static int16_t big[SFIFO_SIZE + 10];
-    line_stream_set(&ls, true);
-    line_stream_from_host(&ls, big, SFIFO_SIZE + 10);
-    CHECK(ls.overruns == 10);
+    sstream_set(&ls.s, true);
+    sstream_from_host(&ls.s, big, SFIFO_SIZE + 10);
+    CHECK(ls.s.overruns == 10);
     for (unsigned i = 0; i < SFIFO_SIZE + 5; i++) chip_frame(&ls);
-    CHECK(ls.overruns > 10);     // nobody read the line's samples
+    CHECK(ls.s.overruns > 10);     // nobody read the line's samples
 }
 
 // ---------------------------------------------------------------------------
