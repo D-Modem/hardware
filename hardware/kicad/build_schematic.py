@@ -58,10 +58,13 @@ BLOCKS = [  # key, title, max width (mm)
     ("rsa", "Chip A: SP3238E, modem side (DCE)", 120),
     ("rsb", "Chip B: MAX3243E, computer side (DTE)", 120),
     ("db25", "DB25 female (hand-fitted)", 45),
-    ("led", "Status LEDs" + ("" if N.W else " (optional, not fitted)"), 118),
+    ("led", "Status LEDs" + ("" if N.W or N.STICK else " (optional, not fitted)"), 118),
     ("radio", "Bluetooth: Raspberry Pi RM2 (CYW43439), wired as on Pico W", 150),
     ("daa", "Telephone line, system side: Si3056 DAA (USB ground)", 150),
     ("line", "Line side: Si3018, hook switch, bridge, protection (isolated: no ground plane)", 260),
+    ("codec", "Codec: TLV320AIC3204, I2S master at 96 kHz (USB ground)", 170),
+    ("hybrid", "Line drive and hybrid: the codec's mixer subtracts the replica arm; protection", 200),
+    ("pair", "Pair side: transformer, DC block, protection (isolated: no ground plane)", 160),
     ("tp", "Test pads", 100),
     ("flags", "Power flags for ERC", 60),
 ]
@@ -72,6 +75,8 @@ if N.W:
                   [["radio"]]]
 if N.LINE:
     SHEET_ROWS = [[["usb"], ["clock"], ["led", "tp", "flags"]], [["mcu"], ["daa"], ["line"]]]
+if N.WB:
+    SHEET_ROWS = [[["usb"], ["clock"], ["led", "tp", "flags"]], [["mcu"], ["codec"], ["hybrid"], ["pair"]]]
 FLAGS_SIZE = (35.56, 15.24)
 
 
@@ -106,6 +111,10 @@ def lib_id(ref):
         return "pico-serial:Si3056"
     if pins is N.SI3018:
         return "pico-serial:Si3018"
+    if pins is N.AIC3204:
+        return "pico-serial:TLV320AIC3204"
+    if pins is N.XFMR8:
+        return "pico-serial:PE-65848"
     if pins is N.BJT:
         return f"Transistor_BJT:{p['value']}"          # MMBTA42 / MMBTA92 / MMBTA06: 1 B, 2 E, 3 C
     if pins is N.DUALDIODE:
@@ -116,7 +125,7 @@ def lib_id(ref):
         if "Fuse_Littelfuse" in p["footprint"]:
             return "Device:Fuse"                        # the telecom fuse (not a PTC)
         return {"R": "Device:R", "C": "Device:C", "F": "Device:Polyfuse", "FB": "Device:FerriteBead",
-                "RV": "Device:D_TVS"}[ref.rstrip("0123456789")]
+                "RV": "Device:D_TVS", "D": "Device:D_TVS"}[ref.rstrip("0123456789")]
     if pins is N.DIODE:
         return "Device:LED" if p["value"].startswith("LED") else "Device:D_Zener"
     lib, name = N.SYMBOLS[id(pins)]
@@ -126,7 +135,7 @@ def lib_id(ref):
 def custom_symbol(name, left, right, top, bottom, desc, fp, ds):
     """A plain box: logic pins left, RS-232 and charge pump right, VCC top, GND bottom."""
     pins_tab = {"SP3238E": N.SP3238E, "MAX3243E": N.MAX3243E, "RM2": N.RM2, "Si3056": N.SI3056,
-                "Si3018": N.SI3018}[name]
+                "Si3018": N.SI3018, "TLV320AIC3204": N.AIC3204, "PE-65848": N.XFMR8}[name]
     by_name = {}
     for num, (pname, ty) in pins_tab.items():
         by_name.setdefault(pname, []).append((num, ty))
@@ -212,6 +221,22 @@ CUSTOM = {
         desc="Skyworks Si3018 DAA, line side: hook switch control, DC/AC termination, ring detect, caller ID",
         fp="Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
         ds="https://www.skyworksinc.com/-/media/Skyworks/SL/documents/public/data-sheets/Si3056.pdf"),
+    "TLV320AIC3204": custom_symbol(
+        "TLV320AIC3204",
+        left=["MCLK", "BCLK", "WCLK", "DIN/MFP1", "DOUT/MFP2", None, "SCL/~{SS}", "SDA/MOSI", "MISO/MFP4",
+              "SCLK/MFP3", "SPI_SELECT", None, "~{RESET}", "GPIO/MFP5", "LDO_SELECT"],
+        right=["HPL", "HPR", "LOL", "LOR", None, "IN1_L", "IN1_R", "IN2_L", "IN2_R", "IN3_L", "IN3_R", None,
+               "MICBIAS", "REF", "AVDD", "DVDD"],
+        top=["IOVDD", "LDOIN/HPVDD"], bottom=["IOVSS", "AVSS", "DVSS", "EP"],
+        desc="TI TLV320AIC3204 low-power stereo codec, 8-192 kHz, PLL, headphone drivers, I2C/SPI",
+        fp="Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm",
+        ds="https://www.ti.com/lit/ds/symlink/tlv320aic3204.pdf"),
+    "PE-65848": custom_symbol(
+        "PE-65848",
+        left=["1", "2", "3", "4"], right=["8", "7", "6", "5"], top=[], bottom=[],
+        desc="Pulse PE-65848NL line transformer, 1:1 split windings (1-2, 3-4 : 8-7, 6-5), 1500 Vrms",
+        fp="pico-serial:Pulse_PE-65848",
+        ds="https://www.pulseelectronics.com/"),
 }
 
 CACHE = os.path.join(HERE, "lib", "symbol-cache.sexp")
@@ -697,11 +722,14 @@ def build(syms):
            [Sym("generator_version"), "9.0"], [Sym("uuid"), root], [Sym("paper"), paper],
            [Sym("title_block"), [Sym("title"), "pico-serial W: Bluetooth and USB-C to DB25 RS-232 (DCE/DTE)" if N.W
                              else "pico-serial Line: USB-C telephone line interface for D-Modem" if N.LINE
+                             else "pico-serial WB: USB-C wideband bare-pair interface for D-Modem" if N.WB
                              else "pico-serial: USB-C to DB25 RS-232 (DCE/DTE)"],
             [Sym("date"), N.DATE], [Sym("rev"), "0.3"],
             [Sym("comment"), 1, "RP2040, Si3056 + Si3018 DAA, RJ11" if N.LINE else
+             "RP2040, TLV320AIC3204 codec, PE-65848 transformer, RJ11" if N.WB else
              "RP2040, SP3238E (DCE) + MAX3243E (DTE) on one female DB25" + (", RM2 Bluetooth" if N.W else "")],
-            [Sym("comment"), 2, ("See SPEC-W.md" if N.W else "See SPEC-L.md" if N.LINE else "See SPEC.md")
+            [Sym("comment"), 2, ("See SPEC-W.md" if N.W else "See SPEC-L.md" if N.LINE else "See SPEC-WB.md" if N.WB
+                                 else "See SPEC.md")
              + "; parts and nets come from hardware/netlist/build_netlist.py"],
             [Sym("comment"), 3, "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)"],
             [Sym("comment"), 4, "Source: https://github.com/Neo-Desktop/pico-serial"]],

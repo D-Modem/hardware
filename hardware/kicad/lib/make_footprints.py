@@ -10,6 +10,8 @@ RJ11_Ckmtw_R-RJ11R06P-A800: the phone-line stick's jack (LCSC C189750),
 from its drawing 55A-1X1-6P6C-13H.
 Fuse_Littelfuse_0461: TeleLink surface-mount telecom fuse (04611.25ER),
 from Littelfuse's recommended pad layout.
+Pulse_PE-65848: the WB stick's line transformer (PE-65848NL), from Pulse's
+drawing (rev M12) "suggested land pattern".
 
 Origin: module centre. Antenna end toward -y (pins 1 and 21 nearest it).
   - 7 pads down each side, 1.5 mm pitch; lowest pad centres 1.8 mm above the
@@ -136,3 +138,25 @@ fu.append(line(-2.8, 1.68, 2.8, 1.68, "F.SilkS", 0.12))
 for n, x in (("1", -4.675), ("2", 4.675)):
     fu.append(f'\t(pad "{n}" smd rect (at {x:g} 0) (size 3.25 3.43) (layers "F.Cu" "F.Paste" "F.Mask"))')
 save("Fuse_Littelfuse_0461", fu)
+
+# Pulse PE-65848NL, SMD-8 gull wing (drawing rev M12, inches): pads .050 x
+# .120 on .100 pitch, rows .400 apart inside, .640 outside (centres 13.21 mm
+# apart); body .475 x .460, .340 high. Pins 1-4 one row (the codec winding),
+# 5-8 the other (the line winding): the rows face the two sides of the
+# isolation barrier. Numbered counter-clockwise seen from the top.
+IN = 25.4
+PY = (0.400 + 0.640) / 4 * IN            # row centre from the middle: 6.604
+xf = fp_header("Pulse_PE-65848", "Pulse PE-65848NL line transformer, SMD-8 gull wing, 12.1 x 11.7 x 8.6 mm, 1500 Vrms",
+               "transformer line DSL Pulse PE-65848", "smd", -PY - 2.6, PY + 2.6)
+bx, by = 0.475 * IN / 2, 0.460 * IN / 2
+xf.append(rect(-bx, -by, bx, by, "F.Fab", 0.1))
+xf.append(rect(-bx - 0.25, -PY - 1.525 - 0.25, bx + 0.25, PY + 1.525 + 0.25, "F.CrtYd", 0.05))
+xf.append(line(-bx - 0.12, -by + 0.5, -bx - 0.12, by - 0.5, "F.SilkS", 0.12))
+xf.append(line(bx + 0.12, -by + 0.5, bx + 0.12, by - 0.5, "F.SilkS", 0.12))
+xf.append(f'\t(fp_circle (center {-bx - 0.9:g} {PY:g}) (end {-bx - 0.65:g} {PY:g}) '
+          '(stroke (width 0.12) (type solid)) (fill solid) (layer "F.SilkS"))')
+for k in range(4):
+    x = (k - 1.5) * 0.100 * IN
+    xf.append(f'\t(pad "{1 + k}" smd rect (at {x:g} {PY:g}) (size 1.27 3.048) (layers "F.Cu" "F.Paste" "F.Mask"))')
+    xf.append(f'\t(pad "{8 - k}" smd rect (at {x:g} {-PY:g}) (size 1.27 3.048) (layers "F.Cu" "F.Paste" "F.Mask"))')
+save("Pulse_PE-65848", xf)

@@ -9830,11 +9830,11 @@
 		(effects (font (size 2 2) (bold yes)) (justify left bottom))
 		(uuid "786a244f-1b2d-5dab-9bf1-4557c3463dfb")
 	)
-	(text "Status LEDs (optional, not fitted)"
+	(text "Status LEDs"
 		(exclude_from_sim no)
 		(at 345.44 21.59 0)
 		(effects (font (size 2 2) (bold yes)) (justify left bottom))
-		(uuid "c4552868-edb1-5a2d-a668-51b57df7f939")
+		(uuid "1c45e8ec-92b6-50be-8a01-0a6a5c50bea0")
 	)
 	(text "Test pads"
 		(exclude_from_sim no)
