@@ -326,7 +326,7 @@ if N.WB:
     POUR_OUTLINE = [(-ST.BOARD_Y, BARRIER[1] + 0.2), (ST.BOARD_Y, BARRIER[1] + 0.2),
                     (ST.BOARD_Y, ymax), (-ST.BOARD_Y, ymax)]
     del NETCLASSES["Line"]                       # no Si3018 here; the pair's nets are all TipRing
-    CY = 38.9                                    # the codec, between the transformer and the screw
+    CY = 38.5                                    # the codec, between the transformer and the screw
     PLACE.update({
         # --- the pair side: fuse across the front (as on the Line board), the sidactor
         # behind it, ferrites beside the transformer's line winding, DC block under it
@@ -347,15 +347,20 @@ if N.WB:
         "C32": (8.8, CY + 1.4, 90, "B"),
         # LDOIN and DVDD on the left
         "C20": (-4.4, CY - 2.4, 0, "B"), "C24": (-4.4, CY - 1.3, 0, "B"),
-        "C21": (-6.8, CY - 2.0, 90, "B"), "C25": (-8.6, CY - 2.0, 90, "B"),
+        "C21": (-6.8, CY - 1.6, 90, "B"), "C25": (-8.6, CY - 1.6, 90, "B"),
         # --- the codec and what sits close to its pins, top
-        "U5": (0.0, CY, 0, "F"),
+        "U5": (0.0, CY, 180, "F"),   # its I2S pins (1-5) toward the RP2040's GP2-5 side
         "C19": (-4.2, CY - 1.0, 90, "F"),                                       # IOVDD (pin 6)
         "C22": (4.2, CY - 1.8, 90, "F"), "C23": (5.6, CY - 1.8, 90, "F"),     # AVDD (pin 24)
-        "C26": (4.6, CY + 1.4, 0, "F"),                                         # REF (pin 18)
+        "C26": (5.2, CY + 1.4, 0, "F"),                                         # REF (pin 18)
         "R11": (-4.2, CY + 2.0, 90, "F"), "R12": (-5.4, CY + 2.0, 90, "F"),   # I2C pull-ups
         "R13": (-6.6, CY + 2.0, 90, "F"),                                       # RESET pull-down
     })
+    # the codec is turned 180: the parts around it swap sides with its pins
+    for ref in ("C19", "C22", "C23", "C26", "R11", "R12", "R13", "C20", "C21", "C24", "C25", "C32",
+                *(f"R{n}" for n in range(19, 23)), *(f"C{n}" for n in range(28, 32))):
+        x, y, rot, side = PLACE[ref]
+        PLACE[ref] = (-x, y, rot, side)
     for i, (name, sx, sy) in enumerate(ST.LEDS):
         x, y = stick(sx, sy)
         PLACE[f"D{5 + i}"] = (x, y, 90, "F")
@@ -704,8 +709,8 @@ def ep_vias(board, fps):
 
 
 # grounded pins with no room for a via of their own: a stub into the exposed pad
-# beside them, on the top copper (the WB codec's SPI_SELECT)
-PAD_LINKS = [("U5", "12", "33")] if N.WB else []
+# beside them, on the top copper (the WB codec's SPI_SELECT and DVSS)
+PAD_LINKS = [("U5", "12", "33"), ("U5", "28", "33")] if N.WB else []
 
 
 def pad_links(board, fps):
