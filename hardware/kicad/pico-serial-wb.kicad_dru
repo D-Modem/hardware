@@ -1,0 +1,24 @@
+(version 1)
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+# Copyright (C) 2026 Neo-Desktop
+# Board-specific rules on top of the project's (build_pcb.py).
+
+# The USB-C receptacle's shell (and its silkscreen outline) overhangs the
+# back edge on purpose, into the shell's end wall.
+(rule "USB-C outline at the edge"
+    (condition "A.Parent == 'J1' || B.Parent == 'J1'")
+    (constraint silk_clearance (min -2mm)))
+
+# The RJ11's body runs past the front edge, through the shell's end wall.
+(rule "RJ11 outline at the edge"
+    (condition "A.Parent == 'J2' || B.Parent == 'J2'")
+    (constraint silk_clearance (min -2mm)))
+
+# SPEC-WB §3: across the isolation gap, pair side to USB side, 2.5 mm on
+# every layer (the gap's rule area, 4 mm, keeps tracks, vias and pours out;
+# this catches anything else). Only the transformer crosses: its two
+# windings' pads are 10 mm apart. The RJ11's unused contacts are on the
+# pair side: they're not counted as USB-side copper.
+(rule "Isolation barrier"
+    (condition "(A.NetClass == 'TipRing' && B.NetClass != 'TipRing' && B.NetName != '' && B.NetName != 'unconnected-*') || (B.NetClass == 'TipRing' && A.NetClass != 'TipRing' && A.NetName != '' && A.NetName != 'unconnected-*')")
+    (constraint clearance (min 2.5mm)))

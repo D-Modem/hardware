@@ -226,7 +226,7 @@ if N.W:
 
 POUR_OUTLINE = None          # where planes and pours go (None: the whole board)
 BARRIER = None               # (y0, y1): the isolation gap across the board, no copper but the Y2 caps' pads
-if N.LINE:
+if N.STICK:   # the Line stick's layout; the WB stick shares its USB end (below)
     sys.path.insert(0, os.path.join(HERE, "..", "enclosure"))
     import stick as ST  # noqa: E402
 
@@ -311,6 +311,58 @@ if N.LINE:
     # test pads: bottom, under the Si3056
     for i, ref in enumerate(f"TP{n}" for n in range(1, 13)):
         PLACE[ref] = (-4.8 + 2.6 * (i % 4), 34.6 + 2.6 * (i // 4), 0, "B")
+
+if N.WB:
+    # SPEC-WB §3: the USB end as on the Line stick (same parts, same references);
+    # in front of it the codec and hybrid, the transformer across the gap, the
+    # protection behind the jack. Only the transformer crosses: its codec winding's
+    # pads (1-4) and its line winding's (5-8) are 10 mm apart.
+    SHARED = {"J1", "J2", "F2", "R1", "R2", "R3", "C1", "U4", "F1", "D1", "C2", "U3", "C3", "R4", "R5", "U1",
+              "R6", "R7", "U2", "Y1", "R8", "C16", "C17", "C18", "SW1", "R9", "SW2", "R10",
+              *(f"C{n}" for n in range(4, 16))}
+    PLACE = {k: v for k, v in PLACE.items() if k in SHARED}
+    TY = 25.0                                    # the transformer's centre: the gap's centre line
+    BARRIER = (TY - 2.0, TY + 2.0)
+    POUR_OUTLINE = [(-ST.BOARD_Y, BARRIER[1] + 0.2), (ST.BOARD_Y, BARRIER[1] + 0.2),
+                    (ST.BOARD_Y, ymax), (-ST.BOARD_Y, ymax)]
+    del NETCLASSES["Line"]                       # no Si3018 here; the pair's nets are all TipRing
+    CY = 38.9                                    # the codec, between the transformer and the screw
+    PLACE.update({
+        # --- the pair side: fuse across the front (as on the Line board), the sidactor
+        # behind it, ferrites beside the transformer's line winding, DC block under it
+        "RV1": (0.0, 8.0, 0, "B"),
+        "FB1": (-7.6, 19.0, 90, "F"), "FB2": (7.6, 19.0, 90, "F"),
+        "C33": (-2.6, 19.7, 90, "B"), "C34": (2.6, 19.7, 90, "B"),   # in series between pins 7 and 6
+        # --- the transformer: line winding (5-8) toward the jack, codec winding (1-4) toward the codec
+        "T1": (0.0, TY, 0, "F"),
+        # --- codec side, bottom: clamps, drive and replica arms, mixer inputs
+        "D3": (-7.6, 29.6, 0, "B"), "D2": (0.0, 29.6, 0, "B"), "D4": (7.6, 29.6, 0, "B"),
+        "R14": (-5.6, 32.4, 0, "B"), "R18": (-1.8, 32.4, 0, "B"), "C27": (1.8, 32.4, 0, "B"),
+        "R15": (5.6, 32.4, 0, "B"),
+        "R16": (-5.6, 34.6, 0, "B"), "R17": (5.6, 34.6, 0, "B"),
+        # beside the codec, underneath (the area under it is its ground and supply vias'):
+        # the mixer inputs' 1k and 1 uF on the right, by IN1/IN2 and IN3_R
+        **{f"R{19 + k}": (4.4, CY - 2.4 + 1.1 * k, 0, "B") for k in range(4)},
+        **{f"C{28 + k}": (6.5, CY - 2.4 + 1.1 * k, 0, "B") for k in range(4)},
+        "C32": (8.8, CY + 1.4, 90, "B"),
+        # LDOIN and DVDD on the left
+        "C20": (-4.4, CY - 2.4, 0, "B"), "C24": (-4.4, CY - 1.3, 0, "B"),
+        "C21": (-6.8, CY - 2.0, 90, "B"), "C25": (-8.6, CY - 2.0, 90, "B"),
+        # --- the codec and what sits close to its pins, top
+        "U5": (0.0, CY, 0, "F"),
+        "C19": (-4.2, CY - 1.0, 90, "F"),                                       # IOVDD (pin 6)
+        "C22": (4.2, CY - 1.8, 90, "F"), "C23": (5.6, CY - 1.8, 90, "F"),     # AVDD (pin 24)
+        "C26": (4.6, CY + 1.4, 0, "F"),                                         # REF (pin 18)
+        "R11": (-4.2, CY + 2.0, 90, "F"), "R12": (-5.4, CY + 2.0, 90, "F"),   # I2C pull-ups
+        "R13": (-6.6, CY + 2.0, 90, "F"),                                       # RESET pull-down
+    })
+    for i, (name, sx, sy) in enumerate(ST.LEDS):
+        x, y = stick(sx, sy)
+        PLACE[f"D{5 + i}"] = (x, y, 90, "F")
+        PLACE[f"R{23 + i}"] = (x - 1.5 if x > 0 else x + 1.5, y, 90, "F")
+    # test pads: bottom, beside the screw
+    for i, ref in enumerate(f"TP{n}" for n in range(1, 13)):
+        PLACE[ref] = ((-9.0, -6.4, 6.4, 9.0)[i % 4], 43.0 + 2.6 * (i // 4), 0, "B")
 
 
 def uid(*parts):
@@ -450,6 +502,9 @@ SILK = [
 if N.LINE:   # a narrow board: the licence and Source Location are on the shell's bottom too (stick.py)
     SILK = [(f"pico-serial Line rev {REVISION}", 0.0, 41.4, 0.8, "B", "c"),
             ("CERN-OHL-S-2.0", 0.0, 31.9, 0.8, "B", "c")]   # on the isolation gap
+if N.WB:
+    SILK = [(f"pico-serial WB rev {REVISION}", 0.0, 41.4, 0.8, "B", "c"),
+            ("CERN-OHL-S-2.0", 0.0, 25.0, 0.8, "B", "c")]   # on the isolation gap
 if N.W:
     SILK += [(name, PLACE[f"D{2 + i}"][0] - 3.6, PLACE[f"D{2 + i}"][1] + 0.3, 0.8, "F", "c")
              for i, (name, _) in enumerate(H.LEDS)]
@@ -639,10 +694,35 @@ def crystal_keepout(board, fps):
         area(x0, y0, x1, y1_, ["In1.Cu", "In2.Cu", "B.Cu"], False)
 
 
+EXPOSED_PADS = {("U1", "57")} | ({("U5", "33")} if N.WB else set())   # the RP2040's; the WB codec's
+
+
 def ep_vias(board, fps):
-    """GND vias in the RP2040's exposed pad (heat, and its ground)."""
-    u1 = fps["U1"]
-    c = u1.FindPadByNumber("57").GetPosition()
+    """GND vias in the exposed pads (heat, and their ground): the RP2040's, and the WB stick's codec."""
+    for ref, num in sorted(EXPOSED_PADS):
+        ep_vias_one(board, fps[ref].FindPadByNumber(num).GetPosition())
+
+
+# grounded pins with no room for a via of their own: a stub into the exposed pad
+# beside them, on the top copper (the WB codec's SPI_SELECT)
+PAD_LINKS = [("U5", "12", "33")] if N.WB else []
+
+
+def pad_links(board, fps):
+    """A 0.25 mm F.Cu stub from each PAD_LINKS pin straight in to its footprint's exposed pad."""
+    for ref, pin, ep in PAD_LINKS:
+        a, b = fps[ref].FindPadByNumber(pin), fps[ref].FindPadByNumber(ep)
+        pa, pb = a.GetPosition(), b.GetPosition()
+        # in along the pin's own axis, to the exposed pad's edge
+        end = pcbnew.VECTOR2I(pa.x, pb.y) if abs(pa.x - pb.x) < abs(pa.y - pb.y) else pcbnew.VECTOR2I(pb.x, pa.y)
+        t = pcbnew.PCB_TRACK(board)
+        t.SetStart(pa); t.SetEnd(end); t.SetWidth(mm(0.25)); t.SetLayer(pcbnew.F_Cu); t.SetNet(a.GetNet())
+        board.Add(t)
+        FANOUT_IDS.add(t.m_Uuid.AsString())
+
+
+def ep_vias_one(board, c):
+    """Four GND vias, 1.6 mm apart, centred on the exposed pad at c."""
     gnd = board.FindNet("GND")
     for dx in (-0.8, 0.8):
         for dy in (-0.8, 0.8):
@@ -713,7 +793,8 @@ def fanout(board):
         if (net not in FANOUT_NETS and (fp.GetReference(), pad.GetNumber()) not in FANOUT_EXTRA) \
                 or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
             continue
-        if fp.GetReference() == "U1" and pad.GetNumber() == "57":
+        if (fp.GetReference(), pad.GetNumber()) in EXPOSED_PADS or \
+                (fp.GetReference(), pad.GetNumber()) in {(r, p) for r, p, _ in PAD_LINKS}:
             continue   # exposed pad: has its own vias
         layer = lay(pad)
         pc = pad.GetPosition()
@@ -1270,6 +1351,7 @@ def build(fpdir):
     edge_keepout(board)
     crystal_keepout(board, fps)
     ep_vias(board, fps)
+    pad_links(board, fps)
     fanout(board)
     silk(board)
     return board, fps

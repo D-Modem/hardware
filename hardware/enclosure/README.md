@@ -60,3 +60,16 @@ board outline, `placement.md`) and refuses to if anything collides.
 - **Bottom face:** the Source Location and `CERN-OHL-S-2.0`.
 
 Print in MJF PA12 as the hood. **Not yet printed.**
+
+## pico-serial WB stick
+
+The wideband stick (`../../SPEC-WB.md`) uses the same shell:
+
+```sh
+python3 hardware/enclosure/stick.py --variant wb
+```
+
+It writes `out-wb/`. The differences: the lid reads "pico-serial WB", the
+LEDs are LINK and DATA, and the collision check includes the 8.6 mm-tall
+line transformer, which the shell's 13 mm headroom clears. **Not yet
+printed.**
