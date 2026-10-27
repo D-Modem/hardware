@@ -136,9 +136,20 @@ and compression above it (V.42 LAPM, V.44) as for every other mode.
   sync, and adapt the bit tables in a call (bit swapping) as the pair's
   noise changes.
 
-Expected rates (to be measured): about 100–150 kbit/s each way on a short
-pair (about 85 tones each way); on long pairs (km of telephone cable) the top
-tones fade and the rate drops with them.
+Rates measured on a simulated pair (D-Modem-RE `vwb_test`: 24 AWG cable
+loss, −15 dB hybrid echo, crystals 100 ppm apart, no bit errors), each
+way at 96 kHz:
+
+| Pair | Rate |
+|---|---|
+| 0.5 km, quiet | 148.7 kbit/s (every usable tone at 12 bits: the most at 96 kHz) |
+| 1 km | 125–128 kbit/s |
+| 3 km | about 100 kbit/s |
+| 5 km | 70–73 kbit/s |
+
+Through V.42 both ways at once: 137.6 kbit/s of data each way on 0.5 km.
+Not yet tried on a real pair; the stick's transmit level (§3, about
++3 dBm) and its noise will set the real figures.
 
 **Leased-line behaviour (Hayes `&L1`):** no dial tone, ringing or hook.
 `ATD` (any number) starts as the caller; `ATA`, or `ATS0=1`, waits for a
