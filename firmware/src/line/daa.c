@@ -127,9 +127,9 @@ bool lhal_daa_start(int src) {
     gpio_set_irq_enabled_with_callback(PIN_DAA_RGDT_N, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, ring_edge);
 
     // the frames: 15-bit mode until SB is set
-    bool streaming = g_stream.streaming;
+    bool streaming = g_stream.s.streaming;
     line_stream_init(&g_stream, PREFILL);
-    g_stream.streaming = streaming;
+    g_stream.s.streaming = streaming;
     if (!s_loaded) {
         s_offset = pio_add_program(DAA_PIO, &si3056_program);
         pio_sm_claim(DAA_PIO, DAA_SM);
@@ -171,14 +171,14 @@ bool lhal_daa_write(uint8_t reg, uint8_t v) { return access(si_ctl_write(reg, v)
 
 void daa_stream(bool on) {
     uint32_t irq = save_and_disable_interrupts();
-    line_stream_set(&g_stream, on);
+    sstream_set(&g_stream.s, on);
     restore_interrupts(irq);
 }
 
 void daa_from_host(const int16_t *s, uint32_t n) {
     // the overrun count is shared with the interrupt's: count with it held off
     uint32_t irq = save_and_disable_interrupts();
-    line_stream_from_host(&g_stream, s, n);
+    sstream_from_host(&g_stream.s, s, n);
     restore_interrupts(irq);
 }
 
@@ -187,13 +187,13 @@ void lhal_hook(bool off) { gpio_put(PIN_DAA_OFHK_N, !off); }
 bool lhal_ring(void) { return !gpio_get(PIN_DAA_RGDT_N); }
 uint8_t lhal_ring_edges(void) { return s_ring_edges; }
 bool lhal_int(void) { return !gpio_get(PIN_DAA_INT_N); }
-bool lhal_streaming(void) { return g_stream.streaming; }
+bool lhal_streaming(void) { return g_stream.s.streaming; }
 
 void lhal_counters(uint16_t *underruns, uint16_t *overruns, uint32_t *in, uint32_t *out) {
-    *underruns = g_stream.underruns;
-    *overruns = g_stream.overruns;
-    *in = g_stream.samples_in;
-    *out = g_stream.samples_out;
+    *underruns = g_stream.s.underruns;
+    *overruns = g_stream.s.overruns;
+    *in = g_stream.s.samples_in;
+    *out = g_stream.s.samples_out;
 }
 
 void lhal_leds(bool off_hook, bool ringing) {

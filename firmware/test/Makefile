@@ -16,7 +16,7 @@ test_autobaud: test_autobaud.c $(DEPS)
 test_link: test_link.c fake_hal.c ../src/core/link.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ test_link.c fake_hal.c ../src/core/link.c $(CORE) -lm
 
-LINE = ../src/core/daa_frame.c ../src/core/line_dev.c
+LINE = ../src/core/daa_frame.c ../src/core/sstream.c ../src/core/line_dev.c
 test_line: test_line.c $(LINE) $(wildcard ../src/core/*.h)
 	$(CC) $(CFLAGS) -o $@ test_line.c $(LINE)
 

@@ -157,9 +157,12 @@ src/rp2040/     HAL (GPIO, UART + IRQ, PIO line timing, flash), USB descriptors
                 and callbacks, Bluetooth (W board: bt.c, the GATT database,
                 BTstack config), main
 src/line/       the line stick: the Si3056's pins, clock and serial port (PIO),
-                its USB device, main
-src/core/       (also) daa_frame.c, line_dev.c: the line stick's frame
-                engine and device logic, portable
+                its part of the USB device (line_stick.c), main
+src/stick/      the sticks' USB device (usb_stick.c: descriptors, the class
+                driver, Microsoft OS 2.0) and what it needs from a stick (stick.h)
+src/core/       (also) sstream.c: the sticks' sample streams; daa_frame.c,
+                line_dev.c: the line stick's frame engine and device logic,
+                portable
 src/generated/  board_pins.h, board_pins_w.h and board_pins_line.h, written
                 by hardware/netlist/build_netlist.py
 boards/         SDK board headers for the hood, W and line boards

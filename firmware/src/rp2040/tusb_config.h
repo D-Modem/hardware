@@ -12,7 +12,7 @@
 #define CFG_TUD_ENDPOINT0_SIZE 64
 
 #if defined(PS_BOARD_LINE)
-#define CFG_TUD_CDC 0                 // the line stick: one vendor interface (src/line/usb_line.c)
+#define CFG_TUD_CDC 0                 // the line stick: one vendor interface (src/stick/usb_stick.c)
 #else
 #define CFG_TUD_CDC 1
 #endif

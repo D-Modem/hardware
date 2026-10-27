@@ -55,8 +55,10 @@ if (PS_BOARD STREQUAL "line")
     add_executable(pico_serial
         src/line/main.c
         src/line/daa.c
-        src/line/usb_line.c
+        src/line/line_stick.c
+        src/stick/usb_stick.c
         src/core/daa_frame.c
+        src/core/sstream.c
         src/core/line_dev.c
     )
     pico_generate_pio_header(pico_serial ${CMAKE_CURRENT_LIST_DIR}/src/line/si3056.pio)
@@ -71,7 +73,7 @@ else ()
     )
     pico_generate_pio_header(pico_serial ${CMAKE_CURRENT_LIST_DIR}/src/rp2040/autobaud.pio)
 endif ()
-target_include_directories(pico_serial PRIVATE src src/core src/rp2040 src/line)
+target_include_directories(pico_serial PRIVATE src src/core src/rp2040 src/stick src/line)
 target_compile_options(pico_serial PRIVATE -Wall -Wextra)
 target_compile_definitions(pico_serial PRIVATE
     PS_FW_MAJOR=${PS_FW_MAJOR} PS_FW_MINOR=${PS_FW_MINOR} PS_FW_PATCH=${PS_FW_PATCH}

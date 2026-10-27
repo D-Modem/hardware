@@ -30,7 +30,7 @@ uint8_t lhal_ring_edges(void);
 bool lhal_int(void);
 // Whether the host has the sample stream open (USB alternate setting 1).
 bool lhal_streaming(void);
-// The sample streams' counters (line_stream_t).
+// The sample streams' counters (sstream_t).
 void lhal_counters(uint16_t *underruns, uint16_t *overruns, uint32_t *in, uint32_t *out);
 // The status LEDs: off hook, ringing.
 void lhal_leds(bool off_hook, bool ringing);
