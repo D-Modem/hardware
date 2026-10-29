@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // pico-serial WB, the wideband bare-pair stick (SPEC-WB.md): bare RP2040,
 // W25Q128JV, 12 MHz ABM8-272-T3 (also the codec's MCLK), TLV320AIC3204 codec.

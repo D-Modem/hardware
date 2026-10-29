@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The phone-line stick's device logic (portable): the vendor requests of
 // line_proto.h, the hook and its flash, the line monitor, the interrupt

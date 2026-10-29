@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The sticks' USB device (the phone-line stick and the wideband stick): one
 // vendor interface shaped like the Smart Link SmartUSB56's (D-Modem's

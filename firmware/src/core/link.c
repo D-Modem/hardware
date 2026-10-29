@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Host links and port ownership. See link.h and SPEC-W.md 4.4, 4.6.
 #include "link.h"

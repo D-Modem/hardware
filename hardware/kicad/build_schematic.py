@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 """pico-serial schematic, generated from ../netlist/build_netlist.py.
 
 --variant w draws pico-serial W (the Bluetooth board) instead; its files
@@ -731,7 +731,7 @@ def build(syms):
             [Sym("comment"), 2, ("See SPEC-W.md" if N.W else "See SPEC-L.md" if N.LINE else "See SPEC-WB.md" if N.WB
                                  else "See SPEC.md")
              + "; parts and nets come from hardware/netlist/build_netlist.py"],
-            [Sym("comment"), 3, "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)"],
+            [Sym("comment"), 3, "CERN-OHL-S-2.0 (or commercial licence from the D-Modem Authors)"],
             [Sym("comment"), 4, "Source: https://github.com/D-Modem/hardware"]],
            [Sym("lib_symbols")] + [syms[k] for k in sorted({lib_id(r) for r in N.parts} | set(POWER.values()) | {"power:PWR_FLAG"})]]
     sch += items

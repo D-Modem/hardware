@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The serial core: which role the board is in, what the modem lines do,
 // flow control, and the bytes between the host link and the RS-232 port.

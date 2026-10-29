@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) 2026 Neo-Desktop
+// Copyright (C) 2026 D-Modem Authors
 // End-to-end test of the real firmware image in the rp2040js emulator:
 // boot, USB enumeration (the emulator plays the host), DCE/DTE detection via
 // the transceivers' status lines, modem-line mapping on the GPIOs, data both

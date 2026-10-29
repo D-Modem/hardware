@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Host links (USB CDC, and on the W board BLE and classic Bluetooth SPP) and
 // which one owns the RS-232 port (SPEC-W.md 4.6):

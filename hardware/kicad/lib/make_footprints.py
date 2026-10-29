@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 """Writes the footprints KiCad doesn't ship into pico-serial.pretty/:
 
 RaspberryPi_RM2: from the RM2 datasheet (Raspberry Pi Radio Module 2,

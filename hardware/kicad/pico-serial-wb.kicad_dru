@@ -1,6 +1,6 @@
 (version 1)
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 # Board-specific rules on top of the project's (build_pcb.py).
 
 # The USB-C receptacle's shell (and its silkscreen outline) overhangs the

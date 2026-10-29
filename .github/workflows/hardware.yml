@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 #
 # For every board (the hood board, pico-serial W, Line and WB): the generated hardware
 # files are up to date with the netlist script, the schematic passes ERC, and

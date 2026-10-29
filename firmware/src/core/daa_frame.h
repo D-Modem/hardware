@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The Si3056's serial frames, from the RP2040's side (portable: the PIO
 // interrupt calls it with each 16-bit word received; host tests do too).

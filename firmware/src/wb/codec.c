@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The WB stick's codec on the RP2040 (SPEC-WB.md §3-4): the TLV320AIC3204
 // as the I2S master on the RP2040's 12 MHz crystal clock, the RP2040 its

@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // pico-serial WB firmware: the wideband bare-pair stick's USB front end for
 // the TLV320AIC3204 codec (SPEC-WB.md). The modem itself is on the host

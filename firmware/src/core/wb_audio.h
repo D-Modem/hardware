@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The WB stick's samples between the codec's I2S frames and the sample
 // streams (portable: the DMA interrupt calls it with each block of frames;

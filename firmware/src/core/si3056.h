@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Skyworks Si3056 (with the Si3018/19 line side): the registers and bits the
 // firmware uses. Datasheet rev 1.03, section 6 "Control Registers".

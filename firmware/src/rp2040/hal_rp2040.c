@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // hal.h for the RP2040 boards. GPIO numbers come from the netlist
 // (generated/board_pins.h). The RS-232 transceivers invert: logic low on a

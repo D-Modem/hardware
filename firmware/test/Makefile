@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 # Host tests for the portable core: make -C firmware/test
 CFLAGS ?= -std=c11 -O1 -g -Wall -Wextra -Werror -Wconversion -Wno-sign-conversion -fsanitize=address,undefined
 CORE = ../src/core/core.c ../src/core/autobaud.c

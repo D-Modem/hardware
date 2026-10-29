@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Automatic baud-rate detection, portable part. The HAL times the RX line
 // (how long it stays low, then high, then low...) starting at the first

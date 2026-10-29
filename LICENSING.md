@@ -1,6 +1,6 @@
 # Licensing
 
-pico-serial is copyright Neo-Desktop.
+pico-serial is copyright the D-Modem Authors.
 
 ## Firmware (`firmware/`)
 
@@ -8,8 +8,8 @@ The firmware is available under either of two licences:
 
 - the **GNU Affero General Public License, version 3 only**
   (AGPL-3.0-only), in [firmware/COPYING](firmware/COPYING); or
-- a **commercial licence** from Neo-Desktop, for uses that cannot meet
-  the AGPL's terms. Ask Neo-Desktop (<https://github.com/Neo-Desktop>)
+- a **commercial licence** from the D-Modem Authors, for uses that cannot meet
+  the AGPL's terms. Ask the D-Modem Authors (<https://github.com/D-Modem>)
   for its terms.
 
 This is the same arrangement as the rest of D-Modem. Each source file names
@@ -40,9 +40,9 @@ The hardware design is available under either of two licences:
 
 - the **CERN Open Hardware Licence Version 2, Strongly Reciprocal**
   (CERN-OHL-S-2.0), in [hardware/LICENSE](hardware/LICENSE); or
-- a **commercial licence** from Neo-Desktop, for uses that cannot meet
+- a **commercial licence** from the D-Modem Authors, for uses that cannot meet
   CERN-OHL-S's terms, such as shipping a product made from a modified
-  design without publishing that design. Ask Neo-Desktop for its terms.
+  design without publishing that design. Ask the D-Modem Authors for their terms.
 
 ### What it covers
 
@@ -88,5 +88,5 @@ makers' own terms.
 
 ## Contributions
 
-Contributions can be accepted only under terms that let Neo-Desktop offer
+Contributions can be accepted only under terms that let the D-Modem Authors offer
 them under all the licences above. Ask before sending one.

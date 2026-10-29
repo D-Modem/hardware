@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // What the portable core needs from the hardware. Implemented for the RP2040
 // in src/rp2040/hal_rp2040.c and faked for the host tests in test/fake_hal.c.

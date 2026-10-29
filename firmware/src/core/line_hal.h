@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // What line_dev.c needs from the stick's hardware. Implemented for the
 // RP2040 in src/line/daa.c and faked for the host tests in test/test_line.c.

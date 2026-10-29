@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // TI TLV320AIC3204: the registers and bits the firmware uses. TI SLAA557
 // (Application Reference Guide, November 2012), chapter 5 "Register Map";
