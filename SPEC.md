@@ -521,7 +521,7 @@ The hood is the MH Connectors **MHDPPK25-K** (LCSC C22372846):
 - Silkscreen: name, revision, "DCE / DTE auto", DB25 pin 1, "male–male
   gender changer for DTE".
 - Silkscreen must also carry the licence notice: `CERN-OHL-S-2.0` and
-  `github.com/Neo-Desktop/pico-serial`. This is the Source Location
+  `github.com/D-Modem/hardware`. This is the Source Location
   required by the licence (LICENSING.md); the W board's hood also has it
   debossed underneath.
 

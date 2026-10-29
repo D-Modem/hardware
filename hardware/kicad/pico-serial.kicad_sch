@@ -11,7 +11,7 @@
 		(comment 1 "RP2040, SP3238E (DCE) + MAX3243E (DTE) on one female DB25")
 		(comment 2 "See SPEC.md; parts and nets come from hardware/netlist/build_netlist.py")
 		(comment 3 "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)")
-		(comment 4 "Source: https://github.com/Neo-Desktop/pico-serial")
+		(comment 4 "Source: https://github.com/D-Modem/hardware")
 	)
 	(lib_symbols
 		(symbol "Connector:DB25_Socket"

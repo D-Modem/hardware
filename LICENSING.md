@@ -60,7 +60,7 @@ Each source file names its licence on an `SPDX-License-Identifier` line.
 ### Source Location
 
 The Source Location (CERN-OHL-S-2.0 section 1.9) is
-<https://github.com/Neo-Desktop/pico-serial>.
+<https://github.com/D-Modem/hardware>.
 
 The repository must be **public**, and expected to stay reachable for at
 least three years, before any Product made from the design is given to
@@ -70,7 +70,7 @@ anyone (section 1.9). It is private as of this writing.
 and securely display that Source Location, and the licence name. This is
 already done on the original design:
 - on the PCB silkscreen;
-- debossed in the hood's underside: `github.com/Neo-Desktop/pico-serial`,
+- debossed in the hood's underside: `github.com/D-Modem/hardware`,
   `CERN-OHL-S-2.0`.
 
 A modified design must point to its own Source Location instead, and

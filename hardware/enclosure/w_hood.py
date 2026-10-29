@@ -171,7 +171,7 @@ def split(body):
     return top, bot
 
 
-SOURCE_LOCATION = "github.com/Neo-Desktop/pico-serial"
+SOURCE_LOCATION = "github.com/D-Modem/hardware"
 
 
 def label_bottom(bot):

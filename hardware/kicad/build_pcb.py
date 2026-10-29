@@ -510,7 +510,7 @@ SILK = [
     ("DCE / DTE auto", -9.8, 10.9, 0.8, "F", "c"),
     ("DTE: male-male changer", -9.8, 12.2, 0.8, "F", "c"),
     # the licence and its Source Location, CERN-OHL-S-2.0 section 4 (LICENSING.md)
-    ("github.com/Neo-Desktop/pico-serial", 0.0, 4.45, 0.8, "B", "c"),  # between the cups and the chips
+    ("github.com/D-Modem/hardware", 0.0, 4.45, 0.8, "B", "c"),  # between the cups and the chips
     ("CERN-OHL-S-2.0", -9.8, 7.9, 0.8, "F", "c"),
 ]
 if N.LINE:   # a narrow board: the licence and Source Location are on the shell's bottom too (stick.py)

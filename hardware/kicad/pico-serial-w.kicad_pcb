@@ -21113,7 +21113,7 @@
 			)
 		)
 	)
-	(gr_text "github.com/Neo-Desktop/pico-serial"
+	(gr_text "github.com/D-Modem/hardware"
 		(at 0 4.45 0)
 		(layer "B.SilkS")
 		(uuid "12d70d7a-4ec9-48c0-a483-08170c4f88ff")
