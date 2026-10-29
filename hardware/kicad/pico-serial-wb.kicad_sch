@@ -11,7 +11,7 @@
 		(comment 1 "RP2040, TLV320AIC3204 codec, PE-65848 transformer, RJ11")
 		(comment 2 "See SPEC-WB.md; parts and nets come from hardware/netlist/build_netlist.py")
 		(comment 3 "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)")
-		(comment 4 "Source: https://github.com/Neo-Desktop/pico-serial")
+		(comment 4 "Source: https://github.com/D-Modem/hardware")
 	)
 	(lib_symbols
 		(symbol "Connector:6P6C"

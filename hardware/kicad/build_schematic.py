@@ -732,7 +732,7 @@ def build(syms):
                                  else "See SPEC.md")
              + "; parts and nets come from hardware/netlist/build_netlist.py"],
             [Sym("comment"), 3, "CERN-OHL-S-2.0 (or commercial licence from Neo-Desktop)"],
-            [Sym("comment"), 4, "Source: https://github.com/Neo-Desktop/pico-serial"]],
+            [Sym("comment"), 4, "Source: https://github.com/D-Modem/hardware"]],
            [Sym("lib_symbols")] + [syms[k] for k in sorted({lib_id(r) for r in N.parts} | set(POWER.values()) | {"power:PWR_FLAG"})]]
     sch += items
     sch += [[Sym("sheet_instances"), [Sym("path"), "/", [Sym("page"), "1"]]], [Sym("embedded_fonts"), Sym("no")]]

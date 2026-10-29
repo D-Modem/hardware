@@ -174,7 +174,7 @@ reviewed by a person, and nothing has been built.
     (Freerouting doesn't apply KiCad's edge clearance).
 - **Silkscreen:** on top, name and revision, "DCE / DTE auto", the
   gender-changer note and `CERN-OHL-S-2.0`; underneath, between the cups
-  and the chips, `github.com/Neo-Desktop/pico-serial` (the licence's
+  and the chips, `github.com/D-Modem/hardware` (the licence's
   Source Location). Reference designators are on the fab layers; there's
   no room for them on the silkscreen.
 - **Linked to the schematic:** every footprint carries its symbol's ID,
