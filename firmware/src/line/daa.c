@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The line stick's DAA on the RP2040 (SPEC-L.md §3.2): the Si3056 as the
 // serial-port master, the RP2040 its slave in PIO, every received word

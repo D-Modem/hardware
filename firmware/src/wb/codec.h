@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The WB stick's codec on the RP2040: its pins, MCLK, I2C, and its I2S
 // frames (PIO and DMA) with the samples through wb_audio.c. Implements

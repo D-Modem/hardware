@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 """Lay out the pico-serial PCB from the netlist script.
 
   hardware/kicad/build_pcb.py --kicad-fp <kicad-footprints 9.0 checkout> [--route] [--variant w]

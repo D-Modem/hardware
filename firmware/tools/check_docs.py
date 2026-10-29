@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-only
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 """Every function in the firmware has a comment saying what it does.
 
   python3 firmware/tools/check_docs.py        # lists what's missing; exit 1 if anything is

@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // pico-serial Line firmware: the phone-line stick's USB front end for the
 // Si3056 DAA (SPEC-L.md). The modem itself is on the host (D-Modem).

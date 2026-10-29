@@ -1,5 +1,5 @@
 ; SPDX-License-Identifier: AGPL-3.0-only
-; Copyright (C) 2026 Neo-Desktop
+; Copyright (C) 2026 D-Modem Authors
 ;
 ; Times the RS-232 RX line for baud-rate learning (hal_autobaud). From the
 ; first falling edge after the line is high, pushes one word per run of one

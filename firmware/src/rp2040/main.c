@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // pico-serial firmware: USB CDC serial port (and on the W board, Bluetooth)
 // <-> RS-232 DB25, DCE/DTE auto-detect.

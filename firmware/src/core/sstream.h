@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // A stick's two sample streams (portable; both sticks use them): the line's
 // samples to the host (USB IN) and the modem's samples from it (USB OUT),

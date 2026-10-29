@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Host tests for the phone-line stick's portable firmware: the Si3056's
 // serial frames (daa_frame.c) against a model of the chip's serial port,

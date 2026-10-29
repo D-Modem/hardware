@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The phone-line stick's USB protocol (SPEC-L.md §5, firmware/PROTOCOL.md
 // "Line stick"): what the host's driver (D-Modem's dmodemd) and the

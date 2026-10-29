@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // What the sticks' USB device (usb_stick.c) needs from the stick it serves:
 // its protocol's numbers, and its device logic and sample streams. The

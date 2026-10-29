@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Host tests for the wideband stick's portable firmware: the codec's
 // bring-up (wb_codec.c) against a model of the TLV320AIC3204's registers,

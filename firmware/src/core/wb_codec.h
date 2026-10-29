@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The WB stick's codec (TLV320AIC3204, SPEC-WB.md §3-4), portable: its
 // clocks for each sample rate, its registers by page, and its bring-up

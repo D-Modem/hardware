@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 cmake_minimum_required(VERSION 3.13)
 
 # Which board: "hood" (the DB25 hood board), "w" (pico-serial W, with the

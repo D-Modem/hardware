@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-# Copyright (C) 2026 Neo-Desktop
+# Copyright (C) 2026 D-Modem Authors
 """Minimal reader/writer for KiCad's s-expression files.
 
 A node is a Python list whose first item is its keyword. Atoms are Sym

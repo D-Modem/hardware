@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // What wb_codec.c and wb_dev.c need from the WB stick's hardware.
 // Implemented for the RP2040 in src/wb/codec.c and faked for the host tests

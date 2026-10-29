@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Single-producer single-consumer ring of 16-bit samples, for the sticks
 // (sstream.h): the codec's interrupt on one side, USB in the main loop on

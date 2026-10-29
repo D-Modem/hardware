@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Bluetooth on pico-serial W (SPEC-W.md 4): classic SPP and BLE (Nordic UART
 // Service plus the pico-serial control service) as host links (link.h).

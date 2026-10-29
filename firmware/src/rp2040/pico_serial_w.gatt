@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) 2026 Neo-Desktop
+// Copyright (C) 2026 D-Modem Authors
 // pico-serial W GATT database (SPEC-W.md 4.2-4.3). Compiled into
 // pico_serial_w.h by BTstack's compile_gatt.py at build time.
 

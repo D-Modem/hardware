@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Single-producer single-consumer byte ring. One side may run in an interrupt
 // handler and the other in the main loop (single core): indices are only

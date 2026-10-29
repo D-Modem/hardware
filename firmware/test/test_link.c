@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Host tests for the host links: who owns the RS-232 port (SPEC-W.md 4.6)
 // and DCD from result codes (SPEC-W.md 4.4).

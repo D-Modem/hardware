@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
-<!-- Copyright (C) 2026 Neo-Desktop -->
+<!-- Copyright (C) 2026 D-Modem Authors -->
 # pico-serial Line — phone-line modem stick (draft 0.1)
 
 A USB modem for a real telephone line, in the shape of Apple's USB Modem:

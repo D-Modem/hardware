@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The wideband stick behind the sticks' USB device (stick.h): its device
 // logic (wb_dev.c) and the codec's sample streams (codec.c).

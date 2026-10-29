@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The WB stick's device logic (portable): the vendor requests of
 // wb_proto.h, the codec's bring-up at the host's rate and settings, its

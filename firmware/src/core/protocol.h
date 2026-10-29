@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // pico-serial vendor protocol: control requests on the "pico-serial control"
 // interface. Shared by the firmware and any host app; see firmware/PROTOCOL.md.

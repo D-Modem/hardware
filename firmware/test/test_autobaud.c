@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Host tests for the baud-rate detector: waveforms made from text and random
 // bytes at every standard rate, with timing jitter, a sender running fast or

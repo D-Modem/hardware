@@ -1,5 +1,5 @@
 ; SPDX-License-Identifier: AGPL-3.0-only
-; Copyright (C) 2026 Neo-Desktop
+; Copyright (C) 2026 D-Modem Authors
 ;
 ; The RP2040 as the Si3056's serial-port slave (serial mode 0, DCE = 0; Si3056
 ; datasheet rev 1.03, Table 7 and Figure 3). The Si3056 makes SCLK (256 a

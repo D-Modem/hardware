@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
-<!-- Copyright (C) 2026 Neo-Desktop -->
+<!-- Copyright (C) 2026 D-Modem Authors -->
 # pico-serial WB — wideband bare-pair stick (draft 0.1)
 
 A sibling of the phone-line stick ([SPEC-L.md](SPEC-L.md)) for **bare

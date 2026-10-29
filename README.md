@@ -8,4 +8,4 @@ Wireless variant (Bluetooth LE for iPhone, classic Bluetooth serial for Android)
 
 ## Licence
 
-Firmware: AGPL-3.0-only, or a commercial licence from Neo-Desktop. Hardware: CERN-OHL-S-2.0, or a commercial licence from Neo-Desktop. See [LICENSING.md](LICENSING.md).
+Firmware: AGPL-3.0-only, or a commercial licence from the D-Modem Authors. Hardware: CERN-OHL-S-2.0, or a commercial licence from the D-Modem Authors. See [LICENSING.md](LICENSING.md).

@@ -1,5 +1,5 @@
 ; SPDX-License-Identifier: AGPL-3.0-only
-; Copyright (C) 2026 Neo-Desktop
+; Copyright (C) 2026 D-Modem Authors
 ;
 ; The RP2040 as the TLV320AIC3204's I2S slave, full duplex (SLAA557 2.6.3,
 ; "I2S Mode"; datasheet 7.13, I2S timing in master mode). The codec makes

@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // The phone-line stick behind the sticks' USB device (stick.h): its device
 // logic (line_dev.c) and the DAA's sample streams (daa.c).

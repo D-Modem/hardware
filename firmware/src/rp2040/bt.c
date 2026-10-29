@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // Bluetooth on pico-serial W (SPEC-W.md 4). BTstack on the RM2 (CYW43439),
 // polled from the main loop (pico_cyw43_arch_poll), so every callback here

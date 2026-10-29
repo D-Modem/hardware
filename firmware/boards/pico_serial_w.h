@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: AGPL-3.0-only
- * Copyright (C) 2026 Neo-Desktop
+ * Copyright (C) 2026 D-Modem Authors
  */
 // pico-serial W (SPEC-W.md): the hood board's circuit plus a Raspberry Pi
 // RM2 (CYW43439) wired exactly as on Pico W, so the SDK's CYW43 defaults apply.
