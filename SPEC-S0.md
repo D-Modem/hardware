@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
 <!-- Copyright (C) 2026 D-Modem Authors -->
-# pico-serial S0 — ISDN basic rate stick (draft 0.1)
+# pico-serial S0 — ISDN basic rate stick (draft 0.2)
 
 A USB stick with an **ISDN S/T (S0) port**: an RJ45 socket at one end,
 USB-C at the other, the Line stick's shape. It plugs into an NTBA or a
@@ -8,19 +8,27 @@ PBX's internal S0 port as an ISDN terminal (TE), or, the other way round,
 it is the network (NT) for ISDN terminal adapters, ISDN cards and phones.
 
 As with the Line stick ([SPEC-L.md](SPEC-L.md)), the stick is only the
-line interface. It carries the S0 bus's layer 1 and HDLC framing, and
-streams both B-channels and the D-channel's frames over USB. Everything
-above, LAPD, Q.931, the clear channel modes (X.75, V.110, V.120, sync
-PPP), every analogue modulation on a 3.1 kHz call, and CAPI, is
-**D-Modem on the host** (`dmodemd`, dmodem-android). D-Modem already has
-those parts for Linux mISDN cards (`dmodemd --misdn`, D-Modem's
-`docs/isdn.md`); this stick brings them to every host D-Modem runs on,
-Android and Windows included, where there is no mISDN.
+line interface, and here even its layer 1 is software: there is **no
+ISDN chip**. The RP2040's PIO drives and samples the S0 bus through a
+transformer pair, a tri-state buffer and two comparators, and its second
+core runs I.430: the line code, the clock and frame recovery, the
+D-channel's access procedure and HDLC. The stick streams both B-channels
+and the D-channel's frames over USB. Everything above, LAPD, Q.931, the
+clear channel modes (X.75, V.110, V.120, sync PPP), every analogue
+modulation on a 3.1 kHz call, and CAPI, is **D-Modem on the host**
+(`dmodemd`, dmodem-android). D-Modem already has those parts for Linux
+mISDN cards (`dmodemd --misdn`, D-Modem's `docs/isdn.md`); this stick
+brings them to every host D-Modem runs on, Android and Windows included,
+where there is no mISDN.
 
-Not covered: the U interface (the exchange's 2B1Q pair to the NTBA; the
-chip could do Up0/UpN, see §14), primary rate (S2M/E1: a different
-chip, as Osmocom's icE1usb), and power feeding ISDN phones in NT mode on
-rev A (§4.5).
+Every part is at LCSC except, so far, the S0 transformer (§11). The
+cost is that I.430 conformance is ours to show on the bench (§12). The
+one S/T chip still made, Cologne Chip's XHFC-1SU, is the fallback
+(§13).
+
+Not covered: the U interface (the exchange's 2B1Q or 4B3T pair to the
+NTBA: the FPGA board, [SPEC-FX.md](SPEC-FX.md)), primary rate (S2M/E1),
+and power feeding ISDN phones in NT mode on rev A (§4.6).
 
 ---
 
@@ -37,185 +45,228 @@ rev A (§4.5).
 | S7 | Protection against a wrong cable: survives an analogue phone line (−48 V, ringing 90 Vrms) or a powered S0 bus (40 V) on any pins |
 | S8 | Switchable 100 Ω terminations (point to point, or the end of a passive bus) |
 | S9 | The same RP2040 core, USB-C and firmware structure as the other sticks; drivers on Linux, Windows (WinUSB, no INF) and Android |
+| S10 | I.430's transmitter (pulse mask, amplitude, impedance in both states) and receiver (attenuation, jitter, bus configurations) met by the discrete circuit and the firmware, and shown on the bench (§12) |
 
 ---
 
 ## 2. Block diagram
 
 ```
-                     SPI (25 MHz max) ──────────┐
- USB-C ── ESD ── RP2040 ── PCM30 (PIO) ──── XHFC-1SU ── TX ══ transformer ══┐
-  (UFP)          │   IRQ, RESET ──────────────┘  │  24.576 MHz     1:2 CT    ├─ TVS, PTC ── RJ45
-  LDO 3.3 V      │                               └─ RX ══ transformer ══════┘   (3/6 TX, 4/5 RX)
+                       PIO0 SM0 ─► DA, DB, /OE ─► 74LVC2G125 ─ 2 × 100 Ω ─┐
+ USB-C ── ESD ── RP2040                                                    TX ══ 1:2 ══╗
+  (UFP)          │ core 1: I.430     PIO0 SM1 ◄─ RXP, RXN ◄─ TLV3202 ◄─────RX ══ 1:2 ══╣  TVS, PTC ── RJ45
+  LDO 3.3 V      │ core 0: USB, HDLC          PWM ─► RC ─► Vref (threshold)            ║  (3/6 TX, 4/5 RX)
   flash, 12 MHz  ├── PhotoMOS ×2: 100 Ω terminations (line side)     isolation barrier
-                 └── LEDs (LINK, B1, B2)
+                 └── LEDs (LINK, B1, B2)            Vmid (1.65 V) ─► both chip-side centre taps
 ```
 
 ---
 
-## 3. Choosing the S/T chip
+## 3. I.430 in brief (what the firmware must do)
 
-ISDN chips are mostly gone. What is left:
-
-| Part | Maker | What it is | Status (October 2026) |
-|---|---|---|---|
-| **XHFC-1SU** | Cologne Chip | one S/T or Up0 port, HDLC controller, FIFOs, PCM bus, SPI or 8-bit bus; TE and NT; LQFP-64, 3.3 V | **in mass production, "recommended for new projects"** ([colognechip.com](https://colognechip.com/xhfc-1su-overview/)); sold through Cologne Chip's own distribution, not LCSC, Mouser or DigiKey |
-| XHFC-2SU | Cologne Chip | the same with two ports (Osmocom's [xhfc-breakout](https://gitea.osmocom.org/electronics/osmo-small-hardware) uses it) | "contact factory" |
-| HFC-S USB | Cologne Chip | a complete USB ISDN adapter in one chip (mISDN's `hfcsusb`) | datasheet from 2002; no current availability found. It would also tie the stick to Cologne Chip's USB IDs and protocol |
-| SBCX PEB 3081, IPAC-X PSB 21150 | Infineon / Lantiq (Intel) | S/T transceiver, S/T + HDLC controller | broker stock only, end of life |
-| TP3420A | TI | S/T transceiver | NRND, no successor |
-| MC145574 | Motorola / NXP | S/T transceiver | discontinued |
-| W6691 | Winbond | PCI S/T controller | discontinued, and PCI |
-| **No chip:** S0 in the RP2040's PIO | ours | a discrete transmitter and two comparators, the line code, framing and D-channel access in software (§12) | every part at LCSC, but nobody has done it, and I.430 conformance is ours to prove |
-
-**Rev A uses the XHFC-1SU.** It is the one S/T chip still made, it does
-TE and NT to I.430 and TBR 3, its HDLC controller does the D-channel's
-framing, CRC and access procedure (the echo channel, priority classes,
-automatic repetition of a frame that lost a collision), and its external
-circuit is a few resistors, two transistors and a transformer pair. The
-cost is sourcing: it is bought from Cologne Chip (a quote), and fitted by
-hand or sent to JLC as a consigned part, as the Line stick's Si3056 is.
-LQFP-64 at 0.5 mm pitch hand-solders.
-
-The software S0 (§12) stays the fallback, and an experiment worth doing
-on a later board: it would make the stick all-LCSC.
+- **The line:** 192 kbit/s each way on its own pair, **pseudo-ternary**:
+  a binary one is no signal, a binary zero a full-width pulse (5.21 µs)
+  of alternating polarity, **750 mV ±10 % peak into 50 Ω** (the bus's two
+  100 Ω terminations in parallel).
+- **Frames:** 48 bits, 4000 a second (250 µs). Each carries two octets of
+  B1, two of B2, 4 D bits, and framing and DC balance bits; NT to TE also
+  the 4 E bits (the echo of the D bits the NT received), the activation
+  bit A, and the multiframe bits. A frame starts with the framing bit F
+  and its balance bit L, and the first zero after them breaks the
+  alternation (a **code violation**); that is how a receiver finds the
+  frame. A second violation follows within 14 bits (the FA or N bit).
+- **The TE's clock is the NT's.** A TE recovers the bit clock from the
+  NT's frames and sends its own frames **two bits behind** them.
+- **Binary ones are high impedance from a TE.** Several TEs share the TE
+  to NT pair; a zero from any of them pulls the line, ones from the
+  others don't. So the D-channel is a wired AND, and the NT echoes it in
+  the E bits.
+- **D-channel access (TE):** before sending a frame, count consecutive
+  ones in the E bits: 8 for priority class 1 (signalling), 10 for class 2,
+  each one more after a successful frame. While sending, compare each D
+  bit sent with the E bit that echoes it; on a difference, stop at once
+  (send ones) and start counting again. This is the one tight loop
+  (§6.3).
+- **Activation:** INFO 0 (no signal), INFO 1 (TE to NT, asking: a fixed
+  pattern, not frame-locked), INFO 2 (NT frames, B, D, E and A zero),
+  INFO 3 (TE frames, synchronised), INFO 4 (NT frames with data, A one).
+  TE states F1–F8, NT states G1–G4, with their timers (T3, T1).
+- **D-channel frames** are HDLC: flags, zero insertion, the CCITT CRC-16,
+  at 16 kbit/s.
 
 ---
 
 ## 4. The line interface
 
-Cologne Chip's XHFC-2SU datasheet (June 2012, §5.2.8, the same circuit
-for the 1SU): one transformer for each direction, both 1:2 (line : chip)
-with a centre tap on the chip side.
+### 4.1 Transmit
 
-### 4.1 Receive
+- A **74LVC2G125** dual tri-state buffer (separate enables tied
+  together: one /OE) drives the two ends of the transmit transformer's
+  chip-side winding through **100 Ω** each; the winding's centre tap sits
+  at Vmid (1.65 V, decoupled). The PIO sets three states each bit: A high
+  and B low (a positive zero), A low and B high (a negative zero), or
+  both off (a binary one: high impedance).
+- **Amplitude:** the transformer is 1:2 (line : chip), so 750 mV into
+  50 Ω on the line is 1.5 V across 200 Ω on the chip side, 7.5 mA. From
+  3.3 V that leaves 1.8 V for the 2 × 100 Ω and the buffer's own ~10 Ω
+  each: about 240 Ω in all, so 2 × 100 Ω is the starting value, to be
+  trimmed on the bench (§12). The pulse's height then depends on the 3.3 V
+  rail (±3 %) and the resistors (1 %); the buffer's output resistance
+  (lower and steadier than an RP2040 pad's) varies by a few percent of the
+  total. Inside ±10 %.
+- **The source impedance** while sending a zero is about 240 Ω / 4 = 60 Ω
+  as the line sees it; in the third state it is the transformer's
+  magnetising inductance and the buffer's off leakage (high).
+- **Pulse shape:** an RC across the line side (the 62 Ω and 1 nF of
+  Cologne Chip's reference circuit as a start) damps the transformer's
+  undershoot into I.430's pulse mask.
+- With the centre tap at Vmid, the winding's ends stay inside the rails
+  in the third state while another TE drives the pair (1.65 ± 0.75 V), so
+  the buffer's clamp diodes never load the bus.
 
-The line pair through its transformer to the chip's four receive pins
-(R_A, L_A, L_B, R_B) through the datasheet's divider network (100 kΩ,
-33 kΩ, 3.9 kΩ, 22 pF at the pins, BAV99 clamps on the transformer
-side, the centre tap biased from 3.3 V by 330 kΩ / 3.9 kΩ). The
-receiver detects polarity by itself, so the pair may be either way round.
+### 4.2 Receive
 
-### 4.2 Transmit
-
-T_A and T_B through 3.3 Ω to the transmit transformer's ends, its centre
-tap at **V_AMP**, about 2.8–3.1 V from a BC848 pair (the datasheet's
-Figure 5.7), and VDD_SU from the same reference. V_AMP sets the pulse
-amplitude: it is trimmed (a resistor choice, set once on the bench) for
-I.430's 750 mV into 50 Ω. 62 Ω and 1 nF across the line side damp the
-undershoot (values depend on the transformer). BAV99 clamps each end to
-the rails.
+- The receive transformer's chip-side centre tap is also at Vmid, so a
+  pulse puts one end above Vmid and the other below it.
+- A **TLV3202** dual comparator (40 ns, rail-to-rail inputs, 3.3 V)
+  compares each end with one reference, **Vref = Vmid + Vth**: RXP goes
+  high on a positive pulse, RXN on a negative one. 1 kΩ in series and
+  BAV99 clamps to the rails at each input; a little hysteresis from the
+  outputs.
+- **Vth** is an RP2040 PWM output through a two-pole RC filter (about
+  1 kHz corner), so the firmware sets it: about **half the received
+  pulse's peak**, which it measures by stepping Vth up until pulses drop
+  out (on INFO 2 or 4 in TE mode, INFO 1 or 3 in NT mode) and then
+  tracks. A short bus brings 1.5 V on the chip side, a long point-to-point
+  line about half that.
+- The comparators' outputs go straight to two GPIOs for the PIO (§6).
 
 ### 4.3 Transformer
 
 A dual 1:2 module, centre-tapped on the chip side, with a common-mode
-choke: **UMEC UT20795-05TS** (Osmocom's xhfc-breakout uses the -5MTS),
+choke: **UMEC UT20775-05TS** (1CT:2CT; the UT20795 has split windings),
 or Pulse **PE-65795** (dual SMT, 1:2, 2000 Vrms). Both meet I.430's pulse
-template with Cologne Chip's circuit. Neither is at LCSC: from DigiKey or
-Mouser, consigned. A Pulse part at LCSC would be better; see §14.
+template with the ISDN chips' circuits, and their 30 mH line inductance
+keeps the third state's impedance high. Neither is at LCSC: from DigiKey
+or Mouser, consigned. A Pulse part at LCSC would be better (§15).
 
 ### 4.4 Wiring, NT mode and terminations
 
 - The RJ45 is wired as a TE: pins 3 (+) and 6 (−) transmit, 4 (+) and
-  5 (−) receive. Cologne Chip's polarity: T_A to the jack's minus pin,
-  T_B to its plus.
+  5 (−) receive.
 - **NT mode** swaps the pairs: rev A does it with a standard ISDN
-  crossover cable (3↔4, 6↔5), and the firmware switches the chip to NT.
-  Swapping on the board needs two latching DPDT relays (§14).
+  crossover cable (3↔4, 6↔5), and the firmware runs as the NT. Swapping
+  on the board needs two latching DPDT relays (§15).
 - **Terminations:** 100 Ω across each pair, each through a 60 V
   PhotoMOS relay (normally open), so the host turns them on: in NT
   mode, and in TE mode on a point-to-point line with nothing else at our
   end. 3 mA of LED current each while on.
 
-### 4.5 Power on the bus (PS1)
-
-An NT may feed 40 V (34–42 V) to its terminals through the transformers'
-centre taps on the line side. **Rev A neither feeds nor draws it.** In TE
-mode the line side's centre taps are left free, so an NTBA's 40 V does
-nothing. In NT mode, locally powered terminals (TAs, ISDN cards, most
-PBXs' TE ports) work; ISDN phones powered by the bus need an external
-40 V supply put on the line side's centre taps. A feeding variant (a
-5 V → 40 V boost, about 1 W, past USB's 100 mA unless the host offers
-more through USB-C current advertisement) is §14.
-
-### 4.6 Protection
+### 4.5 Protection
 
 S0 is inside a building, but a stick will meet the wrong socket. On the
-line side, per pair: a PTC (or the transformer's own winding resistance
-and a 0.5 A telecom fuse) and a bidirectional TVS that stands off 58 V
-(above PS1's 42 V) and clamps below the transformer's isolation, low
-capacitance (≤ 50 pF: the bus is a 100 Ω pair at 192 kbit/s). A phone
-line's ringing (≈ 130 V peak on −48 V) is then clamped and the PTC
-trips; nothing passes the transformer that the chip-side BAV99s cannot
-take. The chip side gets the datasheet's BAV99 clamps.
+line side, per pair: a PTC (or a 0.5 A telecom fuse) and a bidirectional
+TVS that stands off 58 V (above PS1's 42 V) and clamps below the
+transformer's isolation, low capacitance (≤ 50 pF: the bus is a 100 Ω
+pair at 192 kbit/s). A phone line's ringing (≈ 130 V peak on −48 V) is
+then clamped and the PTC trips. On the chip side, the comparators' BAV99
+clamps and series resistors; the buffer's outputs through their 100 Ω.
 
 Layout, as for the Line stick: the isolation barrier is the transformer
 module; nothing else crosses it except the PhotoMOS outputs, whose own
 barrier is rated for it. Creepage and clearance across it ≥ 2.5 mm on
 every layer; no ground plane under the line side.
 
+### 4.6 Power on the bus (PS1)
+
+An NT may feed 40 V (34–42 V) to its terminals through the transformers'
+line-side centre taps. **Rev A neither feeds nor draws it.** In TE mode
+the line-side centre taps are left free, so an NTBA's 40 V does nothing.
+In NT mode, locally powered terminals (TAs, ISDN cards, most PBXs' TE
+ports) work; ISDN phones powered by the bus need an external 40 V supply
+on the line-side centre taps. A feeding variant is §15.
+
 ---
 
 ## 5. Clocks
 
-- **XHFC-1SU:** a 24.576 MHz 3.3 V oscillator into OSC_IN (e.g. SCTF
-  SX3V24.576B, LCSC C5179997; or the datasheet's Pierce circuit with a
-  crystal). Its PLL makes the line interface's 12.288 MHz and the PCM
-  side's clocks.
-- **RP2040:** its own 12 MHz crystal, as on every stick.
-- **TE mode:** the XHFC locks to the NT's frames; its PCM bus (F0IO,
-  C4IO), which it masters, runs at the network's 8000 frames a second. So
-  the B-channel octets come at the network's rate, and the USB side counts
-  them (§8.2), as the Line stick counts its codec's samples. Slips are
-  counted and reported.
-- **NT mode:** the stick is the network clock: the 24.576 MHz oscillator
-  (±50 ppm). TEs lock to it.
+- **System clock 96 MHz** from the 12 MHz crystal (PLL: VCO 1152 MHz,
+  ÷6, ÷2): **500 cycles a bit**, exactly, so the NT's bit clock needs no
+  dither. USB keeps its own 48 MHz PLL. (192 MHz gives 1000 cycles a bit
+  if core 1 needs more room: VCO 1152, ÷6, ÷1, past the RP2040's
+  original 133 MHz rating.)
+- **NT mode:** the stick is the network clock: 192 000 Hz from the
+  crystal, ±30 ppm, inside I.430's ±100 ppm.
+- **TE mode:** the transmit clock follows the clock recovered from the
+  NT's frames (§6.2). The transmit program's bit length is set bit by bit
+  (500 cycles, ±1 to steer), so its phase follows the receiver's in 10 ns
+  steps.
+- The B-channel octets come at the frame rate (4000 frames, two octets
+  of each B-channel each), and the USB side counts them (§8.2), as the
+  Line stick counts its codec's samples.
 
 ---
 
-## 6. The XHFC-1SU and the RP2040
+## 6. Layer 1 in software
 
-| XHFC-1SU | RP2040 | |
+### 6.1 The PIO programs
+
+| SM | Pins | |
 |---|---|---|
-| SPI_CLK, D6/SPI_RX, D7/SPI_TX, /CS | SPI0 (SCK, TX, RX, CSn) | registers and the D-channel FIFOs; mode 0, up to 25 MHz (run at 12.5 MHz from clk_peri) |
-| A0, D0–D5 | GND | SPI mode (A0/SPI_GND and the unused data pins tied low, as the datasheet's SPI configuration) |
-| SPI_INV | GND | SPI clock not inverted |
-| MODE0, MODE1 | strapped | the SPI processor interface (the datasheet's mode table, to confirm) |
-| F0IO | PIO | the PCM frame sync, 8 kHz, the XHFC master |
-| C4IO | PIO | the PCM bit clock (×2): PCM30, 2.048 Mbit/s, 32 slots |
-| STIO1 | PIO in | the XHFC's PCM output: B1 in slot 1, B2 in slot 2 |
-| STIO2 | PIO out | to the XHFC: B1, B2 |
-| /INT | GPIO (IRQ) | open drain, pulled up |
-| /RES | GPIO | held low until the oscillator runs |
-| WAKEUP | — | not used |
+| PIO0 SM0, transmit | out: DA, DB, /OE | each word from core 1 holds a few bits: per bit, a symbol (+, −, one) and the bit's length in cycles (500 ±1). The program sets the three pins and waits |
+| PIO0 SM1, receive | in: RXP, RXN | samples both comparators at 3.84 MHz (÷25), 20 times a bit, packs 16 sample pairs into each word, DMA into a ring |
+| PIO0 SM2 | — | a 1 MHz tick for timers, if core 1 wants one |
 
-- **B-channels over PCM, not SPI:** the XHFC's data flow connects each
-  B-channel straight to a PCM time slot (transparent, no HDLC), and a PIO
-  program shifts the slots into the RP2040's DMA. This gives the octets
-  exactly at the network's clock, with no FIFO polling, the same shape as
-  the Line stick's codec port. The PIO shifts most significant bit first,
-  so octets reach USB in G.711 and I.460 order: the first bit on the line
-  is the octet's top bit (no bit reversal on the host, unlike mISDN's
-  cards, D-Modem `docs/isdn.md`).
-- **D-channel over SPI:** FIFO pair 2 in HDLC mode. The XHFC adds and
-  checks the CRC, does the access procedure in TE mode (it watches the
-  echo bits, backs off on a collision and repeats the frame by itself),
-  and gives a status byte after each received frame. 16 kbit/s is a few
-  hundred SPI transactions a second.
-- **Layer 1 states** (I.430's F3–F7 in TE mode, G1–G4 in NT mode): the
-  XHFC's state machine, read in its interrupt and reported (§8.4). The
-  host asks for activation; the XHFC does the INFO 1–4 exchange.
-- The **E-channel** (the NT's echo of the D bits) is the chip's business;
-  it is not sent to the host.
+### 6.2 Core 1: receive
+
+- Each bit's 20 sample pairs give the pulses' edges. A digital PLL on the
+  edges of the zeros (ones carry none) holds the bit phase, and the
+  slicer takes each bit at its centre: positive zero, negative zero, or
+  one.
+- **Frame lock:** find the code violation after F and L, check the
+  second violation, then lock after three good frames in a row and lose
+  lock after two frames' time without one (I.430's rules, to check).
+- Out of each frame: B1 and B2 octets into the B rings (most significant
+  bit first: the first bit on the line), D bits into the HDLC receiver,
+  E bits to the access procedure (TE), A and the multiframe bits to the
+  state machine.
+- **NT mode:** the TEs' frames come two bits after ours, plus the bus's
+  delay; the receiver's PLL tracks that phase as it tracks the NT's clock
+  in TE mode.
+
+### 6.3 Core 1: transmit and the D-channel's tight loop
+
+- The transmit words are pushed **a few bits ahead** only, so that a D
+  bit can still be changed after its echo arrives: a D bit is sent, its E
+  echo comes back in the NT's frame a few bit times later, and the next D
+  bit (or a one, on a collision) is decided then. About 10 µs: 1000 cycles
+  at 96 MHz.
+- Core 1 counts the E bits' ones for the priority class, starts the
+  frame's bits when the count is reached, and stops on a difference;
+  core 0 then puts the frame back at the head of the queue.
+- In NT mode, core 1 builds the E bits from the D bits it received in the
+  same frame, as I.430 lays them out, and sets A from the state machine.
+
+### 6.4 Core 0
+
+USB (TinyUSB, as on the other sticks), HDLC in both directions on the D
+bits (flags, zero insertion, CRC-16), the D frames' queues, the states'
+timers, the termination relays, the threshold PWM, the LEDs.
+
+### 6.5 Budget
+
+Core 1 handles one bit every 500 cycles: about 1.25 sample words, the
+PLL step, one slicer decision, one transmit symbol, and at frame ends the
+frame's bookkeeping. A few hundred cycles; to measure on the first
+firmware, with 192 MHz as the reserve.
 
 GPIO map (preliminary):
 
 | GPIO | |
 |---|---|
-| 0–3 | SPI0: RX (MISO), CSn, SCK, TX (MOSI) |
-| 4–7 | PCM: F0IO, C4IO, STIO1 (in), STIO2 (out); PIO0 |
-| 8 | XHFC /INT |
-| 9 | XHFC /RES |
+| 0, 1, 2 | TX: DA, DB, /OE (PIO0 SM0, consecutive for `out pins, 3`) |
+| 3, 4 | RX: RXP, RXN (PIO0 SM1) |
+| 5 | Vth (PWM2 B) |
 | 10, 11 | termination PhotoMOS: TX pair, RX pair |
 | 12–14 | LEDs: LINK (layer 1 active), B1, B2 (a call on it) |
 | 24, 25 | test pads (UART0, firmware log) |
@@ -227,13 +278,13 @@ GPIO map (preliminary):
 
 The RP2040 core of SPEC.md §4.2–4.4 (the chip, W25Q flash, 12 MHz
 crystal, AP2112K-3.3, USBLC6 ESD, USB-C with its CC resistors, a 0.5 A
-PTC), the BOOTSEL and RESET buttons inside, SWD test pads.
+PTC), the BOOTSEL and RESET buttons inside, SWD test pads. Vmid from a
+divider on the 3.3 V rail, 10 µF and 100 nF; the threshold's RC.
 
-Budget, to check on the bench: RP2040 about 25 mA; the XHFC-1SU and its
-oscillator, the datasheet's DC figures to be confirmed (Cologne Chip's
-3.3 V parts run at tens of mA); the transmitter about 15 mA peak while
-sending zeros into 50 Ω, a few mA on average; PhotoMOS LEDs 3 mA each;
-LEDs 2 mA each. **Expected under 80 mA**, inside S1.
+Budget: RP2040 at 96 MHz, both cores busy, about 25 mA; the transmitter
+7.5 mA while sending zeros, a few mA on average; the comparators about
+1 mA; PhotoMOS LEDs 3 mA each; LEDs 2 mA each. **About 45 mA**, well
+inside S1.
 
 ---
 
@@ -269,10 +320,12 @@ the firmware.
   packet carries the pairs the line gave since the last one, so its
   length *is* the network's clock (7, 8 or 9 pairs, 12 at most to catch
   up); the host sends per millisecond as many pairs as the last IN packet
-  brought. The stick plays them after a 2 ms head start; dry, it sends
-  the idle octet (`0xFF`), counts an underrun and waits for its head
-  start again. A B-channel not switched on (`SET_B`) carries `0xFF`
-  both ways and the host's octets for it are ignored.
+  brought. The stick sends them after a 2 ms head start; dry, it sends
+  ones (`0xFF`), counts an underrun and waits for its head start again.
+  A B-channel not switched on (`SET_B`) carries ones both ways and the
+  host's octets for it are ignored. Octets are in line order: the first
+  bit on the line is the octet's most significant (G.711 and I.460
+  order; no bit reversal on the host, unlike mISDN's cards).
 - **D-channel:** one frame per bulk transfer (ended by a short packet, or
   a zero-length one), address to the last information octet: no flags,
   no CRC. IN frames start with one status octet: 0 good, 1 bad CRC,
@@ -283,21 +336,24 @@ the firmware.
 
 | Request | Dir | |
 |---|---|---|
-| `GET_INFO` | IN | the version, board 5, the XHFC's chip ID and revision |
+| `GET_INFO` | IN | the version, board 5 |
 | `SET_MODE` | OUT | 0 TE, 1 NT; layer 1 deactivates first |
 | `ACTIVATE`, `DEACTIVATE` | OUT | layer 1 (PH-ACTIVATE request); in NT mode `DEACTIVATE` sends INFO 0 |
-| `GET_STATUS` | IN | the layer 1 state (F1–F8, G1–G4), the termination switches, counters: frame slips, B underruns and overruns, D frames each way, bad CRCs, D collisions |
+| `GET_STATUS` | IN | the layer 1 state (F1–F8, G1–G4), the threshold and the measured peak, the termination switches, counters: frame slips, lost frame lock, code violations out of place, B underruns and overruns, D frames each way, bad CRCs, D collisions |
 | `SET_B` | OUT | which B-channels flow (bit 0 B1, bit 1 B2) |
 | `SET_TERM` | OUT | the 100 Ω terminations (bit 0 TX pair, bit 1 RX pair) |
-| `LOOP` | OUT | test loops: B-channels back inside the XHFC, or at the line side (I.430's loops 2 and 3 for the bench) |
-| `REG_READ`, `REG_WRITE` | IN, OUT | the XHFC's registers, for debugging |
+| `SET_THRESHOLD` | OUT | 0 automatic (default), or a fixed Vth in mV, for the bench |
+| `LOOP` | OUT | test loops: B-channels back in the firmware, or the transmitter heard by the receiver (with a loop plug) |
+| `TEST_PATTERN` | OUT | I.430's test signals for the bench: continuous zeros (alternating pulses, for the pulse mask and amplitude), INFO 1, high impedance (for the impedance test) |
+| `CAPTURE` | IN | the receiver's raw comparator samples, a few ms, for the host to look at |
 | `REBOOT_UF2` | OUT | to the UF2 loader, as the other sticks |
 
 ### 8.4 Events (`0x83`)
 
 Eight bytes when something changes: the layer 1 state (activated,
-deactivated, lost frame sync, the NT's INFO 2 or INFO 4 seen), a frame
-slip, a B-channel underrun or overrun, a D-channel FIFO overrun.
+deactivated, lost frame lock, INFO 2 or INFO 4 seen), a frame slip, a
+B-channel underrun or overrun, a D-channel queue overrun, the threshold
+moved far.
 
 ---
 
@@ -316,7 +372,7 @@ clear channel or a 3.1 kHz modem call) with two differences:
   operation, T200, N200, T203. `link/lapb.cpp` already has Q.921's
   extended mode for V.120 (SABME, modulo 128, the timers), which the LAPD
   code builds on.
-- **No bit reversal**: the stick sends octets in line order (§6).
+- **No bit reversal**: the stick sends octets in line order (§8.2).
 
 Then, in order of use:
 - **Two B-channels**: two calls at once (two ptys), which `--misdn`
@@ -325,7 +381,7 @@ Then, in order of use:
   terminal adapter, an ISDN card in a vintage PC, or a BBS's ISDN
   hardware dials into D-Modem: the stick is the exchange. A call between
   two terminals on the bus can be switched B-channel to B-channel in the
-  XHFC, or routed to SIP.
+  firmware, or routed to SIP.
 - **CAPI**: `dmodem-capid` (the ISDN work's phase 4) drives a D-Modem
   through its DTE with AT commands, above every line backend, so the
   stick is a CAPI controller wherever dmodemd runs, with nothing in the
@@ -365,11 +421,12 @@ make it thinner. Light pipes for the three LEDs.
 
 | Role | Part | Source | Package | Notes |
 |---|---|---|---|---|
-| S/T controller | Cologne Chip XHFC-1SU | Cologne Chip (quote) | LQFP-64 0.5 mm | consigned or hand-fitted |
-| Oscillator | 24.576 MHz, 3.3 V | LCSC C5179997 (SCTF SX3V24.576B) | 3225 | or a crystal and the Pierce circuit |
-| Transformer | UMEC UT20795-05TS, or Pulse PE-65795 | DigiKey / Mouser | dual SMT | 1:2, chip-side centre tap, common-mode choke |
-| Transmit reference | BC848C ×2 (or a BC848 dual) | LCSC | SOT-23 | V_AMP, VDD_SU |
-| Clamps | BAV99 | LCSC C2500 | SOT-23 | chip side, transmit and receive |
+| Transmit buffer | TI SN74LVC2G125 | LCSC | VSSOP-8 / SOT-23-8 | both /OE tied; 3.3 V |
+| Transmit resistors | 100 Ω 1 % ×2 | LCSC | 0603 | trimmed on the bench |
+| Comparator | TI TLV3202 (dual, 40 ns, rail to rail) | LCSC, to confirm | VSSOP-8 | or a dual of the same class |
+| Threshold filter | 2 × (10 kΩ, 100 nF) | LCSC | 0603 | PWM to Vref |
+| Clamps | BAV99 ×2 | LCSC C2500 | SOT-23 | comparator inputs |
+| Transformer | UMEC UT20775-05TS, or Pulse PE-65795 | DigiKey / Mouser | dual SMT | 1:2, chip-side centre tap, common-mode choke |
 | Line TVS ×2 | bidirectional, 58 V stand-off, low capacitance | LCSC, to choose | SMB or smaller | |
 | PTC or fuse ×2 | telecom rated | LCSC, to choose | | |
 | Terminations | 100 Ω ×2 through 60 V PhotoMOS ×2 | LCSC, to choose (AQY212 or TLP172A class) | SOP-4 | |
@@ -378,74 +435,88 @@ make it thinner. Light pipes for the three LEDs.
 
 ---
 
-## 12. The alternative: S0 in the RP2040's PIO
+## 12. Showing it meets I.430 (the bench)
 
-What the XHFC does on the line is within the RP2040's reach:
+The firmware's `TEST_PATTERN` and `CAPTURE` (§8.3) are for this. In
+order:
 
-- I.430's line is 192 kbit/s, pseudo-ternary: a binary one is no pulse
-  (the TE's transmitter at high impedance), a zero a pulse of alternating
-  polarity, 750 mV into 50 Ω. 48 bit frames, 4000 a second: each frame
-  carries two octets of B1, two of B2 and 4 D bits, and (NT to TE) the E bits
-  that echo the D bits the NT heard.
-- **Transmit:** two GPIOs each drive one end of the transmit transformer's
-  chip winding through a resistor, the third state a binary one. The
-  pulse amplitude and the TE's output impedance (I.430's templates) come
-  from the resistors and the transformer.
-- **Receive:** two comparators (a fast dual, at LCSC) at about ±50 % of
-  the nominal pulse, into two GPIOs, oversampled 16 times in PIO
-  (3.072 MHz).
-- **Software:** a PIO program for each direction; core 1 recovers the
-  clock (a digital PLL on the received zeros), finds the frame (the F bit's
-  code violation), sends its frames two bits behind the NT's (I.430's
-  offset), runs the D-channel access (compare each D bit sent with the E
-  bit back, stop at once on a difference; the priority classes' counts of
-  ones), the activation states (INFO 0–4), and HDLC on the D-channel. At
-  5.2 µs a bit and 125 MHz that is 650 cycles a bit for one core: room to
-  spare.
-
-Why not on rev A: the work is all ours (the DPLL and the comparator
-thresholds must hold on a passive bus with other terminals, and on a long
-point-to-point line), and I.430's pulse mask, impedance and jitter
-figures have to be shown on the bench before the stick goes on someone's
-NTBA. The XHFC has them. A soft-S0 board (`--variant s0soft`) would be
-cheap to try once rev A gives a reference to test against.
+1. **Transmitter:** continuous zeros into a 50 Ω load: the amplitude
+   (750 mV ±10 %) and the pulse against I.430's mask, on a scope; the
+   resistors and the RC trimmed until both pass with margin, at 3.2 and
+   3.4 V.
+2. **Impedance:** the transmitter's in the high impedance state and the
+   receiver's, against I.430's templates, with a network analyser or a
+   bridge across the band; both TX states.
+3. **Receiver:** a second stick in NT mode as the source, through a cable
+   simulator (or real cable on a drum): a short passive bus with 8 TE
+   loads, an extended passive bus, a point-to-point line to I.430's
+   longest; jitter and frame lock.
+4. **D-channel access:** two sticks as TEs on one bus to a third as NT,
+   both sending at once: collisions resolved, no frame lost.
+5. **The real thing:** an NTBA on an ISDN line where one still exists,
+   then the S0 ports of PBXs (Auerswald, AVM's FRITZ!Box models with an
+   internal S0), and, in NT mode, ISDN TAs, an AVM FRITZ!Card and an
+   HFC-based card with mISDN. An HFC card on mISDN is also the
+   reference: it can be the NT or the TE across from the stick.
 
 ---
 
-## 13. Compliance (only if you sell it)
+## 13. The fallback: an XHFC-1SU
+
+If the soft S0 fails the bench, the line goes to a chip. Cologne
+Chip's **XHFC-1SU** (LQFP-64) is the one S/T controller still in
+production ("recommended for new projects", sold through Cologne Chip,
+not LCSC): TE and NT to I.430 and TBR 3, an HDLC controller doing the
+D-channel's CRC and access procedure, a PCM bus and SPI. With it:
+
+- the line interface becomes Cologne Chip's reference circuit (XHFC-2SU
+  datasheet §5.2.8): the same 1:2 transformers, the receive divider
+  network, a BC848 pair making V_AMP for the transmitter;
+- B-channels on its PCM bus (PCM30, slots 1 and 2) into a PIO program, the
+  D-channel's frames over SPI; a 24.576 MHz oscillator;
+- the USB interface (§8) unchanged, so the host never knows.
+
+Osmocom's [xhfc-breakout](https://gitea.osmocom.org/electronics/osmo-small-hardware)
+(the two-port XHFC-2SU) is a working reference.
+
+Other S/T chips (Infineon's SBCX and IPAC-X, TI's TP3420A, Motorola's
+MC145574, Winbond's W6691, Cologne Chip's HFC-S USB) are end of life or
+found only at brokers.
+
+---
+
+## 14. Compliance (only if you sell it)
 
 Terminal equipment on a public ISDN: in Europe the Radio Equipment and
 Low Voltage rules with EN 62368-1, TBR 3 conformance for the S/T
-interface (the XHFC is designed to pass TBR 3); elsewhere
+interface (a soft S0 has to be tested for it from scratch); elsewhere
 each country's own. NT mode makes a private bus only. Building your own:
 at your own risk, on your own NTBA or PBX.
 
 ---
 
-## 14. Open questions
+## 15. Open questions
 
-1. **Buying XHFC-1SU:** price, minimum order and lead time from Cologne
-   Chip, and whether a distributor (or JLC's global sourcing) can supply
-   it, so the board can be assembled whole.
-2. **A transformer at LCSC:** a Pulse ISDN S module of the T50xx family
-   with 1:2 and a chip-side centre tap, so the line side is assembled too.
-3. **NT on the board instead of a crossover cable:** two latching DPDT
+1. **A transformer at LCSC:** a Pulse ISDN S module of the T50xx family
+   with 1:2 and a chip-side centre tap, so the whole board is assembled.
+2. **Core 1's real cycle count** (§6.5): 96 MHz or 192 MHz.
+3. **The receiver on long lines:** whether a sliced threshold is enough
+   at the far end of a point-to-point line, or the slicer wants the
+   received pulse's shape (an equaliser on the samples) as the ISDN
+   chips' adaptive receivers do.
+4. **NT on the board instead of a crossover cable:** two latching DPDT
    signal relays (pulsed: no standing current) on the line side swap the
    pairs, at 2 × 9 × 14 mm. Worth it if the stick is mostly used as an NT.
-4. **Power feeding (PS1) in NT mode:** a 5 V → 40 V boost (about 1 W for
+5. **Power feeding (PS1) in NT mode:** a 5 V → 40 V boost (about 1 W for
    one phone), only on a host that offers 500 mA or more.
-5. **The Up0 port:** the XHFC-1SU's same port can run Up0/UpN, the
-   two-wire interface of many PBXs' system phones. A second footprint
-   choice, not on rev A.
-6. **XHFC-1SU's supply current:** from the datasheet's DC section and
-   the bench, for §7.
 
-## 15. Next steps
+## 16. Next steps
 
-1. Parts (§11, §14 1–2): the XHFC from Cologne Chip, a transformer.
-2. Netlist, schematic and PCB (`--variant s0`), the shell (`stick.py`
+1. Firmware first, on a Pico on a breadboard with the transformer, the
+   buffer and the comparators: two Picos, TE and NT, back to back;
+   then against an HFC card on mISDN.
+2. The bench tests of §12, 1–3, on that rig.
+3. Netlist, schematic and PCB (`--variant s0`), the shell (`stick.py`
    with an RJ45).
-3. Firmware: the XHFC over SPI, its PCM bus in PIO, the USB interface
-   (§8), against the XHFC's own loops first.
-4. D-Modem: `fake_s0`, `lapd.cpp`, `s0_line.cpp`; then a stick on an NTBA,
-   and two sticks back to back (TE and NT).
+4. D-Modem: `fake_s0`, `lapd.cpp`, `s0_line.cpp`; then a stick on an NTBA
+   or a PBX's S0 port.

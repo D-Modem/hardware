@@ -27,7 +27,7 @@ the depth of the other specs; part numbers are candidates.
 | ADSL, ADSL2+ ATU-R (a customer modem, to a DSLAM) | line | samples at 2.208 / 4.416 MHz, clock tracking | DMT (G.992.1/.3/.5), G.994.1 handshake, training, trellis, Reed-Solomon, interleaving; ATM (AAL5, RFC 2684) or PTM; PPPoE/PPPoA to a network interface |
 | ADSL ATU-C (the exchange end, for vintage ADSL modems and routers) | line | the same, more transmit power | the same, the other side of each procedure |
 | ISDN U, NT1 or LT side | line | samples (about 1 MHz) | 2B1Q (80 kbaud, ETSI TS 102 080 annex A, ANSI T1.601) or 4B3T (120 kbaud, annex B, Germany); echo canceller; then LAPD and Q.931 as for the S0 stick |
-| ISDN S0, TE or NT | S0 | I.430's line code, framing, D-channel access (the "soft S0" of [SPEC-S0.md](SPEC-S0.md) §12, easier in logic than in PIO) | as the S0 stick (SPEC-S0 §9) |
+| ISDN S0, TE or NT | S0 | I.430's line code, framing, D-channel access (the S0 stick's soft S0, [SPEC-S0.md](SPEC-S0.md) §3–6, in logic instead of PIO) | as the S0 stick (SPEC-S0 §9) |
 | Bare pair, wideband (WB's mode, more tones) | line | samples | D-Modem's WB pump with tones to 1 MHz or more |
 | SHDSL (G.991.2) | line | samples | later, if wanted |
 
@@ -52,7 +52,7 @@ ISDN and ADSL are being switched off in many countries (Germany's ISDN
 was largely gone by 2022; ADSL is following fibre and VDSL out). So the board's
 most lasting use is likely **being the exchange**: the ATU-C for an old
 ADSL router, the LT for an NTBA (which then gives S0 and power to ISDN
-phones, the PS1 problem of SPEC-S0 §4.5), or NT mode for terminal
+phones, the PS1 problem of SPEC-S0 §4.6), or NT mode for terminal
 adapters, all with D-Modem behind it. ATU-R mode still matters where
 ADSL is still sold, and that is also the hardest interoperability test
 (§6).
@@ -162,11 +162,11 @@ or not at all; most NTBAs run from their own mains supply.
 
 ## 5. The S0 front end
 
-SPEC-S0's §12, with the FPGA in place of the PIO: two outputs drive the
-transmit transformer's chip winding through resistors (a third state
-for a binary one), two fast comparators (±50 % of the nominal pulse)
-read the receive transformer, the 1:2 S0 transformer pair of SPEC-S0
-§4.3 for isolation, the same 100 Ω terminations and protection. In logic,
+The S0 stick's circuit (SPEC-S0 §4): the tri-state buffer driving the
+transmit transformer's chip winding through resistors, two fast
+comparators against a set threshold on the receive transformer, the
+1:2 S0 transformer pair for isolation, the same 100 Ω terminations and
+protection, with the FPGA in place of the PIO and core 1. In logic,
 the frame timing, the two-bit TE offset and the D-channel's echo check
 are exact by construction. A board-mounted XHFC-1SU on the FPGA's SPI
 instead is the conservative choice; it costs a separate order and
@@ -241,7 +241,7 @@ V.90/V.92.
 ## 10. Recommendation
 
 1. Keep the **S0 stick** (SPEC-S0) as the ISDN path to build first: one
-   cheap board, a proven chip, and its host software (LAPD, `s0_line`) is
+   cheap board, the soft S0 proven there first, and its host software (LAPD, `s0_line`) is
    what the FX board's ISDN modes reuse.
 2. Build the **FX board** as the line lab after it: ECP5-25F, USB3320,
    AD9866, THS6222, Si5351; the line front end for ADSL, ISDN U and WB,
