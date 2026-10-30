@@ -6,6 +6,10 @@ Status: spec only. See [SPEC.md](SPEC.md).
 
 Wireless variant (Bluetooth LE for iPhone, classic Bluetooth serial for Android): see [SPEC-W.md](SPEC-W.md).
 
+ISDN S0 stick (an ISDN basic rate S/T port for D-Modem, TE or NT): see [SPEC-S0.md](SPEC-S0.md).
+
+FPGA line board (study: ADSL, ISDN U or S0 by gateware and host software): see [SPEC-FX.md](SPEC-FX.md).
+
 ## Licence
 
 Firmware: AGPL-3.0-only, or a commercial licence from the D-Modem Authors. Hardware: CERN-OHL-S-2.0, or a commercial licence from the D-Modem Authors. See [LICENSING.md](LICENSING.md).
