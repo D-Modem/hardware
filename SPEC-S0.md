@@ -326,9 +326,10 @@ Then, in order of use:
   hardware dials into D-Modem: the stick is the exchange. A call between
   two terminals on the bus can be switched B-channel to B-channel in the
   XHFC, or routed to SIP.
-- **CAPI**: D-Modem's CAPI 2.0 layer (the ISDN work's phase 4) sits
-  above dmodemd's lines, so the stick is a CAPI controller wherever
-  dmodemd runs.
+- **CAPI**: `dmodem-capid` (the ISDN work's phase 4) drives a D-Modem
+  through its DTE with AT commands, above every line backend, so the
+  stick is a CAPI controller wherever dmodemd runs, with nothing in the
+  stick or in `s0_line.cpp` for it.
 
 ### 9.2 dmodem-android
 
