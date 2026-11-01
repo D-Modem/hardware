@@ -12,7 +12,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # (apt's downloads cached: .github/actions/apt)
       - name: Tools
@@ -67,14 +67,14 @@ jobs:
                 -DPICO_TINYUSB_PATH=$PWD/firmware/build-hood/_deps/tinyusb-src
           ninja -C firmware/build-wb
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 
       - name: Emulator test (rp2040js)
         run: firmware/test/emu/run.sh firmware/build-hood/pico-serial-hood.bin
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pico-serial-firmware
           path: |
