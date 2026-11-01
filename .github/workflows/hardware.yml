@@ -9,9 +9,9 @@ name: hardware
 
 on:
   push:
-    paths: ["hardware/**", ".github/workflows/hardware.yml"]
+    paths: ["hardware/**", ".github/workflows/hardware.yml", ".github/actions/apt/**"]
   pull_request:
-    paths: ["hardware/**", ".github/workflows/hardware.yml"]
+    paths: ["hardware/**", ".github/workflows/hardware.yml", ".github/actions/apt/**"]
 
 jobs:
   check:
@@ -19,11 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # (apt's downloads cached: .github/actions/apt)
       - name: KiCad 9
-        run: |
-          sudo add-apt-repository -y ppa:kicad/kicad-9.0-releases
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends kicad
+        uses: ./.github/actions/apt
+        with:
+          ppa: ppa:kicad/kicad-9.0-releases
+          packages: kicad
 
       - name: Netlists and schematics match the netlist script
         run: |
