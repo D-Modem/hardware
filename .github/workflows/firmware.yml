@@ -4,9 +4,9 @@ name: firmware
 
 on:
   push:
-    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml"]
+    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml", ".github/actions/apt/**"]
   pull_request:
-    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml"]
+    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml", ".github/actions/apt/**"]
 
 jobs:
   build-and-test:
@@ -14,10 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # (apt's downloads cached: .github/actions/apt)
       - name: Tools
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib ninja-build cmake
+        uses: ./.github/actions/apt
+        with:
+          packages: >-
+            gcc-arm-none-eabi libnewlib-arm-none-eabi
+            libstdc++-arm-none-eabi-newlib ninja-build cmake
+          recommends: 'true'
 
       - name: Pin header matches the netlist
         run: |
