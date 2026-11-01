@@ -191,7 +191,7 @@ ALSA codecs.
 
 ### 6.1 D-Modem-RE (Linux)
 
-A second device kind beside the SmartUSB56 in `dmodemd/usb_line.cpp`:
+A second device kind beside the SmartUSB56 in `frontend/dmodemd/usb_line.cpp`:
 `dmodemd --usb=auto` finds either. The differences from the ST7554:
 - samples at 9600 Hz by default (V.90);
 - the hook and the line monitor by vendor request, not GPIO registers;
