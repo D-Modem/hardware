@@ -163,7 +163,7 @@ different device: a softmodem's line interface, for a host driver such as
 D-Modem's `dmodemd`. It has none of the above. Its definitions are in
 [`src/core/line_proto.h`](src/core/line_proto.h); this section is enough to
 write the host's driver. It is shaped like Smart Link's SmartUSB56 (the
-ST7554, which `dmodemd/usb_line.cpp` drives), so that driver is the model.
+ST7554, which `frontend/dmodemd/usb_line.cpp` drives), so that driver is the model.
 
 ### Finding it
 
