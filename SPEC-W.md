@@ -8,7 +8,7 @@ cable:
 - **iPhone and iPad over Bluetooth Low Energy (BLE).** No Apple
   certification (MFi) is needed. Any iOS app can talk to a BLE device, and
   existing "BLE UART" apps work for testing straight away.
-- **Android over classic Bluetooth serial (SPP).** dmodem-android already
+- **Android over classic Bluetooth serial (SPP).** The D-Modem app already
   connects out to a paired device's serial port, so this works with **no
   app change**.
 - **USB-C works as before**, as a wired serial port and for power.
@@ -250,10 +250,10 @@ becomes the computer's DCD. A plain NUS terminal app, which sets no lines,
 therefore gets **DCD and DSR asserted while connected**. That's what a
 computer expects from a modem that's "on".
 
-### 4.4 Classic Bluetooth: SPP (for Android and dmodem-android)
+### 4.4 Classic Bluetooth: SPP (for Android and the D-Modem app)
 
 - An SPP server on RFCOMM, named "pico-serial".
-- dmodem-android's existing mode, which connects to a paired device's
+- The D-Modem app's existing mode, which connects to a paired device's
   serial port, works unchanged. Pair the board in Android's Bluetooth
   settings, then pick it in dmodem.
 - Data passes straight through.
@@ -319,12 +319,12 @@ pairing window open, steady = connected.
 
 - **iPhone/iPad:** there is no app yet.
   - For testing, use a generic BLE UART app (§4.2).
-  - For real use, an iOS app has to do what dmodem-android does: the
+  - For real use, an iOS app has to do what the Android app does: the
     phone as the modem.
   - That's a separate project and needs no MFi: BLE apps can go on the
     App Store.
 - **Android:**
-  - dmodem-android works today over SPP (§4.4).
+  - The D-Modem app works today over SPP (§4.4).
   - Adding BLE to dmodem would also carry the modem lines through the
     control service.
 
@@ -360,7 +360,7 @@ pairing window open, steady = connected.
 1. Buy a Pico W; order one test print of the hood (`hardware/enclosure/out/*.stl`).
 2. **Bench prototype with an off-the-shelf Pico W.** It has the same radio
    and the same pins. Wire it to the RS-232 test rig from SPEC.md §9, then
-   prove BLE NUS with an iPhone, SPP with dmodem-android, pairing, and
+   prove BLE NUS with an iPhone, SPP with the D-Modem app, pairing, and
    throughput at 115,200 and 230,400. **Also test the radio inside a
    DB25 hood against a computer's back panel**: this decides the
    enclosure (§2.1). None of this needs a new board.

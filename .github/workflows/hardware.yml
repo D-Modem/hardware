@@ -9,9 +9,9 @@ name: hardware
 
 on:
   push:
-    paths: ["hardware/**", ".github/workflows/hardware.yml", ".github/actions/apt/**"]
+    paths: ["hardware/**", ".github/workflows/hardware.yml", ".github/actions/apt/**", "!hardware/README.md", "!hardware/enclosure/README.md"]
   pull_request:
-    paths: ["hardware/**", ".github/workflows/hardware.yml", ".github/actions/apt/**"]
+    paths: ["hardware/**", ".github/workflows/hardware.yml", ".github/actions/apt/**", "!hardware/README.md", "!hardware/enclosure/README.md"]
 
 jobs:
   check:

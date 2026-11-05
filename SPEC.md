@@ -19,7 +19,7 @@ each role, both on the same DB25 pins, and only one is powered at a time.
 The role is **auto-detected** from whatever is plugged in, or can be fixed
 in firmware (§5.2).
 
-The main DCE use is a phone running **dmodem-android** plugged into a
+The main DCE use is a phone running **the D-Modem app** plugged into a
 vintage computer: to the computer it looks like an external modem. DTE
 mode turns the same board into an ordinary USB-to-serial adapter for
 talking to real modems.
@@ -45,7 +45,7 @@ talking to real modems.
 | R5 | Auto-detects the role from what is attached; can also be fixed in firmware |
 | R6 | 300 baud to at least 230 400 baud; 5–8 data bits, none/even/odd parity, 1 or 2 stop bits, break |
 | R7 | Hardware RTS/CTS flow control on the RS-232 side |
-| R8 | Works with dmodem-android's USB bridge as it is today (§6) |
+| R8 | Works with the D-Modem app's USB bridge as it is today (§6) |
 | R9 | Firmware update over the same USB-C cable (UF2) |
 | R10 | ±15 kV ESD (HBM) on the RS-232 pins, ESD protection on USB |
 | R11 | Fits inside a standard DB25 hood; USB-C exits through the cable opening |
@@ -409,7 +409,7 @@ So the phone app doesn't need to know what speed the terminal is set to.
 
 ---
 
-## 6. dmodem-android compatibility
+## 6. D-Modem app compatibility
 
 Works today with **no app change** (DCE mode):
 - The app finds any CDC-ACM device (its USB filter matches the CDC
@@ -431,7 +431,7 @@ Needs app work:
   requests.
 
 DTE mode is for computers using the board to reach a real modem;
-dmodem-android doesn't need it.
+The D-Modem app doesn't need it.
 
 ---
 
@@ -560,7 +560,7 @@ DB25 hood has, so it is a separate, slightly larger board.
 2. **Bench prototype** on a Pico dev board with SP3238E and MAX3243E on
    SSOP-28 adapter boards, wired as §4.5. Prove the role detection, the
    driver swing with both chips on the bus, and both line mappings with
-   dmodem-android (DCE) and a real modem (DTE).
+   the D-Modem app (DCE) and a real modem (DTE).
 3. Netlist, schematic and PCB: done, `hardware/` (generated and
    checked). Next: a person reviews the layout, and the outline is
    confirmed against the sample hood (step 1).
