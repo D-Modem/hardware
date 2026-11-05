@@ -1,6 +1,6 @@
 # pico-serial control protocol (version 1)
 
-For host apps (dmodem-android, a desktop tool) that want more than a plain
+For host apps (the D-Modem app, a desktop tool) that want more than a plain
 serial port gives: the board's role, every modem line, and settings. The
 C definitions are in [`src/core/protocol.h`](src/core/protocol.h).
 

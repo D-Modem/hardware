@@ -9,14 +9,14 @@ USB-A cable).
 
 It is a **softmodem**: the stick is the telephone-line interface (a DAA
 and its codec) with an RP2040 between it and USB. The modem itself, every
-modulation from V.21 to V.90, fax and voice, is **D-Modem-RE's open DSP**
+modulation from V.21 to V.90, fax and voice, is **D-Modem's open DSP**
 running on whatever the stick is plugged into:
 
 - **Linux:** `dmodemd` drives it through libusb, as it drives Smart
   Link's SmartUSB56 today (§6). The modem appears as a pty.
 - **Windows:** `dmodemd` drives it through libusb on WinUSB, which
   Windows binds by itself (Microsoft OS 2.0 descriptors: no INF).
-- **Android:** dmodem-android gets a real telephone line beside SIP
+- **Android:** the D-Modem app gets a real telephone line beside SIP
   (§6.2).
 
 So the stick has no modem firmware of its own to go out of date, and
@@ -189,7 +189,7 @@ ALSA codecs.
 
 ## 6. Host software
 
-### 6.1 D-Modem-RE (Linux)
+### 6.1 D-Modem (Linux)
 
 A second device kind beside the SmartUSB56 in `frontend/dmodemd/usb_line.cpp`:
 `dmodemd --usb=auto` finds either. The differences from the ST7554:
@@ -198,7 +198,7 @@ A second device kind beside the SmartUSB56 in `frontend/dmodemd/usb_line.cpp`:
 - caller ID (the ST7554's codec hears nothing on hook; this one does);
 - the country's line settings written to the line side's registers.
 
-### 6.2 dmodem-android
+### 6.2 The D-Modem app (Android)
 
 The app gets the stick through Android's USB host API (a `UsbDeviceConnection`'s
 descriptor handed to libusb), so the same line code runs on the phone:
@@ -253,4 +253,4 @@ phone.
 1. Netlist and schematic (`--variant line`).
 2. The shell (`stick.py`), then the PCB.
 3. Firmware: the Si3056's serial port in PIO, the USB interface.
-4. D-Modem-RE's driver, against a fake device first (as `fake_st7554`).
+4. D-Modem's driver, against a fake device first (as `fake_st7554`).

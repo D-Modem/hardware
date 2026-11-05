@@ -10,7 +10,7 @@ bandwidth than any voice-band modem can.
 
 Same as the Line stick: the stick is only the line interface (a codec, a
 transformer, protection) with an RP2040 streaming samples over USB, and
-the modem is **D-Modem-RE on the host** (Linux `dmodemd`, Android's
+the modem is **D-Modem on the host** (Linux `dmodemd`, Android's
 dmodem app), here a new wideband mode of our own (§6). Both ends are
 ours, so the modulation needn't follow any standard.
 
@@ -109,7 +109,7 @@ hook, ring or caller ID.
 
 ## 6. The modem: a wideband mode for D-Modem
 
-A new data pump in D-Modem-RE (`dsp/`), with D-Modem's error correction
+A new data pump in D-Modem (`dsp/`), with D-Modem's error correction
 and compression above it (V.42 LAPM, V.44) as for every other mode.
 
 **Multicarrier (DMT/OFDM), frequency-division duplex.**
@@ -136,7 +136,7 @@ and compression above it (V.42 LAPM, V.44) as for every other mode.
   sync, and adapt the bit tables in a call (bit swapping) as the pair's
   noise changes.
 
-Rates measured on a simulated pair (D-Modem-RE `vwb_test`: 24 AWG cable
+Rates measured on a simulated pair (D-Modem `vwb_test`: 24 AWG cable
 loss, −15 dB hybrid echo, crystals 100 ppm apart, no bit errors), each
 way at 96 kHz:
 
@@ -209,5 +209,5 @@ different chip, if wanted later.
 1. Parts (§8), then the netlist, schematic and PCB (`--variant wb`).
 2. Firmware: the codec over I2C, I2S in PIO, the Line stick's USB at
    96/192 kHz.
-3. The modem in D-Modem-RE, developed against the simulated pair first.
+3. The modem in D-Modem, developed against the simulated pair first.
 4. Two sticks on a real pair.

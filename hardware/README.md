@@ -308,7 +308,7 @@ Not reviewed by a person, nothing built.
 
 A USB-C stick for a telephone line, shaped like Apple's USB Modem
 ([SPEC-L.md](../SPEC-L.md)): the RP2040 core and a Skyworks Si3056 +
-Si3018 DAA. The modem itself is D-Modem-RE on the computer or phone
+Si3018 DAA. The modem itself is D-Modem on the computer or phone
 (`dmodemd --usb`). Every script takes `--variant line`; the shell is
 `enclosure/stick.py`.
 
@@ -360,7 +360,7 @@ goes near a phone line.**
 The Line stick's sibling for bare copper pairs ([SPEC-WB.md](../SPEC-WB.md)):
 the same RP2040 core and USB end, a TI TLV320AIC3204 codec sampling at
 96 kHz, and a Pulse PE-65848 line transformer. Two WB sticks talk to each
-other over the pair; the modem is D-Modem-RE's wideband mode on the
+other over the pair; the modem is D-Modem's wideband mode on the
 computer or phone. Every script takes `--variant wb`; the shell is the
 Line stick's (`enclosure/stick.py --variant wb`).
 

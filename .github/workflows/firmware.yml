@@ -4,9 +4,9 @@ name: firmware
 
 on:
   push:
-    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml", ".github/actions/apt/**"]
+    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml", ".github/actions/apt/**", "!firmware/**/*.md"]
   pull_request:
-    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml", ".github/actions/apt/**"]
+    paths: ["firmware/**", "hardware/netlist/**", ".github/workflows/firmware.yml", ".github/actions/apt/**", "!firmware/**/*.md"]
 
 jobs:
   build-and-test:

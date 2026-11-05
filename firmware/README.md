@@ -81,7 +81,7 @@ like the USB code, so nothing runs in an interrupt.
 | | |
 |---|---|
 | Name | `pico-serial-XXXX`, XXXX = the end of the Bluetooth address |
-| Android, desktops | Classic **SPP** server on RFCOMM channel 1, "pico-serial". dmodem-android's "paired device" mode works unchanged |
+| Android, desktops | Classic **SPP** server on RFCOMM channel 1, "pico-serial". The D-Modem app's "paired device" mode works unchanged |
 | iPhone, anything BLE | **Nordic UART Service**: write to RX (`6E400002…`), notifications from TX (`6E400003…`). Generic BLE UART apps work |
 | Control | The pico-serial control service over BLE: line coding, outputs, inputs (notify), mode, break, flow, credits (notify), info. See [PROTOCOL.md](PROTOCOL.md#bluetooth-w-board) |
 | Who owns the port | USB while its port is open (DTR set); otherwise the wireless link that connected first; the others stay connected but read-only (BLE writes are refused, SPP data is dropped). `src/core/link.c` |
@@ -361,7 +361,7 @@ and the levels above are all still to be tried.
 - **Bluetooth:** the W firmware builds, but nothing about the radio has
   run: the emulator has no CYW43, and there's no W board or Pico W rig
   yet. A Pico W wired to the transceivers (SPEC-W.md §9) is the first test:
-  pairing from an iPhone and from Android, dmodem-android over SPP, the
+  pairing from an iPhone and from Android, the D-Modem app over SPP, the
   ownership rules, and throughput.
 - **Not built yet:**
   - the rest of SPEC-W.md §4 listed under [Bluetooth](#bluetooth-w-board);
