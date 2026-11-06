@@ -2,7 +2,7 @@
 
 For host apps (the D-Modem app, a desktop tool) that want more than a plain
 serial port gives: the board's role, every modem line, and settings. The
-C definitions are in [`src/core/protocol.h`](src/core/protocol.h).
+C definitions are in [`src/core/protocol.h`](src/core/protocol.h), and every value of them in the [protocol reference](../docs/protocol-reference.md).
 
 ## Finding it
 
