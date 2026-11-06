@@ -1,3 +1,5 @@
+<img src=".github/banner.png" alt="D-Modem/hardware: Open source hardware modem designs" width="100%">
+
 # pico-serial
 
 Open RP2040 boards for the D-Modem suite: serial adapters and phone-line
