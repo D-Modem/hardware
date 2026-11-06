@@ -10,3 +10,5 @@ hardware/kicad/*.kicad_prl
 hardware/kicad/*-backups/
 hardware/kicad/route/
 hardware/kicad/fp-info-cache
+.site/
+site/

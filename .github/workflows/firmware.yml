@@ -31,6 +31,9 @@ jobs:
       - name: Every function is documented
         run: python3 firmware/tools/check_docs.py
 
+      - name: Protocol reference matches the headers
+        run: python3 firmware/tools/protocol_ref.py --check
+
       - name: Core tests (host)
         run: make -C firmware/test run
 

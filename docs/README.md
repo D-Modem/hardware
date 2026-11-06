@@ -11,6 +11,7 @@
 
 - [firmware/README.md](../firmware/README.md): build, flash, what it does, Bluetooth, automatic baud rate, tests, the Line and WB sticks
 - [firmware/PROTOCOL.md](../firmware/PROTOCOL.md): the control protocol for host apps
+- [Protocol reference](protocol-reference.md): every request, constant and wire struct in the protocol headers, made from them (`firmware/tools/protocol_ref.py`)
 
 ## Hardware
 

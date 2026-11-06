@@ -1,0 +1,23 @@
+# The hardware's site, https://d-modem.github.io/hardware/: docs/, the README
+# and the specs, firmware and hardware pages, with brand's shared theme and
+# workflow (brand's docs/sites.md).  A pull request builds it, main deploys
+# it.  It fails if docs/protocol-reference.md isn't what the protocol
+# headers make now (python3 firmware/tools/protocol_ref.py).
+name: Pages
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  site:
+    uses: D-Modem/brand/.github/workflows/site.yml@main
+    with:
+      prepare: python3 firmware/tools/protocol_ref.py --check

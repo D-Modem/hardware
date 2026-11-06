@@ -1,0 +1,43 @@
+INHERIT: .site/mkdocs-base.yml
+# The hardware's site, https://d-modem.github.io/hardware/: docs/, the README
+# and the pages site_include lists, with brand's shared theme and workflow
+# (brand's docs/sites.md).  docs/protocol-reference.md is made from the
+# protocol headers (python3 firmware/tools/protocol_ref.py).
+site_name: D-Modem hardware
+site_description: pico-serial, the D-Modem suite's RS-232 adapters and phone-line sticks
+site_url: https://d-modem.github.io/hardware/
+repo_url: https://github.com/D-Modem/hardware
+repo_name: D-Modem/hardware
+docs_dir: .site/docs
+extra:
+  repo: hardware
+  site_include:
+    - SPEC*.md
+    - LICENSING.md
+    - firmware/*.md
+    - hardware/README.md
+    - hardware/enclosure/**/*.md
+    - hardware/netlist/*.md
+nav:
+  - Home: index.md
+  - Specs:
+      - pico-serial: SPEC.md
+      - pico-serial W: SPEC-W.md
+      - pico-serial Line: SPEC-L.md
+      - pico-serial WB: SPEC-WB.md
+  - Firmware:
+      - Firmware: firmware/README.md
+      - Control protocol: firmware/PROTOCOL.md
+      - Protocol reference: protocol-reference.md
+  - Hardware:
+      - Board: hardware/README.md
+      - Enclosures: hardware/enclosure/README.md
+      - Placement (DB25): hardware/enclosure/out/placement.md
+      - Placement (Line): hardware/enclosure/out-line/placement.md
+      - Placement (WB): hardware/enclosure/out-wb/placement.md
+      - Net list (DB25): hardware/netlist/NETLIST.md
+      - Net list (W): hardware/netlist/NETLIST-w.md
+      - Net list (Line): hardware/netlist/NETLIST-line.md
+      - Net list (WB): hardware/netlist/NETLIST-wb.md
+  - Licensing: LICENSING.md
+  - Documentation index: README.md
