@@ -32,6 +32,8 @@ The board files are generated from `hardware/netlist/build_netlist.py`.
 
 ## Documentation
 
+The documentation is also a website, [d-modem.github.io/hardware](https://d-modem.github.io/hardware/), with reference pages made from the code.
+
 - [docs/](docs/README.md): an index of every spec and guide
 - [Firmware](firmware/README.md): building, flashing, Bluetooth, tests
 - [Control protocol](firmware/PROTOCOL.md): the USB vendor interface for host apps
