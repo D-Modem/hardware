@@ -91,4 +91,5 @@ makers' own terms.
 ## Contributions
 
 Contributions can be accepted only under terms that let the D-Modem Authors offer
-them under all the licences above. Ask before sending one.
+them under all the licences above, so each one comes with the contributor
+agreement in [CONTRIBUTING.md](CONTRIBUTING.md).
