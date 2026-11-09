@@ -51,6 +51,10 @@ The documentation is also a website, [d-modem.github.io/hardware](https://d-mode
 | [go3270](https://github.com/D-Modem/go3270) | A Go library for 3270 terminal servers, used by bbs |
 | [brand](https://github.com/D-Modem/brand) | Logos, colours, type and the naming guide |
 
+ISDN S0 stick (an ISDN basic rate S/T port for D-Modem, TE or NT): see [SPEC-S0.md](SPEC-S0.md).
+
+FPGA line board (study: ADSL, ISDN U or S0 by gateware and host software): see [SPEC-FX.md](SPEC-FX.md).
+
 ## Licence
 
 Firmware: AGPL-3.0-only, or a commercial licence from the D-Modem Authors. Hardware: CERN-OHL-S-2.0, or a commercial licence from the D-Modem Authors. See [LICENSING.md](LICENSING.md). Contributions come with a contributor agreement ([CONTRIBUTING.md](CONTRIBUTING.md)).
