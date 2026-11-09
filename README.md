@@ -53,4 +53,4 @@ The documentation is also a website, [d-modem.github.io/hardware](https://d-mode
 
 ## Licence
 
-Firmware: AGPL-3.0-only, or a commercial licence from the D-Modem Authors. Hardware: CERN-OHL-S-2.0, or a commercial licence from the D-Modem Authors. See [LICENSING.md](LICENSING.md).
+Firmware: AGPL-3.0-only, or a commercial licence from the D-Modem Authors. Hardware: CERN-OHL-S-2.0, or a commercial licence from the D-Modem Authors. See [LICENSING.md](LICENSING.md). Contributions come with a contributor agreement ([CONTRIBUTING.md](CONTRIBUTING.md)).
