@@ -9,9 +9,9 @@
 
 ## Firmware
 
-- [firmware/README.md](../firmware/README.md): build, flash, what it does, Bluetooth, automatic baud rate, tests, the Line and WB sticks
+- [firmware/README.md](../firmware/README.md): how to build and flash, the functions, Bluetooth, automatic baud rate, tests, the Line and WB sticks
 - [firmware/PROTOCOL.md](../firmware/PROTOCOL.md): the control protocol for host apps
-- [Protocol reference](protocol-reference.md): every request, constant and wire struct in the protocol headers, made from them (`firmware/tools/protocol_ref.py`)
+- [Protocol reference](protocol-reference.md): all requests, constants and wire structs in the protocol headers. A script makes this page from the headers (`firmware/tools/protocol_ref.py`)
 
 ## Hardware
 
