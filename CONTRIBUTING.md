@@ -3,6 +3,8 @@
 Contributions are welcome: issues, fixes and features alike.  Before
 sending a change, build what it affects and run its tests (the firmware's in [firmware/README.md](firmware/README.md)).
 
+Write all technical documentation in ASD-STE100 Simplified Technical English. Follow docs/STYLE.md.
+
 ## The contributor agreement
 
 The firmware is offered under the AGPL-3.0 and the hardware design under
