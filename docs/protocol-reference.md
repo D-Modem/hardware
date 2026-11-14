@@ -1,12 +1,12 @@
-<!-- Made by firmware/tools/protocol_ref.py from the protocol headers: change the headers (or the script), not this page. -->
+<!-- The script firmware/tools/protocol_ref.py makes this page from the protocol headers. Change the headers (or the script), not this page. -->
 
 # Protocol reference
 
-What the firmware's protocol headers define, value by value: the requests, constants and wire structs a host app shares with the boards. [PROTOCOL.md](../firmware/PROTOCOL.md) says how to use them. Every struct is packed and little-endian.
+This page gives the definitions of the protocol headers of the firmware, value by value: the requests, constants and wire structs that a host app shares with the boards. [PROTOCOL.md](../firmware/PROTOCOL.md) tells how to use them. All structs are packed and little-endian.
 
 ## pico-serial control
 
-The DB25 and W boards' control interface: [`protocol.h`](../firmware/src/core/protocol.h).
+The control interface of the DB25 and W boards: [`protocol.h`](../firmware/src/core/protocol.h).
 
 pico-serial vendor protocol: control requests on the "pico-serial control" interface. Shared by the firmware and any host app; see firmware/PROTOCOL.md.
 
