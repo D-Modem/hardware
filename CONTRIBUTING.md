@@ -1,7 +1,8 @@
 # Contributing
 
-Contributions are welcome: issues, fixes and features alike.  Before
-sending a change, build what it affects and run its tests (the firmware's in [firmware/README.md](firmware/README.md)).
+We welcome contributions: issues, fixes and features.  Before you send a
+change, build the parts that it changes and run their tests. For the
+firmware tests, see [firmware/README.md](firmware/README.md).
 
 Write all technical documentation in ASD-STE100 Simplified Technical English. Follow docs/STYLE.md.
 
