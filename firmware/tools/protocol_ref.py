@@ -18,7 +18,7 @@ import sys
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 OUT = os.path.join(ROOT, "docs", "protocol-reference.md")
 HEADERS = [
-    ("pico-serial control", "firmware/src/core/protocol.h", "the DB25 and W boards' control interface"),
+    ("pico-serial control", "firmware/src/core/protocol.h", "the control interface of the DB25 and W boards"),
     ("Line stick", "firmware/src/core/line_proto.h", "pico-serial Line, the phone-line stick"),
     ("WB stick", "firmware/src/core/wb_proto.h", "pico-serial WB, the wideband stick"),
 ]
@@ -178,13 +178,13 @@ def sentence(s):
 
 
 def page():
-    b = ["<!-- Made by firmware/tools/protocol_ref.py from the protocol headers: "
-         "change the headers (or the script), not this page. -->\n\n",
+    b = ["<!-- The script firmware/tools/protocol_ref.py makes this page from the protocol headers. "
+         "Change the headers (or the script), not this page. -->\n\n",
          "# Protocol reference\n\n",
-         "What the firmware's protocol headers define, value by value: the "
-         "requests, constants and wire structs a host app shares with the "
-         "boards. [PROTOCOL.md](../firmware/PROTOCOL.md) says how to use them. "
-         "Every struct is packed and little-endian.\n\n"]
+         "This page gives the definitions of the protocol headers of the firmware, "
+         "value by value: the requests, constants and wire structs that a host app "
+         "shares with the boards. [PROTOCOL.md](../firmware/PROTOCOL.md) tells how to "
+         "use them. All structs are packed and little-endian.\n\n"]
     for title, rel, what in HEADERS:
         with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
             blocks = parse(f.read())
