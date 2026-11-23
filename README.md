@@ -18,6 +18,8 @@ Pico module.
 | pico-serial Line | A USB modem stick for a real telephone line, with a Si3056 DAA. The modem is D-Modem on the host | [SPEC-L.md](SPEC-L.md) |
 | pico-serial WB | A wideband stick for bare copper pairs. It samples at 96 kHz for the V.wb mode of D-Modem | [SPEC-WB.md](SPEC-WB.md) |
 
+Two more designs have only a spec: an ISDN S0 stick (a basic rate S/T port for D-Modem, as TE or NT, [SPEC-S0.md](SPEC-S0.md)), and an FPGA line board (a study: ADSL, ISDN U or S0 through gateware and host software, [SPEC-FX.md](SPEC-FX.md)).
+
 Status: the specs are drafts. CI builds the firmware and runs its tests
 on the host and in an RP2040 emulator. A script makes the board files for
 KiCad 9. At this time, nothing has run on a real board.
@@ -46,15 +48,12 @@ The documentation is also a website, [d-modem.github.io/hardware](https://d-mode
 | --- | --- |
 | [D-Modem](https://github.com/D-Modem/D-Modem) | The open V.92 softmodem: dmodemd, libdmodem and the Asterisk, FreeSWITCH and ARI modules |
 | [app](https://github.com/D-Modem/app) | The D-Modem app for Android and iOS: a dial-up modem on a SIP call |
+| [gui](https://github.com/D-Modem/gui) | D-Modem on the desktop: native apps for Windows, macOS and Linux |
 | [hardware](https://github.com/D-Modem/hardware) | pico-serial: RP2040 serial adapters and phone-line USB sticks |
 | [login](https://github.com/D-Modem/login) | dmodem-login: the login, menu and LDAP provider for dial-up callers |
 | [bbs](https://github.com/D-Modem/bbs) | A bulletin board for telnet, SSH, TN3270 and modem callers |
 | [go3270](https://github.com/D-Modem/go3270) | A Go library for 3270 terminal servers, used by bbs |
 | [brand](https://github.com/D-Modem/brand) | Logos, colours, type and the naming guide |
-
-ISDN S0 stick (an ISDN basic rate S/T port for D-Modem, TE or NT): see [SPEC-S0.md](SPEC-S0.md).
-
-FPGA line board (a study: ADSL, ISDN U or S0 through gateware and host software): see [SPEC-FX.md](SPEC-FX.md).
 
 ## Licence
 
