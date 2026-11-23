@@ -6,6 +6,8 @@
 - [SPEC-W.md](../SPEC-W.md): pico-serial W, the Bluetooth variant
 - [SPEC-L.md](../SPEC-L.md): pico-serial Line, the phone-line stick
 - [SPEC-WB.md](../SPEC-WB.md): pico-serial WB, the wideband bare-pair stick
+- [SPEC-S0.md](../SPEC-S0.md): the ISDN S0 stick (spec only)
+- [SPEC-FX.md](../SPEC-FX.md): the FPGA line board (a study)
 
 ## Firmware
 
@@ -22,3 +24,7 @@
 ## Licensing
 
 - [LICENSING.md](../LICENSING.md)
+
+## Style
+
+- [Documentation style](STYLE.md): the rules for ASD-STE100 Simplified Technical English
